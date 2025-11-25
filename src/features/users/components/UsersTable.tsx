@@ -42,7 +42,9 @@ export default function UsersTable({ role, search }: { role?: string; search: st
     },
   });
 
-  const users = response?.results ?? [];
+  const users = Array.isArray(response) ? response : (response?.results ?? []);
+  console.log("Full response:", response);  // ← ADD: Debug full data
+  console.log("users: ", users);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
