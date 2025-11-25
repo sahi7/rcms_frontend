@@ -45,9 +45,10 @@ export default function UsersPage() {
                             <TabsTrigger value="parent">Parents</TabsTrigger>
                         </TabsList>
 
-                        {["all", "teacher", "student", "parent"].map((role) => (
-                            <TabsContent key={role} value={role}>
-                                <UsersTable role={role === "all" ? undefined : role} search={search} />
+                        {["all", "teacher", "student", "parent"].map((tabRole) => (
+                            <TabsContent key={tabRole} value={tabRole} className="space-y-4">
+                                {/* Search is now INSIDE UsersTable, so we don't pass it */}
+                                <UsersTable role={tabRole === "all" ? undefined : tabRole} />
                             </TabsContent>
                         ))}
                     </Tabs>
