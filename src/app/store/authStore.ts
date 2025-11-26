@@ -7,6 +7,7 @@ import { toast } from "sonner";
 interface User {
   id: number;
   username: string;
+  email: string;
   first_name: string;
   last_name: string;
   role: "principal" | "teacher" | "parent" | "student";
@@ -20,12 +21,14 @@ interface LoginResponse {
 export const useAuthStore = create<{
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
 }>((set) => ({
   user: null,
   isAuthenticated: false,
+  isLoading: true,
 
   login: async (username: string, password: string) => {
     try {
@@ -56,6 +59,7 @@ export const useAuthStore = create<{
   },
 
   fetchMe: async () => {
+    set({ isLoading: true });
     const res = await api.get<User>("/auth/me/");
     set({ user: res.data, isAuthenticated: true });
   },

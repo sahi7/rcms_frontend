@@ -146,25 +146,31 @@ export default function LoginPage() {
       <Dialog open={showForgot} onOpenChange={setShowForgot}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>Enter your registered email</DialogDescription>
+            <DialogTitle>Forgot Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a reset link
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email Address</Label>
+            <div>
+              <Label>Email</Label>
               <Input
                 type="email"
-                placeholder="you@school.com"
-                disabled={isSubmitting}
+                placeholder="principal@school.com"
                 {...forgotForm.register("email")}
               />
+              {forgotForm.formState.errors.email && (
+                <p className="text-sm text-destructive mt-1">
+                  {forgotForm.formState.errors.email.message}
+                </p>
+              )}
             </div>
-            <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => setShowForgot(false)} disabled={isSubmitting}>
-                Cancel
-              </Button>
+            <div className="flex gap-3">
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Sending..." : "Send Reset Link"}
+              </Button>
+              <Button variant="outline" type="button" onClick={() => setShowForgot(false)}>
+                Cancel
               </Button>
             </div>
           </form>
