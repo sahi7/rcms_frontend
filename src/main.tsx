@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import App from "./App.tsx";
 import UsersPage from "@/features/users/UsersPage";
+import StudentsPage from "@/features/students/StudentsPage";
 import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
 import "./index.css";
@@ -54,6 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/" element={<App />}>
             {/* your existing routes */}
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/students" element={<StudentsPage />} />
             {/* other routes */}
           </Route>
         </Routes>
