@@ -144,7 +144,7 @@ export default function StudentsTable() {
                     className="pl-10"
                 />
                 {isFetching && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <div className="absolute right-3 bottom-1/4 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                 )}
             </div>
 
