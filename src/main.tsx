@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import App from "./App.tsx";
+import SettingsPage from "@/features/settings/SettingsPage";
 import UsersPage from "@/features/users/UsersPage";
 import StudentsPage from "@/features/students/StudentsPage";
 import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
@@ -56,6 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             {/* your existing routes */}
             <Route path="/users" element={<UsersPage />} />
             <Route path="/students" element={<StudentsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             {/* other routes */}
           </Route>
         </Routes>
