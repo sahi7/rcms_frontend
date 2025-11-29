@@ -1,6 +1,6 @@
 // src/features/settings/subjects/components/SubjectAccordion.tsx
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Edit, Trash2, Plus, BookOpen, Users, Calendar, Building2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2, Plus, BookOpen, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,10 +30,18 @@ interface Assignment {
 interface Props {
   subject: Subject;
   assignments: Assignment[];
-  refData: RefData; // ← Now matches exactly
+  assignmentsError?: boolean;        // ← NEW: did the query fail?
+  assignmentsErrorMessage?: string; // ← NEW: optional message
+  refData: RefData;
 }
 
-export default function SubjectAccordion({ subject, assignments, refData }: Props) {
+export default function SubjectAccordion({ 
+  subject, 
+  assignments, 
+  assignmentsError = false,
+  assignmentsErrorMessage,
+  refData 
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
 
   const subjectDeptNames = subject.departments
@@ -60,7 +68,17 @@ export default function SubjectAccordion({ subject, assignments, refData }: Prop
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="secondary">{assignments.length} assignment{assignments.length !== 1 ? "s" : ""}</Badge>
+          {/* Show error badge instead of count if failed */}
+          {assignmentsError ? (
+            <Badge variant="destructive" className="gap-1">
+              <AlertCircle className="h-3 w-3" />
+              Failed to load
+            </Badge>
+          ) : (
+            <Badge variant="secondary">
+              {assignments.length} assignment{assignments.length !== 1 ? "s" : ""}
+            </Badge>
+          )}
 
           <SubjectForm subject={subject} mode="edit" trigger={
             <Button size="sm" variant="ghost"><Edit className="h-4 w-4" /></Button>
@@ -79,7 +97,15 @@ export default function SubjectAccordion({ subject, assignments, refData }: Prop
       {/* Body */}
       {isOpen && (
         <div className="border-t bg-muted/20 p-4 md:p-6 space-y-4">
-          {assignments.length === 0 ? (
+          {assignmentsError ? (
+            <div className="text-center py-8 text-destructive flex flex-col items-center gap-2">
+              <AlertCircle className="h-8 w-8" />
+              <p>Failed to load assignments</p>
+              {assignmentsErrorMessage && (
+                <p className="text-sm text-muted-foreground">{assignmentsErrorMessage}</p>
+              )}
+            </div>
+          ) : assignments.length === 0 ? (
             <p className="text-center py-8 text-muted-foreground">No assignments yet</p>
           ) : (
             assignments.map(assignment => (
