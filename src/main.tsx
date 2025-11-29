@@ -9,6 +9,7 @@ import UsersPage from "@/features/users/UsersPage";
 import StudentsPage from "@/features/students/StudentsPage";
 import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
+import SubjectsAssignmentsManager from "@/features/settings/components/SubjectsAssignmentsManager";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -19,28 +20,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-// ReactDOM.createRoot(document.getElementById("root")!).render(
-//   <React.StrictMode>
-//     <QueryClientProvider client={queryClient}>
-//       <BrowserRouter>
-//         <App />
-//         <Toaster position="top-center" richColors />
-//         <Routes>
-//           <Route path="/" element={<App />}>
-//             {/* your existing routes */}
-
-//             <Route path="/users" element={<UsersPage />} /> 
-//             <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
-//             <Route path="/change-password" element={<ChangePasswordPage />} />
-
-//             {/* other routes */}
-//           </Route>
-//         </Routes>
-//       </BrowserRouter>
-//     </QueryClientProvider>
-//   </React.StrictMode>
-// );
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -58,6 +37,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/users" element={<UsersPage />} />
             <Route path="/students" element={<StudentsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/subjects" element={<SubjectsAssignmentsManager />} />
             {/* other routes */}
           </Route>
         </Routes>

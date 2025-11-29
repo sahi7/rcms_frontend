@@ -2,8 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { 
-  Menu, Home, Users, GraduationCap, Calendar, BookOpen, 
-  Settings, LogOut, School 
+  Menu, Home, Users, GraduationCap, Settings, LogOut, School,
+  CalendarDays, BookOpen
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
 
@@ -11,9 +11,6 @@ const navItems = [
   { icon: Home, label: "Overview", path: "/" },
   { icon: Users, label: "Users & Teachers", path: "/users" },
   { icon: GraduationCap, label: "Students", path: "/students" },
-  { icon: Calendar, label: "Academic", path: "/academic/years" },
-  { icon: BookOpen, label: "Assignments", path: "/assignments" },
-  { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
 export default function Sidebar() {
@@ -49,6 +46,46 @@ export default function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Settings Group - Always Expanded */}
+        <div className="space-y-1 pt-3">
+          <Link to="/settings">
+            <Button
+              variant={
+                location.pathname.startsWith("/settings") ||
+                location.pathname.startsWith("/academic")
+                  ? "secondary"
+                  : "ghost"
+              }
+              className="w-full justify-start h-11"
+            >
+              <Settings className="mr-3 h-5 w-5" />
+              <span className="text-sm">Settings</span>
+            </Button>
+          </Link>
+          {/* Sub-items - indented */}
+          <div className="space-y-1 pl-10">
+            <Link to="/academic/years">
+              <Button
+                variant={location.pathname.startsWith("/academic") ? "secondary" : "ghost"}
+                className="w-full justify-start h-10 text-sm"
+              >
+                <CalendarDays className="mr-3 h-4 w-4" />
+                Academic Years
+              </Button>
+            </Link>
+
+            <Link to="/settings/subjects">
+              <Button
+                variant={location.pathname.startsWith("/settings/subjects") ? "secondary" : "ghost"}
+                className="w-full justify-start h-10 text-sm"
+              >
+                <BookOpen className="mr-3 h-4 w-4" />
+                Assignments
+              </Button>
+            </Link>
+          </div>
+        </div>
       </nav>
 
       <div className="p-3 border-t">
@@ -69,10 +106,10 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Bar + Sheet */}
       <div className="lg:hidden">
-        {/* Bottom Navigation */}
+        {/* Bottom Navigation - Only main items */}
         <nav className="fixed bottom-0 left-0 right-0 bg-card border-t z-50">
-          <div className="grid grid-cols-5 h-16">
-            {navItems.slice(0, 5).map((item) => {
+          <div className="grid grid-cols-4 h-16"> {/* 4 items now */}
+            {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link key={item.path} to={item.path} className="flex flex-col items-center justify-center">
@@ -83,6 +120,13 @@ export default function Sidebar() {
                 </Link>
               );
             })}
+            {/* Settings as 4th icon */}
+            <Link to="/academic/years" className="flex flex-col items-center justify-center">
+              <Settings className={`h-5 w-5 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`text-xs mt-1 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`}>
+                Settings
+              </span>
+            </Link>
           </div>
         </nav>
 
