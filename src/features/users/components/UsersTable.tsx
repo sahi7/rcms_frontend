@@ -3,12 +3,15 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import UserFormDialog from "./UserFormDialog";
+import DeleteConfirmDialog from "./DeleteConfirmDialog";
 import {
   Select,
   SelectContent,
@@ -39,6 +42,10 @@ import { useReferenceData } from "@/features/settings/subjects/hooks/useReferenc
 interface Props {
   role?: "teacher" | "student" | "parent" | null;
   showFilters?: boolean;
+  dialogOpen: boolean;
+  setDialogOpen: (open: boolean) => void;
+  editingUser: any | null;
+  setEditingUser: (user: any | null) => void;
 }
 
 export default function UsersTable({ role, showFilters = false }: Props) {
@@ -57,6 +64,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   // Local search input (controlled by user typing)
   const [searchInput, setSearchInput] = useState(urlSearch);
   const [debouncedSearch] = useDebounce(searchInput, 500);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
 
   // Sync debounced search → URL
   useEffect(() => {
@@ -71,7 +79,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
       return p;
     });
   }, [debouncedSearch, setSearchParams]);
-  
+
   useEffect(() => {
     if (!ref || yearFilter) return;
 
@@ -97,6 +105,12 @@ export default function UsersTable({ role, showFilters = false }: Props) {
     classId: classFilter || undefined,
     academicYear: yearFilter || undefined,
   });
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    await deleteUser(userToDelete.id); // ← this already does everything
+    setUserToDelete(null);
+    toast.success("User deleted successfully");
+  };
 
   const users = data?.data ?? [];
   const pagination = data?.pagination;
@@ -123,6 +137,9 @@ export default function UsersTable({ role, showFilters = false }: Props) {
       return p;
     });
   };
+
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Loading state
   if (isLoading || refLoading) {
@@ -207,6 +224,25 @@ export default function UsersTable({ role, showFilters = false }: Props) {
           </Select>
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmDialog
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        name={`${userToDelete?.first_name} ${userToDelete?.last_name}`}
+        onConfirm={handleDelete}
+        isLoading={isDeleting}   // ← comes for free from your hook
+      />
+
+      <UserFormDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) {
+            setEditingUser(null);
+          }
+        }}
+        user={editingUser || undefined}
+      />
 
       {/* MOBILE FILTER SHEET */}
       {showFilters && ref && (
@@ -363,6 +399,27 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                       </>
                     )}
                     <td className="p-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setEditingUser(user);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setUserToDelete(user)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </td>
+                    {/* <td className="p-4 text-right">
                       <Button
                         size="sm"
                         variant="ghost"
@@ -371,7 +428,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
@@ -408,14 +465,32 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                       </>
                     )}
                   </div>
-                  <Button
+                  {/* <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => deleteUser(user.id)}
-                    disabled={isDeleting}
+                    onClick={() => setUserToDelete(user)}
                   >
-                    <Trash2 className="h-5 w-5 text-destructive" />
-                  </Button>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button> */}
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingUser(user);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setUserToDelete(user)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}
