@@ -5,7 +5,7 @@ import api from "@/lib/api";
 export interface RefData {
   departments: { id: number; name: string }[];
   classrooms: { id: number; name: string }[];
-  academic_years: { id: number; name: string }[];   // ← This key name must match your backend
+  academic_years: { id: string; name: string }[];   // ← This key name must match your backend
   teachers: { id: number; full_name: string }[];
 }
 

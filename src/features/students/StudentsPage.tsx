@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import StudentsTable from "./components/StudentsTable";
-import BulkUploadDialog from "./components/BulkUploadDialog";
+import BulkUploadDialog from "../users/components/BulkUploadDialog";
 import { useState } from "react";
 
 export default function StudentsPage() {
