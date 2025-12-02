@@ -10,22 +10,14 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = Cookies.get("access_token");
-    
-    if (token && !isAuthenticated) {
-      console.log("Attempting fetchMe");
-      fetchMe()
-        .then(() => console.log("fetchMe success"))
-        .catch((err) => console.error("fetchMe error:", err))
-        .finally(() => {
-          console.log("fetchMe completed, setting loading false");
-          setIsLoading(false);
-        });
-    } else {
-      console.log("Skipping fetchMe, setting loading false");
-      setIsLoading(false);
-    }
-  }, []);
+  const token = Cookies.get("access_token");
+  
+  if (token && !isAuthenticated) {
+    fetchMe().finally(() => setIsLoading(false));
+  } else {
+    setIsLoading(false);
+  }
+}, []);
 
   // ← THIS IS THE KEY: NEVER unmount LoginPage
   if (isLoading) {

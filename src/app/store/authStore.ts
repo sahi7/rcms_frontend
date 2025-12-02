@@ -1,4 +1,5 @@
 // src/app/store/authStore.ts
+
 import { create } from "zustand";
 import Cookies from "js-cookie";
 import api from "@/lib/api";
@@ -11,6 +12,7 @@ interface User {
   first_name: string;
   last_name: string;
   full_name: string;
+  phone_number: string;
   role: "principal" | "teacher" | "parent" | "student";
 }
 
@@ -29,7 +31,7 @@ export const useAuthStore = create<{
 }>((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isLoading: true, // Start as true — App.tsx will set it to false
 
   login: async (username: string, password: string) => {
     try {
@@ -38,30 +40,53 @@ export const useAuthStore = create<{
         password,
       });
 
-      Cookies.set("access_token", res.data.access, { expires: 7 });
-      Cookies.set("refresh_token", res.data.refresh, { expires: 7 });
+      const { access, refresh } = res.data;
+      Cookies.set("access_token", access, { expires: 7 });
+      Cookies.set("refresh_token", refresh, { expires: 7 });
 
-      const me = await api.get<User>("/auth/me/");
-      set({ user: me.data, isAuthenticated: true });
+      // Fetch user after login
+      const meRes = await api.get<User>("/auth/me/");
+      set({
+        user: meRes.data,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+
       toast.success("Welcome back!");
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || "Invalid username or password";
       toast.error(errorMessage);
-      // ↓↓↓ MUST THROW TO PROPAGATE THE ERROR ↓↓↓
-      throw err; // or throw new Error(errorMessage);
+      throw err;
     }
   },
 
   logout: () => {
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, isLoading: false });
     window.location.href = "/";
   },
 
   fetchMe: async () => {
-    set({ isLoading: true });
-    const res = await api.get<User>("/auth/me/");
-    set({ user: res.data, isAuthenticated: true });
+    const token = Cookies.get("access_token");
+    if (!token) {
+      set({ user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
+
+    try {
+      set({ isLoading: true });
+      const res = await api.get<User>("/auth/me/");
+      set({
+        user: res.data,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (err) {
+      console.warn("Invalid token – logging out");
+      Cookies.remove("access_token");
+      Cookies.remove("refresh_token");
+      set({ user: null, isAuthenticated: false, isLoading: false });
+    }
   },
 }));

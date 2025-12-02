@@ -9,6 +9,7 @@ import UsersPage from "@/features/users/UsersPage";
 import StudentsPage from "@/features/students/StudentsPage";
 import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
+import UserProfilePage from "@/features/users/components/UserProfile/UserProfilePage";
 import SubjectsAssignmentsManager from "@/features/settings/components/SubjectsAssignmentsManager";
 import "./index.css";
 
@@ -38,6 +39,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/students" element={<StudentsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/subjects" element={<SubjectsAssignmentsManager />} />
+            <Route path="/settings/profile" element={<UserProfilePage />} />
             {/* other routes */}
           </Route>
         </Routes>

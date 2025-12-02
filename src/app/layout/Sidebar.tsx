@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { 
-  Menu, Home, Users, GraduationCap, Settings, LogOut, School,
+import {
+  Menu, Home, Users, User, GraduationCap, Settings, LogOut, School,
   CalendarDays, BookOpen
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
@@ -10,7 +10,7 @@ import { useAuthStore } from "@/app/store/authStore";
 const navItems = [
   { icon: Home, label: "Overview", path: "/" },
   { icon: Users, label: "Users & Teachers", path: "/users" },
-  { icon: GraduationCap, label: "Students", path: "/students" },
+  // { icon: GraduationCap, label: "Students", path: "/students" },
 ];
 
 export default function Sidebar() {
@@ -31,9 +31,9 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
+          const isActive = location.pathname === item.path ||
             (item.path !== "/" && location.pathname.startsWith(item.path));
-          
+
           return (
             <Link key={item.path} to={item.path}>
               <Button
@@ -53,7 +53,7 @@ export default function Sidebar() {
             <Button
               variant={
                 location.pathname.startsWith("/settings") ||
-                location.pathname.startsWith("/academic")
+                  location.pathname.startsWith("/academic")
                   ? "secondary"
                   : "ghost"
               }
@@ -65,15 +65,13 @@ export default function Sidebar() {
           </Link>
           {/* Sub-items - indented */}
           <div className="space-y-1 pl-10">
-            <Link to="/academic/years">
-              <Button
-                variant={location.pathname.startsWith("/academic") ? "secondary" : "ghost"}
-                className="w-full justify-start h-10 text-sm"
-              >
-                <CalendarDays className="mr-3 h-4 w-4" />
-                Academic Years
+            <Link to="/settings/profile">
+              <Button variant={location.pathname === "/settings/profile" ? "secondary" : "ghost"} className="w-full justify-start h-10 text-sm">
+                <User className="mr-3 h-4 w-4" />
+                My Profile
               </Button>
             </Link>
+
 
             <Link to="/settings/subjects">
               <Button
@@ -82,6 +80,16 @@ export default function Sidebar() {
               >
                 <BookOpen className="mr-3 h-4 w-4" />
                 Assignments
+              </Button>
+            </Link>
+
+            <Link to="/academic/years">
+              <Button
+                variant={location.pathname.startsWith("/academic") ? "secondary" : "ghost"}
+                className="w-full justify-start h-10 text-sm"
+              >
+                <CalendarDays className="mr-3 h-4 w-4" />
+                Academic Years
               </Button>
             </Link>
           </div>
@@ -121,7 +129,7 @@ export default function Sidebar() {
               );
             })}
             {/* Settings as 4th icon */}
-            <Link to="/academic/years" className="flex flex-col items-center justify-center">
+            <Link to="/settings" className="flex flex-col items-center justify-center">
               <Settings className={`h-5 w-5 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`} />
               <span className={`text-xs mt-1 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`}>
                 Settings
@@ -133,9 +141,9 @@ export default function Sidebar() {
         {/* Mobile Menu Sheet */}
         <Sheet>
           <SheetTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
+            <Button
+              variant="outline"
+              size="icon"
               className="fixed left-4 top-4 z-50 rounded-full shadow-lg"
             >
               <Menu className="h-5 w-5" />
