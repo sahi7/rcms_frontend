@@ -4,8 +4,9 @@ import { useUserProfile } from "./useUserProfile";
 import ProfileHeader from "./ProfileHeader";
 import ProfileForm from "./ProfileForm";
 import TeacherScopeCard from "./TeacherScopeCard";
+import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, UserCog } from "lucide-react";
 
 export default function UserProfilePage() {
   const {
@@ -17,75 +18,86 @@ export default function UserProfilePage() {
     isUpdating,
   } = useUserProfile();
 
-  // Loading state
   if (loadingMe) {
     return (
-      <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-10">
-        <div className="flex items-center gap-6">
-          <Skeleton className="h-24 w-24 rounded-full" />
-          <div className="space-y-3">
-            <Skeleton className="h-9 w-64" />
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-48" />
-          </div>
-        </div>
-        <div className="bg-card border rounded-lg p-6">
-          <Skeleton className="h-8 w-48 mb-6" />
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Skeleton className="h-10" />
-              <Skeleton className="h-10" />
-            </div>
-            <Skeleton className="h-10" />
-            <Skeleton className="h-10" />
-            <Skeleton className="h-10 w-32" />
-          </div>
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 px-4 py-12">
+        <div className="mx-auto max-w-4xl space-y-12">
+          <Skeleton className="h-32 rounded-3xl" />
+          <Skeleton className="h-96 rounded-3xl" />
+          {me?.role === "teacher" && <Skeleton className="h-80 rounded-3xl" />}
+          <Skeleton className="h-96 rounded-3xl" />
         </div>
       </div>
     );
   }
 
-  // Error / no user
   if (!me) {
     return (
-      <div className="p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-        <p className="text-lg">Failed to load profile. Please try again.</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="mx-auto h-20 w-20 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="h-10 w-10 text-destructive" />
+          </div>
+          <h2 className="text-2xl font-semibold">Profile not found</h2>
+          <p className="text-muted-foreground">Please log in again.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto space-y-10">
-      {/* Header with avatar and name */}
-      <ProfileHeader user={me} />
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/10 px-4 py-12">
+      <div className="mx-auto max-w-4xl space-y-16">
 
-      {/* Editable personal info */}
-      <div className="bg-card border rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-6">Personal Information</h2>
-        <ProfileForm
-          user={me}
-          onSubmit={updateProfile}
-          isLoading={isUpdating}
-        />
-      </div>
+        {/* Header */}
+        <ProfileHeader user={me} />
 
-      {/* Teaching Scope — only for teachers */}
-      {me.role === "teacher" && (
-        <div className="bg-card border rounded-lg p-6">
-          <h2 className="text-2xl font-bold mb-6">Teaching Scope</h2>
-          {loadingScope ? (
-            <div className="space-y-4">
-              <Skeleton className="h-32 w-full" />
-              <Skeleton className="h-24 w-full" />
+        {/* Personal Information */}
+        <section className="rounded-3xl bg-card/95 backdrop-blur border shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 px-8 py-6 border-b">
+            <h2 className="flex items-center gap-3 text-2xl font-bold">
+              <UserCog className="h-7 w-7 text-primary" />
+              Personal Information
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Update your name, email, and contact details
+            </p>
+          </div>
+          <div className="p-8 lg:p-10">
+            <ProfileForm user={me} onSubmit={updateProfile} isLoading={isUpdating} />
+          </div>
+        </section>
+
+        {/* Teaching Scope - Only for Teachers */}
+        {me.role === "teacher" && (
+          <section className="rounded-3xl bg-card/95 backdrop-blur border shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-br from-primary to-primary/90 px-8 py-6 text-primary-foreground">
+              <h2 className="text-2xl font-bold">Teaching Scope</h2>
+              <p className="mt-1 text-sm opacity-90">Your current assignments across classes</p>
             </div>
-          ) : scope ? (
-            <TeacherScopeCard scope={scope} />
-          ) : (
-            <p className="text-muted-foreground">No teaching assignments found.</p>
-          )}
-        </div>
-      )}
+            <div className="p-8">
+              {loadingScope ? (
+                <div className="space-y-6">
+                  <Skeleton className="h-32 rounded-2xl" />
+                  <Skeleton className="h-40 rounded-2xl" />
+                </div>
+              ) : scope ? (
+                <TeacherScopeCard scope={scope} />
+              ) : (
+                <p className="text-center py-12 text-muted-foreground">
+                  No teaching assignments found
+                </p>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Change Password - Clean, no card wrapper */}
+        <section>
+          <ChangePasswordPage />
+        </section>
+
+      </div>
     </div>
   );
 }
