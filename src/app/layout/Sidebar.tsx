@@ -3,13 +3,14 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   Menu, Home, Users, User, GraduationCap, Settings, LogOut, School,
-  CalendarDays, BookOpen
+  CalendarDays, BookOpen, CheckSquare // ← Added CheckSquare for Marks
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
 
 const navItems = [
   { icon: Home, label: "Overview", path: "/" },
   { icon: Users, label: "Users & Teachers", path: "/users" },
+  { icon: CheckSquare, label: "Marks", path: "/marks" }, // ← Added Marks here
   // { icon: GraduationCap, label: "Students", path: "/students" },
 ];
 
@@ -72,7 +73,6 @@ export default function Sidebar() {
               </Button>
             </Link>
 
-
             <Link to="/settings/subjects">
               <Button
                 variant={location.pathname.startsWith("/settings/subjects") ? "secondary" : "ghost"}
@@ -114,21 +114,21 @@ export default function Sidebar() {
 
       {/* Mobile Bottom Bar + Sheet */}
       <div className="lg:hidden">
-        {/* Bottom Navigation - Only main items */}
+        {/* Bottom Navigation - Now 5 items (including Marks) */}
         <nav className="fixed bottom-0 left-0 right-0 bg-card border-t z-50">
-          <div className="grid grid-cols-4 h-16"> {/* 4 items now */}
+          <div className="grid grid-cols-5 h-16"> {/* ← Changed to 5 columns */}
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link key={item.path} to={item.path} className="flex flex-col items-center justify-center">
                   <item.icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                   <span className={`text-xs mt-1 ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                    {item.label.split(" ")[0]}
+                    {item.label === "Users & Teachers" ? "Users" : item.label.split(" ")[0]}
                   </span>
                 </Link>
               );
             })}
-            {/* Settings as 4th icon */}
+            {/* Settings as 5th icon */}
             <Link to="/settings" className="flex flex-col items-center justify-center">
               <Settings className={`h-5 w-5 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`} />
               <span className={`text-xs mt-1 ${location.pathname.startsWith("/academic") || location.pathname.startsWith("/settings") ? "text-primary" : "text-muted-foreground"}`}>

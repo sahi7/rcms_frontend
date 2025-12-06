@@ -4,9 +4,9 @@ import Cookies from "js-cookie";
 
 const api = axios.create({
   baseURL: "http://127.0.0.1:8000/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
+  // headers: {
+  //   "Content-Type": "application/json",
+  // },
 });
 
 // Request interceptor — no explicit types needed (inferred safely)

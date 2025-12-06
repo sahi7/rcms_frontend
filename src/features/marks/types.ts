@@ -1,0 +1,76 @@
+// src/features/marks/types.ts
+
+export type recentBatch = {
+  id: string;
+  group_key: string;
+  subject_name: string;
+  department: string;
+  class_name: string;
+  term: string;
+  uploaded_by: string;
+  uploaded_at: string | null;
+  is_editable: boolean;
+  time_left_hours: number | null;
+};
+
+export type StudentMark = {
+  id: string;
+  registration_number: string;
+  full_name: string;
+  score: number | null;
+  comment?: string | null;
+  grade?: string;
+  is_below_half?: boolean;
+};
+
+export type BatchDetail = {
+  id: string;
+  batch: {
+    group_key: string;
+  subject_name: string;
+  subject_code?: string;
+  department: string;
+  classes: string;
+  term: string;
+  academic_year?: string;
+  total_students: number;
+  uploaded_at: string | null;
+  is_editable: boolean;
+  time_left_hours: number | null;
+  pagination: {
+    page: number;
+    page_size: number;
+    total_pages: number;
+    total_count: number;
+  };
+  marks: StudentMark[];
+  };
+};
+
+export interface MarksOverview {
+  total_subjects: number;
+  uploaded_subjects: number;
+  subjects: Array<{
+    subject_id: string;
+    subject_name: string;
+    total_classes: number;
+    uploaded_classes: number;
+  }>;
+  // For principal only
+  by_department?: Record<
+    string,
+    { uploaded: number; total: number }
+  >;
+}
+
+export interface UploadScope {
+  assignments: Array<{
+    id: string;
+    subject_name: string;
+    subject_code: string;
+    class_name: string;
+    max_score: number;
+  }>;
+  terms: Array<{ id: string; name: string }>;
+  classes: Array<{ id: string; name: string }>;
+}

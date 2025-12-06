@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import App from "./App.tsx";
 import SettingsPage from "@/features/settings/SettingsPage";
 import UsersPage from "@/features/users/UsersPage";
+import MarksPage from "@/features/marks/MarksPage";
 import StudentsPage from "@/features/students/StudentsPage";
 import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
@@ -40,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/subjects" element={<SubjectsAssignmentsManager />} />
             <Route path="/settings/profile" element={<UserProfilePage />} />
+            <Route path="/marks" element={<MarksPage />} />
             {/* other routes */}
           </Route>
         </Routes>

@@ -52,7 +52,26 @@ export default function BulkUploadDialog({ open, onOpenChange }: { open: boolean
       onOpenChange(false);
       setFile(null);
     } catch (err: any) {
-      toast.error(err.response?.data?.error || "Upload failed");
+      const errorData = err.response?.data;
+
+      let message = "Upload failed";
+
+      if (errorData?.error) {
+        message = errorData.error;
+      }
+
+      // If there are details (array), show them nicely
+      if (Array.isArray(errorData?.details) && errorData.details.length > 0) {
+        const details = errorData.details.join(" • ");
+        message = `${message}\n${details}`;
+      }
+
+      toast.error(message, {
+        duration: 8000,
+        style: {
+          whiteSpace: "pre-line", // ← This makes \n work (line breaks)
+        },
+      });
     } finally {
       setIsUploading(false);
     }
@@ -67,15 +86,14 @@ export default function BulkUploadDialog({ open, onOpenChange }: { open: boolean
 
         <div className="space-y-6">
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragging ? "border-primary bg-primary/5" : "border-muted"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging ? "border-primary bg-primary/5" : "border-muted"
+              }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
             <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground" />
-            
+
             <Label htmlFor="file" className="cursor-pointer block mt-4">
               <span className="text-primary font-medium">Click to upload</span> or drag and drop
             </Label>
@@ -103,8 +121,8 @@ export default function BulkUploadDialog({ open, onOpenChange }: { open: boolean
             <Button variant="outline" onClick={() => { onOpenChange(false); setFile(null); }}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleUpload} 
+            <Button
+              onClick={handleUpload}
               disabled={!file || isUploading}
               className="min-w-32"
             >
