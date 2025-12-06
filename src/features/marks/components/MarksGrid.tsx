@@ -34,7 +34,7 @@ export default function MarksGrid({
   const [redoStack, setRedoStack] = useState<typeof marks[]>([]);
 
   const isEditable = isPrincipal || batch.can_edit;
-  const maxScore = 100;
+  const maxScore = batch.max_score;;
 
   useEffect(() => {
     setMarks(initialMarks.map(m => ({ ...m })));
@@ -52,6 +52,11 @@ export default function MarksGrid({
 
     const value = e.target.value;
     const score = value === "" ? null : Number(value);
+
+    if (score !== null && score > maxScore) {
+      toast.error(`Score cannot exceed ${maxScore}`);
+      return;
+    }
 
     pushUndo();
 
@@ -227,7 +232,7 @@ export default function MarksGrid({
                           type="number"
                           min="0"
                           max={maxScore}
-                          step="0.01"
+                          step="0.5"
                           value={mark.score ?? ""}
                           onChange={handleScoreChange(index)}
                           className="w-24 mx-auto text-center"

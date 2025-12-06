@@ -37,6 +37,7 @@ export type BatchDetail = {
   uploaded_at: string | null;
   can_edit: boolean;
   time_left_hours: number | null;
+  max_score: number;
   };
   pagination: {
     page: number;
