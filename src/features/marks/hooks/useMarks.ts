@@ -40,6 +40,14 @@ export function useMarks() {
     queryFn: () => get<UploadScope>("/marks/upload-scope/"),
   });
 
+  useQuery({
+    queryKey: ["marks", "current-batch"],
+    queryFn: () => null as any,        // ← tiny dummy function
+    enabled: false,
+    initialData: null,
+    staleTime: Infinity,
+  });
+
   const uploadMutation = useMutation({
     mutationFn: (formData: FormData) => post<{ group_key: string }>("/marks/upload/", formData),
     onSuccess: async (data) => {

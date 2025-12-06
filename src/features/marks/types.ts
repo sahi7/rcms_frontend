@@ -27,16 +27,17 @@ export type BatchDetail = {
   id: string;
   batch: {
     group_key: string;
-  subject_name: string;
+  subject: string;
   subject_code?: string;
   department: string;
-  classes: string;
+  class_name: string;
   term: string;
   academic_year?: string;
   total_students: number;
   uploaded_at: string | null;
-  is_editable: boolean;
+  can_edit: boolean;
   time_left_hours: number | null;
+  };
   pagination: {
     page: number;
     page_size: number;
@@ -44,7 +45,6 @@ export type BatchDetail = {
     total_count: number;
   };
   marks: StudentMark[];
-  };
 };
 
 export interface MarksOverview {

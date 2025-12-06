@@ -12,26 +12,35 @@ import type { BatchDetail } from "../types";
 
 interface Props {
   batch: BatchDetail["batch"];
+  pagination: BatchDetail["pagination"];
+  marks: BatchDetail["marks"];
   isPrincipal: boolean;
   onSave: (updates: Array<{ id: string; score?: number | null; comment?: string }>) => Promise<void>;
   onBack: () => void;
   isSaving?: boolean;
 }
 
-export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving }: Props) {
-  const [marks, setMarks] = useState(batch.marks);
+export default function MarksGrid({
+  batch,
+  pagination,
+  marks: initialMarks,
+  isPrincipal,
+  onSave,
+  onBack,
+  isSaving = false,
+}: Props) {
+  const [marks, setMarks] = useState(initialMarks);
   const [undoStack, setUndoStack] = useState<typeof marks[]>([]);
   const [redoStack, setRedoStack] = useState<typeof marks[]>([]);
 
-  const isEditable = isPrincipal || batch.is_editable;
-  const maxScore = 100; // You can get this from backend later
+  const isEditable = isPrincipal || batch.can_edit;
+  const maxScore = 100;
 
-  // Reset on batch change
   useEffect(() => {
-    setMarks(batch.marks.map(m => ({ ...m })));
+    setMarks(initialMarks.map(m => ({ ...m })));
     setUndoStack([]);
     setRedoStack([]);
-  }, [batch.marks]);
+  }, [initialMarks]);
 
   const pushUndo = () => {
     setUndoStack(prev => [...prev.slice(-30), marks]);
@@ -52,12 +61,19 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
 
         const percentage = score !== null ? (score / maxScore) * 100 : 0;
         const grade =
-          score === null ? "" :
-          percentage >= 80 ? "A" :
-          percentage >= 70 ? "B" :
-          percentage >= 60 ? "C" :
-          percentage >= 50 ? "D" :
-          percentage >= 40 ? "E" : "F";
+          score === null
+            ? ""
+            : percentage >= 80
+            ? "A"
+            : percentage >= 70
+            ? "B"
+            : percentage >= 60
+            ? "C"
+            : percentage >= 50
+            ? "D"
+            : percentage >= 40
+            ? "E"
+            : "F";
 
         const is_below_half = score !== null && score < maxScore * 0.5;
 
@@ -75,7 +91,7 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
   const handleSave = async () => {
     const updates = marks
       .map((current, i) => {
-        const original = batch.marks[i];
+        const original = initialMarks[i];
         if (current.score !== original.score || current.comment !== original.comment) {
           return {
             id: current.id,
@@ -85,14 +101,19 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
         }
         return null;
       })
-      .filter(Boolean) as any[];
+      .filter(Boolean) as Array<{ id: string; score?: number | null; comment?: string }>;
 
     if (updates.length === 0) {
       toast.info("No changes to save");
       return;
     }
 
-    await onSave(updates);
+    try {
+      await onSave(updates);
+      toast.success("Marks saved successfully");
+    } catch {
+      toast.error("Failed to save marks");
+    }
   };
 
   const undo = () => {
@@ -117,10 +138,10 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold">
-            {batch.subject_name} — {batch.classes}
+            {batch.subject} — {batch.class_name}
           </h2>
           <p className="text-muted-foreground">
-            Term: {batch.term} • {batch.total_students} students
+            Term: {batch.term} • {batch.total_students} students • {batch.academic_year}
           </p>
         </div>
 
@@ -131,19 +152,19 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
               Locked
             </Badge>
           )}
-          {isEditable && batch.time_left_hours !== null && (
+          {isEditable && batch.time_left_hours !== null && batch.time_left_hours > 0 && (
             <Badge variant="default" className="px-4 py-2 bg-amber-600">
               <Clock className="w-4 h-4 mr-2" />
-              {batch.time_left_hours}h left
+              {batch.time_left_hours.toFixed(1)}h left
             </Badge>
           )}
         </div>
       </div>
 
       {/* Pagination Info */}
-      {batch.pagination.total_pages > 1 && (
+      {pagination.total_pages > 1 && (
         <div className="text-sm text-muted-foreground">
-          Page {batch.pagination.page} of {batch.pagination.total_pages} • Showing {marks.length} of {batch.pagination.total_count} students
+          Page {pagination.page} of {pagination.total_pages} • Showing {marks.length} of {pagination.total_count} students
         </div>
       )}
 
@@ -169,14 +190,24 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
 
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Reg No</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Student Name</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider">Score</th>
-                  <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider">Grade</th>
-                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">Comment</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
+                    Reg No
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
+                    Student Name
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider">
+                    Score
+                  </th>
+                  <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider">
+                    Grade
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider">
+                    Comment
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -206,9 +237,11 @@ export default function MarksGrid({ batch, isPrincipal, onSave, onBack, isSaving
                       <td className="px-6 py-4 text-center">
                         <Badge
                           variant={
-                            mark.grade === "A" ? "default" :
-                            mark.grade === "F" ? "destructive" :
-                            "secondary"
+                            mark.grade === "A" || mark.grade === "A+"
+                              ? "default"
+                              : mark.grade === "F"
+                              ? "destructive"
+                              : "secondary"
                           }
                           className="text-lg px-3"
                         >
