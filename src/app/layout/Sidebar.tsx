@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
-  Menu, Home, Users, User, GraduationCap, Settings, LogOut, School,
+  Menu, Home, Users, User, FileText, Settings, LogOut, School,
   CalendarDays, BookOpen, CheckSquare // ← Added CheckSquare for Marks
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
@@ -11,6 +11,7 @@ const navItems = [
   { icon: Home, label: "Overview", path: "/" },
   { icon: Users, label: "Users & Teachers", path: "/users" },
   { icon: CheckSquare, label: "Marks", path: "/marks" }, // ← Added Marks here
+  { icon: FileText, label: "Report Cards", path: "/reports" },
   // { icon: GraduationCap, label: "Students", path: "/students" },
 ];
 

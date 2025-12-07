@@ -12,6 +12,7 @@ import ChangePasswordPage from "@/features/auth/ChangePasswordPage";
 import ResetPasswordPage from "@/features/auth/ResetPasswordPage";
 import UserProfilePage from "@/features/users/components/UserProfile/UserProfilePage";
 import SubjectsAssignmentsManager from "@/features/settings/components/SubjectsAssignmentsManager";
+import ReportsPage from "@/features/reports/pages/ReportsPage";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -42,6 +43,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/settings/subjects" element={<SubjectsAssignmentsManager />} />
             <Route path="/settings/profile" element={<UserProfilePage />} />
             <Route path="/marks" element={<MarksPage />} />
+            <Route path="/reports" element={<ReportsPage />} />
             {/* other routes */}
           </Route>
         </Routes>
