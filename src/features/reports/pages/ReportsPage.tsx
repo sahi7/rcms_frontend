@@ -32,8 +32,17 @@ export default function ReportsPage() {
         <div className="container mx-auto p-6 max-w-5xl space-y-8">
             <h1 className="text-4xl font-bold">Generate Report Cards</h1>
 
+            {/* Readiness Result */}
+            {readiness.data && !readiness.isPending && (
+                <ReadinessCheck
+                    data={readiness.data}
+                    onGenerate={handleGenerate}
+                    isGenerating={generate.isPending}
+                />
+            )}
+
             {/* Filters */}
-            <div className="bg-card rounded-lg border p-2 border-dashed p-8">
+            <div className="bg-card rounded-lg border  border-dashed p-1">
                 <ReportFilters onSubmit={handleCheck} />
             </div>
 
@@ -65,14 +74,7 @@ export default function ReportsPage() {
                 </div>
             )}
 
-            {/* Readiness Result */}
-            {readiness.data && !readiness.isPending && (
-                <ReadinessCheck
-                    data={readiness.data}
-                    onGenerate={handleGenerate}
-                    isGenerating={generate.isPending}
-                />
-            )}
+            
 
             {/* Generation Progress */}
             {jobId && (
