@@ -3,10 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export interface RefData {
-  departments: { id: number; name: string }[];
+  departments: { id: number; name: string; code: string; class_rooms: number[] }[];
   classrooms: { id: number; name: string }[];
-  academic_years: { id: string; name: string }[];   // ← This key name must match your backend
-  teachers: { id: number; full_name: string }[];
+  academic_years: { id: string; name: string; is_current: boolean }[];
+  teachers: { id: number; full_name: string; email: string }[];
+  terms: Array<{
+    id: number;
+    term_number: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+    is_current: boolean;
+  }>;
 }
 
 export const useReferenceData = () => {
