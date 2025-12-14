@@ -161,9 +161,20 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
       }
 
       if (isEdit) {
-        await api.patch(role === "teacher" ? `/users/${user.id}/` : `/students/${user.id}/`, payload);
-        toast.success("User updated successfully");
+      // ── EDIT MODE ──
+      if (role === "teacher") {
+        await api.patch(`/users/${user.id}/`, payload);
+        toast.success("Teacher updated successfully");
       } else {
+        // Student edit → POST to /student/create/ with update=true
+        await api.post("/student/create/", {
+          update: true,
+          // id: user.id,
+          ...payload,
+        });
+        toast.success("Student updated successfully");
+      }
+    } else {
         await api.post(role === "teacher" ? "/auth/register/" : "/student/create/", {
           role: "teacher",
           ...payload,
