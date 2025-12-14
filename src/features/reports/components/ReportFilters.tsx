@@ -36,9 +36,9 @@ export const ReportFilters = ({ onSubmit }: Props) => {
         const currentYear = data.academic_years.find(y => y.is_current);
         const currentTerm = data.terms.find(t => t.is_current);
 
-        console.log("Auto-filling form with current year & term");
-        console.log("Current Year:", currentYear);
-        console.log("Current Term:", currentTerm);
+        // console.log("Auto-filling form with current year & term");
+        // console.log("Current Year:", currentYear);
+        // console.log("Current Term:", currentTerm);
 
         setForm(prev => ({
             ...prev,
@@ -47,8 +47,8 @@ export const ReportFilters = ({ onSubmit }: Props) => {
         }));
     }, [data]);
 
-    console.log("Render — form state:", form);
-    console.log("Render — data loaded:", !!data);
+    // console.log("Render — form state:", form);
+    // console.log("Render — data loaded:", !!data);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();

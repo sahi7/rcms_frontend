@@ -16,7 +16,6 @@ import {
   Users,
   Palette,
   Bell,
-  Upload,
   Edit3,
   Check,
   X

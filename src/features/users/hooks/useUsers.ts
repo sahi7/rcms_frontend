@@ -8,8 +8,14 @@ export interface User {
   email?: string;
   first_name: string;
   last_name: string;
+  initials?: string;
   role: string;
   date_joined?: string;
+  date_of_birth?: string; 
+  place_of_birth?: string; 
+  phone_number?: string;
+  enrollment_status?: string; 
+  emergency_contact?: string;
   department?: { name: string } | null;
   registration_number?: string;
   department_name?: string;

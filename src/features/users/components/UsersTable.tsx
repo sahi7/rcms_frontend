@@ -385,14 +385,19 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                         <td className="p-4 font-mono text-sm">{user.registration_number || "-"}</td>
                         <td className="p-4 font-medium">{user.first_name} {user.last_name}</td>
                         <td className="p-4"><Badge variant="secondary">{user.class_name}</Badge></td>
-                        <td className="p-4">{user.department_name || "-"}</td>
+                        <td className="p-4">{user.department_name || user.department?.name || "-"}</td>
                       </>
                     ) : (
                       <>
                         <td className="p-4 font-medium">{user.first_name} {user.last_name}</td>
                         <td className="p-4 text-muted-foreground">{user.email || "-"}</td>
                         <td className="p-4"><Badge variant="secondary" className="capitalize">{user.role}</Badge></td>
-                        <td className="p-4">{user.department?.name || user.department_name || "-"}</td>
+                        <td className="p-4">
+                          {(() => {
+                            const departmentName = ref?.departments.find(d => d.id === user.department)?.name || user.department_name || "-";
+                            return departmentName;
+                          })()}
+                        </td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {user.date_joined ? format(new Date(user.date_joined), "MMM d, yyyy") : "-"}
                         </td>
@@ -419,16 +424,6 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                         </Button>
                       </div>
                     </td>
-                    {/* <td className="p-4 text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => deleteUser(user.id)}
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td> */}
                   </tr>
                 ))}
               </tbody>
@@ -447,7 +442,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                         <p className="text-sm text-muted-foreground">Reg: {user.registration_number}</p>
                         <div className="flex gap-2">
                           <Badge variant="secondary">{user.class_name}</Badge>
-                          <Badge variant="outline">{user.department_name}</Badge>
+                          <Badge variant="outline">{user.department_name || user.department?.name || "-"}</Badge>
                         </div>
                       </>
                     ) : (
@@ -465,13 +460,6 @@ export default function UsersTable({ role, showFilters = false }: Props) {
                       </>
                     )}
                   </div>
-                  {/* <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setUserToDelete(user)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button> */}
                   <div className="flex gap-2 mt-4">
                     <Button
                       size="sm"
