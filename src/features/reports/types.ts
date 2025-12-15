@@ -24,6 +24,7 @@ export interface GenerateResponse {
 export interface StatusResponse {
   job_id: string;
   status: "pending" | "processing" | "completed" | "failed";
+  total_students: number,
   progress: string;
   percentage: number;
   download_url: string | null;

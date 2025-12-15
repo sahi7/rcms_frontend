@@ -6,7 +6,7 @@ import { GenerationProgress } from "../components/GenerationProgress";
 import { useReportReadiness } from "../hooks/useReportReadiness";
 import { useGenerateReport } from "../hooks/useGenerateReport";
 import { useReportStatus } from "../hooks/useReportStatus";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function ReportsPage() {
     const [filters, setFilters] = useState<any>(null);
@@ -28,6 +28,8 @@ export default function ReportsPage() {
         });
     };
 
+    const isGenerating = jobId && status.data && ["pending", "processing"].includes(status.data.status);
+
     return (
         <div className="container mx-auto p-6 max-w-5xl space-y-8">
             <h1 className="text-4xl font-bold">Generate Report Cards</h1>
@@ -37,8 +39,33 @@ export default function ReportsPage() {
                 <ReadinessCheck
                     data={readiness.data}
                     onGenerate={handleGenerate}
-                    isGenerating={generate.isPending}
+                    isGenerating={isGenerating || generate.isPending}
                 />
+            )}
+
+            {/* Generation Progress */}
+            {jobId && (
+                <>
+                    {status.isPending && (
+                        <p className="text-center py-8 text-muted-foreground">
+                            Loading progress...
+                        </p>
+                    )}
+
+                    {status.error && (
+                        <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                            <p className="font-medium">Failed to check progress</p>
+                            <p className="text-sm">{(status.error as any).message}</p>
+                        </div>
+                    )}
+
+                    {status.data && (
+                        <GenerationProgress
+                            status={status.data}
+                            isLoading={status.isFetching}
+                        />
+                    )}
+                </>
             )}
 
             {/* Filters */}
@@ -73,33 +100,7 @@ export default function ReportsPage() {
                     <p className="text-lg">Checking marks completeness...</p>
                 </div>
             )}
-
             
-
-            {/* Generation Progress */}
-            {jobId && (
-                <>
-                    {status.isPending && (
-                        <p className="text-center py-8 text-muted-foreground">
-                            Loading progress...
-                        </p>
-                    )}
-
-                    {status.error && (
-                        <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                            <p className="font-medium">Failed to check progress</p>
-                            <p className="text-sm">{(status.error as any).message}</p>
-                        </div>
-                    )}
-
-                    {status.data && (
-                        <GenerationProgress
-                            status={status.data}
-                            isLoading={status.isFetching}
-                        />
-                    )}
-                </>
-            )}
         </div>
     );
 }

@@ -324,9 +324,9 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
                   name="department_id"
                   render={({ field }) => (
                     <Popover>
-                      <div className="text-xs text-gray-500">
+                      {/* <div className="text-xs text-gray-500">
                         Debug: field.value={field.value}, depts={ref?.departments?.length}
-                      </div>
+                      </div> */}
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between">
                           {field.value && ref?.departments

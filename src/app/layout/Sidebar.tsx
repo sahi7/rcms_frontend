@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   Menu, Home, Users, User, FileText, Settings, LogOut, School,
-  CalendarDays, BookOpen, CheckSquare // ← Added CheckSquare for Marks
+  CalendarDays, BookOpen, CheckSquare, Download // ← Added CheckSquare for Marks
 } from "lucide-react";
 import { useAuthStore } from "@/app/store/authStore";
 
@@ -36,16 +36,36 @@ export default function Sidebar() {
           const isActive = location.pathname === item.path ||
             (item.path !== "/" && location.pathname.startsWith(item.path));
 
+          const isReportActive = item.path === "/reports" &&
+            (location.pathname.startsWith("/reports") || location.pathname.startsWith("/reports/downloads"));
+
           return (
-            <Link key={item.path} to={item.path}>
-              <Button
-                variant={isActive ? "secondary" : "ghost"}
-                className="w-full justify-start h-11"
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                <span className="text-sm">{item.label}</span>
-              </Button>
-            </Link>
+            <div key={item.path}>
+              <Link to={item.path}>
+                <Button
+                  variant={isReportActive ? "secondary" : "ghost"}
+                  className="w-full justify-start h-11"
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  <span className="text-sm">{item.label}</span>
+                </Button>
+              </Link>
+
+              {/* Sub-item: Downloads — only under Report Cards and only on desktop */}
+              {item.path === "/reports" && (
+                <div className="space-y-1 pl-10 mt-1">
+                  <Link to="/reports/downloads">
+                    <Button
+                      variant={location.pathname === "/reports/downloads" ? "secondary" : "ghost"}
+                      className="w-full justify-start h-10 text-sm"
+                    >
+                      <Download className="mr-3 h-4 w-4" />
+                      Downloads
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
           );
         })}
 

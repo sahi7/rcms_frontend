@@ -12,8 +12,16 @@ export const useReportStatus = (jobId: string | null) => {
       return response.data as StatusResponse;
     },
     enabled: !!jobId,
-    refetchInterval: jobId ? 3000 : false,
+    refetchInterval: (query) => {
+      // query.data is the latest fetched data
+      const data = query.state.data;
+      if (data?.status === "completed" || data?.status === "failed") {
+        return false; // Stop polling
+      }
+      return 3000; // Continue polling every 3 seconds
+    },
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: 3,
+    staleTime: 0, // Always consider fresh for real-time progress
   });
 };
