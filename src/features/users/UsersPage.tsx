@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
 
 import UsersTable from "./components/UsersTable";
-// import CreateUserDialog from "./components/CreateUserDialog";
 import UserFormDialog from "./components/UserFormDialog";
 import BulkUploadDialog from "./components/BulkUploadDialog";
 
@@ -14,14 +13,14 @@ export default function UsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [bulkOpen, setBulkOpen] = useState(false);
 
-  const tab = searchParams.get("tab") || "all";
+  // Default to "teacher" if no tab is set
+  const tab = searchParams.get("tab") || "teacher";
   const isStudentTab = tab === "student";
 
   const handleTabChange = (value: string) => {
     setSearchParams((prev) => {
       const p = new URLSearchParams(prev);
-      if (value === "all") p.delete("tab");
-      else p.set("tab", value);
+      p.set("tab", value);
       // Clear all filters when switching tabs
       p.delete("page");
       p.delete("search");
@@ -37,9 +36,10 @@ export default function UsersPage() {
       case "student": return "Students";
       case "teacher": return "Teachers";
       case "parent": return "Parents";
-      default: return "All Users";
+      default: return "Users";
     }
   };
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
 
@@ -49,9 +49,7 @@ export default function UsersPage() {
         <div className="max-w-7xl mx-auto space-y-8">
 
           {/* Header */}
-          {/* Header — Perfect alignment: Title left, Buttons far right */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
-            {/* Title + Description — takes available space, stays left */}
             <div className="flex-1 space-y-2 min-w-0">
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight whitespace-normal">
                 {getTitle()}
@@ -63,7 +61,6 @@ export default function UsersPage() {
               </p>
             </div>
 
-            {/* Action Buttons — pushed to the far right */}
             <div className="flex gap-3 flex-wrap sm:flex-nowrap sm:justify-end shrink-0">
               {isStudentTab && (
                 <Button onClick={() => setBulkOpen(true)} size="lg" className="w-full sm:w-auto">
@@ -80,15 +77,14 @@ export default function UsersPage() {
                 size="lg"
               >
                 <Plus className="mr-2 h-5 w-5" />
-                New {isStudentTab ? "Student" : tab === "teacher" ? "Teacher" : "User"}
+                New {tab === "student" ? "Student" : tab === "teacher" ? "Teacher" : "Parent"}
               </Button>
             </div>
           </div>
 
-          {/* Tabs */}
+          {/* Tabs — Only Teacher, Student, Parent */}
           <Tabs value={tab} onValueChange={handleTabChange}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="all">All</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-3"> {/* Changed to 3 columns */}
               <TabsTrigger value="teacher">Teachers</TabsTrigger>
               <TabsTrigger value="student">Students</TabsTrigger>
               <TabsTrigger value="parent">Parents</TabsTrigger>
@@ -96,7 +92,7 @@ export default function UsersPage() {
 
             <TabsContent value={tab} className="mt-8">
               <UsersTable
-                role={tab === "all" ? null : (tab as any)}
+                role={tab as "teacher" | "student" | "parent"} // Explicitly typed
                 showFilters={true}
                 dialogOpen={dialogOpen}
                 setDialogOpen={setDialogOpen}
@@ -106,9 +102,8 @@ export default function UsersPage() {
             </TabsContent>
           </Tabs>
 
-          {/* <CreateUserDialog open={createOpen} onOpenChange={setCreateOpen} /> */}
           {isStudentTab && <BulkUploadDialog open={bulkOpen} onOpenChange={setBulkOpen} />}
-          {/* ONE DIALOG FOR CREATE + EDIT */}
+
           <UserFormDialog
             open={dialogOpen}
             onOpenChange={(open) => {
