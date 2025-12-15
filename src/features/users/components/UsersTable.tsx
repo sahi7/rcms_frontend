@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { format } from "date-fns";
-import { toast } from "sonner";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,6 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   const { data: ref, isLoading: refLoading } = useReferenceData();
 
   // URL params
-
   const urlSearch = searchParams.get("search") || "";
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
   const pageSize = Number(searchParams.get("page_size")) || 20;
@@ -107,9 +106,9 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   });
   const handleDelete = async () => {
     if (!userToDelete) return;
-    await deleteUser(userToDelete.id); // ← this already does everything
+    await deleteUser(userToDelete); // ← this already does everything
     setUserToDelete(null);
-    toast.success("User deleted successfully");
+    // toast.success("User deleted successfully");
   };
 
   const users = data?.data ?? [];

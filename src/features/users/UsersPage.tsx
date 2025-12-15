@@ -12,7 +12,6 @@ import BulkUploadDialog from "./components/BulkUploadDialog";
 
 export default function UsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [createOpen, setCreateOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
 
   const tab = searchParams.get("tab") || "all";

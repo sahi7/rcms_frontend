@@ -11,10 +11,10 @@ export interface User {
   initials?: string;
   role: string;
   date_joined?: string;
-  date_of_birth?: string; 
-  place_of_birth?: string; 
+  date_of_birth?: string;
+  place_of_birth?: string;
   phone_number?: string;
-  enrollment_status?: string; 
+  enrollment_status?: string;
   emergency_contact?: string;
   department?: { name: string } | null;
   registration_number?: string;
@@ -76,9 +76,9 @@ export const useUsers = ({
         ordering: "-date_joined",
       });
 
-     if (role && ["teacher", "student", "parent"].includes(role)) {
-  params.append("type", role);
-}
+      if (role && ["teacher", "student", "parent"].includes(role)) {
+        params.append("type", role);
+      }
       if (search) params.append("search", search);
       if (department) params.append("department", department);
       if (classId) params.append("class", classId);
@@ -93,8 +93,11 @@ export const useUsers = ({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string | number) => {
-      const endpoint = typeof id === "string" && !id.includes("-") ? `/users/${id}/` : `/students/${id}/`;
+    mutationFn: async (user: any) => {
+      const endpoint = user.role === "student"
+        ? `/students/${user.id}/`
+        : `/users/${user.id}/`;
+
       await api.delete(endpoint);
     },
     onSuccess: () => {

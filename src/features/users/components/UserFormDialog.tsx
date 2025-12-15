@@ -106,9 +106,11 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
     if (isEdit && user) {
       setRole(user.role);
 
-      const subjectIds = user.taught_subjects?.map((s: any) => s.id) || [];
-      const deptId = user.department ? Number(user.department) : undefined;
-      // console.log("user.department: ", deptId)
+      // const subjectIds = user.taught_subjects?.map((s: any) => s.id) || [];
+      const deptId = user.department ? Number(user.department) : 0;
+      const subjectIds = user.taught_subjects ? Array.isArray(user.taught_subjects)
+        ? user.taught_subjects.map((s: any) => typeof s === "object" ? s.id : s)
+        : user.teacher_subjects || [] : [];
 
       reset({
         first_name: user.first_name || "",
@@ -119,6 +121,7 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
         phone_number: user.phone_number || "",
         emergency_contact: user.emergency_contact || "",
         enrollment_status: user.enrollment_status || "",
+        initials: user.initials || "",
         // Teacher
         department_id: deptId,
         subject_ids: subjectIds,
@@ -131,14 +134,15 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
       setRole("teacher");
       reset();
     }
-  }, [open, user, isEdit, reset]);
+  }, [open, user, isEdit, reset, setValue]);
 
   const onSubmit = async (data: TeacherForm | StudentForm) => {
     try {
-      const payload = {
+      // ── COMMON FIELDS (shared across all modes) ──
+      const commonFields = {
         first_name: data.first_name,
         last_name: data.last_name,
-        initals: data.initials || null,
+        initials: data.initials || null,
         email: data.email || null,
         date_of_birth: data.date_of_birth ? format(data.date_of_birth, "yyyy-MM-dd") : null,
         place_of_birth: data.place_of_birth || null,
@@ -147,39 +151,46 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
         enrollment_status: data.enrollment_status || null,
       };
 
-      if (role === "teacher") {
-        Object.assign(payload, {
-          department: (data as TeacherForm).department_id,
-          taught_subjects: (data as TeacherForm).subject_ids,
-        });
-      } else {
-        Object.assign(payload, {
-          registration_number: (data as StudentForm).registration_number || null,
-          department_name: (data as StudentForm).department_name,
-          class_name: (data as StudentForm).class_name,
-        });
-      }
-
       if (isEdit) {
-      // ── EDIT MODE ──
-      if (role === "teacher") {
-        await api.patch(`/users/${user.id}/`, payload);
-        toast.success("Teacher updated successfully");
+        // ── EDIT MODE ──
+        if (role === "teacher") {
+          await api.patch(`/users/${user.id}/`, {
+            ...commonFields,
+            department: (data as TeacherForm).department_id,
+            taught_subjects: (data as TeacherForm).subject_ids,
+          });
+          toast.success("Teacher updated successfully");
+        } else {
+          // Student edit
+          await api.post("/student/create/", {
+            update: true,
+            id: user.id,
+            ...commonFields,
+            registration_number: (data as StudentForm).registration_number || null,
+            department_name: (data as StudentForm).department_name,
+            class_name: (data as StudentForm).class_name,
+          });
+          toast.success("Student updated successfully");
+        }
       } else {
-        // Student edit → POST to /student/create/ with update=true
-        await api.post("/student/create/", {
-          update: true,
-          // id: user.id,
-          ...payload,
-        });
-        toast.success("Student updated successfully");
-      }
-    } else {
-        await api.post(role === "teacher" ? "/auth/register/" : "/student/create/", {
-          role: "teacher",
-          ...payload,
-        });
-        toast.success("User created successfully");
+        // ── CREATE MODE ──
+        if (role === "teacher") {
+          await api.post("/auth/register/", {
+            role: "teacher",
+            ...commonFields,
+            department_id: (data as TeacherForm).department_id,
+            subject_ids: (data as TeacherForm).subject_ids,
+          });
+          toast.success("Teacher created! Password sent via email.");
+        } else {
+          await api.post("/student/create/", {
+            ...commonFields,
+            registration_number: (data as StudentForm).registration_number || null,
+            department_name: (data as StudentForm).department_name,
+            class_name: (data as StudentForm).class_name,
+          });
+          toast.success("Student created successfully!");
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -313,9 +324,9 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
                   name="department_id"
                   render={({ field }) => (
                     <Popover>
-                      {/* <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500">
                         Debug: field.value={field.value}, depts={ref?.departments?.length}
-                      </div> */}
+                      </div>
                       <PopoverTrigger asChild>
                         <Button variant="outline" className="w-full justify-between">
                           {field.value && ref?.departments
