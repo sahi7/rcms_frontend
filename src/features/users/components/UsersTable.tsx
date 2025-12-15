@@ -138,6 +138,21 @@ export default function UsersTable({ role, showFilters = false }: Props) {
     });
   };
 
+  const getEnrollmentStatusColor = (status: string | undefined) => {
+  switch (status) {
+    case "active":
+      return "#22c55e";      // green
+    case "suspended":
+      return "#ef4444";      // red
+    case "abandoned":
+      return "#f97316";      // orange
+    case "graduated":
+      return "#3b82f6";      // blue
+    default:
+      return "#6b7280";      // gray
+  }
+};
+
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -379,7 +394,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
               </thead>
               <tbody>
                 {users.map((user: any) => (
-                  <tr key={user.id} className="border-t hover:bg-muted/50">
+                  <tr key={user.id} className="border-t hover:bg-muted/50" style={{ borderLeft: `3px solid ${getEnrollmentStatusColor(user.enrollment_status)}` }}>
                     {role === "student" ? (
                       <>
                         <td className="p-4 font-mono text-sm">{user.registration_number || "-"}</td>
@@ -433,7 +448,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-4">
             {users.map((user: any) => (
-              <Card key={user.id} className="p-4">
+              <Card key={user.id} className="p-4"style={{ borderLeft: `3px solid ${getEnrollmentStatusColor(user.enrollment_status)}` }}>
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>
