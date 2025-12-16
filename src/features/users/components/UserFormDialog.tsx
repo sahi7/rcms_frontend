@@ -57,7 +57,7 @@ const baseSchema = z.object({
 });
 
 const teacherSchema = baseSchema.extend({
-  department_id: z.number(),
+  department_id: z.number().optional(),
   subject_ids: z.array(z.number()).min(1, "Select at least one subject"),
 });
 
@@ -107,7 +107,7 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
       setRole(user.role);
 
       // const subjectIds = user.taught_subjects?.map((s: any) => s.id) || [];
-      const deptId = user.department ? Number(user.department) : 0;
+      const deptId = user.department ? Number(user.department) : undefined;
       const subjectIds = user.taught_subjects ? Array.isArray(user.taught_subjects)
         ? user.taught_subjects.map((s: any) => typeof s === "object" ? s.id : s)
         : user.teacher_subjects || [] : [];

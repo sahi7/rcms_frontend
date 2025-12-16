@@ -92,7 +92,7 @@ export default function LoginPage() {
               <School className="w-12 h-12 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Report Card System</CardTitle>
+          <CardTitle className="text-3xl font-bold">School Management</CardTitle>
           <CardDescription>Sign in with your username</CardDescription>
         </CardHeader>
 

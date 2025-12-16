@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Select as SelectRoot } from "@/components/ui/select"; // adjust import if needed
+import { Select as SelectRoot } from "@/components/ui/select"; 
 import { useReferenceData } from "@/features/settings/subjects/hooks/useReferenceData";
 
 interface Filters {
@@ -29,7 +29,6 @@ export const ReportFilters = ({ onSubmit }: Props) => {
         department_id: 0,
     });
 
-    // THIS IS THE ONLY WAY THAT WORKS
     useEffect(() => {
         if (!data) return;
 

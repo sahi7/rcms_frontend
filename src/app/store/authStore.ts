@@ -42,7 +42,7 @@ export const useAuthStore = create<{
 
       const { access, refresh } = res.data;
       Cookies.set("access_token", access, { expires: 7 });
-      Cookies.set("refresh_token", refresh, { expires: 7 });
+      // Cookies.set("refresh_token", refresh, { expires: 7 });
 
       // Fetch user after login
       const meRes = await api.get<User>("/auth/me/");

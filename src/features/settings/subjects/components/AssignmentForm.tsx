@@ -42,7 +42,7 @@ import {
 
 const assignmentSchema = z.object({
     teacher: z.string().min(1, "Select a teacher"),
-    department: z.string().min(1, "Select department"),
+    department: z.string().optional(),
     academic_year: z.string().min(1, "Select year"),
     class_rooms: z.array(z.number()).min(1, "Select at least one class"),
 });
@@ -84,23 +84,33 @@ export default function AssignmentForm({
     const watchedYear = watch("academic_year");
     const selectedClasses = watch("class_rooms") || [];
 
-    // Pre-fill on edit — runs when dialog opens
+    // Pre-fill on edit OR set current year when creating new
     useEffect(() => {
-        if (assignment && open) {
-            setValue("teacher", String(assignment.teacher_id ?? assignment.teacher ?? ""));
-            setValue("department", String(assignment.department));
-            setValue("academic_year", assignment.academic_year ?? "");
-            setValue("class_rooms", assignment.class_rooms ?? []);
-        } else if (!assignment && open) {
-            reset({ teacher: "", department: "", academic_year: "", class_rooms: [] });
+        if (open) {
+            if (assignment) {
+                // Edit mode — use existing values
+                setValue("teacher", String(assignment.teacher_id ?? assignment.teacher ?? ""));
+                setValue("department", String(assignment.department));
+                setValue("academic_year", assignment.academic_year ?? "");
+                setValue("class_rooms", assignment.class_rooms ?? []);
+            } else {
+                // Create mode — reset and prefill current year
+                reset({ teacher: "", department: "", academic_year: "", class_rooms: [] });
+
+                // Find current year (is_current: true)
+                const currentYear = refData.academic_years.find((y: any) => y.is_current);
+                if (currentYear) {
+                    setValue("academic_year", String(currentYear.id), { shouldValidate: true });
+                }
+            }
         }
-    }, [assignment, open, setValue, reset]);
+    }, [assignment, open, refData.academic_years, setValue, reset]);
 
     const onSubmit = (data: AssignmentFormData) => {
         const payload = {
             subject: subjectId,
             teacher: Number(data.teacher),
-            department: Number(data.department),
+            department: Number(data.department) || undefined,
             academic_year: data.academic_year,
             class_rooms: data.class_rooms,
         } as any;
@@ -232,7 +242,7 @@ export default function AssignmentForm({
                             </SelectTrigger>
                             <SelectContent>
                                 {refData.academic_years.map((y: any) => (
-                                    <SelectItem key={y.id} value={y.id}>
+                                    <SelectItem key={y.id} value={String(y.id)}>
                                         {y.name}
                                     </SelectItem>
                                 ))}
