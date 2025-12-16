@@ -90,7 +90,7 @@ export default function AssignmentForm({
             if (assignment) {
                 // Edit mode — use existing values
                 setValue("teacher", String(assignment.teacher_id ?? assignment.teacher ?? ""));
-                setValue("department", String(assignment.department));
+                setValue("department", String(assignment.department ?? ""));
                 setValue("academic_year", assignment.academic_year ?? "");
                 setValue("class_rooms", assignment.class_rooms ?? []);
             } else {

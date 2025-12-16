@@ -33,7 +33,7 @@ export default function AssignmentCard({ assignment, refData, subjectName, subje
   const deleteMutation = useDeleteAssignment();
 
   // const deptName = assignment.department
-  const deptName = refData.departments.find(d => d.id === assignment.department)?.name || "Unknown Dept";
+  const deptName = refData.departments.find(d => d.id === assignment.department)?.name || "All Departments";
   const academicYearName = refData.academic_years.find(y => y.id === assignment.academic_year)?.name || "Unknown Year";
   const teacherName = refData.teachers.find(t => t.id === Number(assignment.teacher))?.full_name || assignment.teacher;
   const classNames = assignment.class_rooms

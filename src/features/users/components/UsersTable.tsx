@@ -3,8 +3,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { format } from "date-fns";
-
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -80,7 +78,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   }, [debouncedSearch, setSearchParams]);
 
   useEffect(() => {
-    if (!ref || yearFilter) return;
+    if (!ref || yearFilter !== "" || searchParams.toString() !== "") return;
 
     const currentYear = ref.academic_years.find((y: any) => y.is_current);
     const yearToSelect = currentYear || ref.academic_years[0];
@@ -93,7 +91,8 @@ export default function UsersTable({ role, showFilters = false }: Props) {
         return p;
       });
     }
-  }, [ref, yearFilter, setSearchParams]);
+
+   }, [ref, yearFilter, searchParams, setSearchParams]);
 
   const { data, isLoading, isFetching, deleteUser, isDeleting } = useUsers({
     role,
@@ -106,7 +105,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   });
   const handleDelete = async () => {
     if (!userToDelete) return;
-    await deleteUser(userToDelete); // ← this already does everything
+    await deleteUser(userToDelete); 
     setUserToDelete(null);
     // toast.success("User deleted successfully");
   };
@@ -117,8 +116,12 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   const updateFilter = (key: string, value: string) => {
     setSearchParams((prev) => {
       const p = new URLSearchParams(prev);
-      if (value && value !== "all") p.set(key, value);
-      else p.delete(key);
+      if (value && value !== "all") {
+        p.set(key, value);
+      } else {
+        p.delete(key);
+        // If setting academic_year to "all", don't automatically add it back
+      }
       p.set("page", "1");
       return p;
     });
