@@ -92,7 +92,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
       });
     }
 
-   }, [ref, yearFilter, searchParams, setSearchParams]);
+  }, [ref, yearFilter, searchParams, setSearchParams]);
 
   const { data, isLoading, isFetching, deleteUser, isDeleting } = useUsers({
     role,
@@ -105,7 +105,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   });
   const handleDelete = async () => {
     if (!userToDelete) return;
-    await deleteUser(userToDelete); 
+    await deleteUser(userToDelete);
     setUserToDelete(null);
     // toast.success("User deleted successfully");
   };
@@ -141,19 +141,19 @@ export default function UsersTable({ role, showFilters = false }: Props) {
   };
 
   const getEnrollmentStatusColor = (status: string | undefined) => {
-  switch (status) {
-    case "active":
-      return "#22c55e";      // green
-    case "suspended":
-      return "#ef4444";      // red
-    case "abandoned":
-      return "#f97316";      // orange
-    case "graduated":
-      return "#3b82f6";      // blue
-    default:
-      return "#6b7280";      // gray
-  }
-};
+    switch (status) {
+      case "active":
+        return "#22c55e";      // green
+      case "suspended":
+        return "#ef4444";      // red
+      case "abandoned":
+        return "#f97316";      // orange
+      case "graduated":
+        return "#3b82f6";      // blue
+      default:
+        return "#6b7280";      // gray
+    }
+  };
 
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -239,6 +239,16 @@ export default function UsersTable({ role, showFilters = false }: Props) {
               ))}
             </SelectContent>
           </Select>
+
+          <div>
+            {/* CLEAR FILTERS BUTTON — always visible when needed */}
+            {(debouncedSearch || departmentFilter || classFilter || yearFilter || page > 1) && (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear all filters
+              </Button>
+            )}
+          </div>
+
         </div>
       )}
       {/* Delete Confirmation Dialog */}
@@ -346,11 +356,103 @@ export default function UsersTable({ role, showFilters = false }: Props) {
         </Sheet>
       )}
 
-      {/* CLEAR FILTERS BUTTON — always visible when needed */}
-      {(debouncedSearch || departmentFilter || classFilter || yearFilter || page > 1) && (
-        <Button variant="outline" size="sm" onClick={clearFilters}>
-          Clear all filters
-        </Button>
+
+
+      {/* SEARCH RESULTS SUMMARY */}
+      {users.length > 0 && pagination && (
+        <div className="bg-gradient-to-r from-muted/30 to-muted/10 border rounded-lg p-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Search Results
+              </h3>
+              <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span>
+                    <span className="font-semibold text-foreground">{pagination.total_count}</span> total users
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span>
+                    Page <span className="font-semibold text-foreground">{page}</span> of{" "}
+                    <span className="font-semibold text-foreground">{pagination.total_pages}</span>
+                  </span>
+                </div>
+                {debouncedSearch && (
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span>
+                      Search: <span className="font-semibold text-foreground">"{debouncedSearch}"</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Filter badges */}
+            <div className="flex flex-wrap gap-2">
+              {debouncedSearch && (
+                <Badge variant="secondary" className="gap-1">
+                  <Search className="h-3 w-3" />
+                  {debouncedSearch}
+                </Badge>
+              )}
+              {departmentFilter && ref && (
+                <Badge variant="outline" className="gap-1">
+                  <span className="text-muted-foreground">Dept:</span>
+                  {ref.departments.find((d: any) => String(d.id) === departmentFilter)?.name}
+                </Badge>
+              )}
+              {classFilter && ref && (
+                <Badge variant="outline" className="gap-1">
+                  <span className="text-muted-foreground">Class:</span>
+                  {ref.classrooms.find((c: any) => String(c.id) === classFilter)?.name}
+                </Badge>
+              )}
+              {yearFilter && ref && (
+                <Badge variant="outline" className="gap-1">
+                  <span className="text-muted-foreground">Year:</span>
+                  {ref.academic_years.find((y: any) => String(y.id) === yearFilter)?.name}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Quick stats for students */}
+          {role === "student" && users.length > 0 && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-background rounded border">
+                  <div className="text-2xl font-bold text-foreground">
+                    {users.filter((u: any) => u.enrollment_status === 'active').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">On View</div>
+                </div>
+                <div className="text-center p-3 bg-background rounded border">
+                  <div className="text-2xl font-bold text-foreground">
+                    {users.filter((u: any) => u.enrollment_status === 'suspended').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">Suspended</div>
+                </div>
+                <div className="text-center p-3 bg-background rounded border">
+                  <div className="text-2xl font-bold text-foreground">
+                    {users.filter((u: any) => u.enrollment_status === 'graduated').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">Graduated</div>
+                </div>
+                <div className="text-center p-3 bg-background rounded border">
+                  <div className="text-2xl font-bold text-foreground">
+                    {users.filter((u: any) => !['active', 'suspended', 'graduated'].includes(u.enrollment_status)).length}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">Other Status</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* EMPTY STATE — SEARCH BAR STAYS ALIVE */}
@@ -450,7 +552,7 @@ export default function UsersTable({ role, showFilters = false }: Props) {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-4">
             {users.map((user: any) => (
-              <Card key={user.id} className="p-4"style={{ borderLeft: `3px solid ${getEnrollmentStatusColor(user.enrollment_status)}` }}>
+              <Card key={user.id} className="p-4" style={{ borderLeft: `3px solid ${getEnrollmentStatusColor(user.enrollment_status)}` }}>
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
                     <h3 className="font-semibold">{user.first_name} {user.last_name}</h3>

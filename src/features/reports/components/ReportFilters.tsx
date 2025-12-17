@@ -37,12 +37,12 @@ export const ReportFilters = ({ onSubmit }: Props) => {
 
         // console.log("Auto-filling form with current year & term");
         // console.log("Current Year:", currentYear);
-        // console.log("Current Term:", currentTerm);
+        console.log("Current Term:", currentTerm);
 
         setForm(prev => ({
             ...prev,
             academic_year: currentYear?.id || prev.academic_year || "",
-            term: currentTerm?.term_number ?? prev.term ?? 0,
+            term: currentTerm?.id ?? prev.term ?? 0,
         }));
     }, [data]);
 
@@ -116,7 +116,7 @@ export const ReportFilters = ({ onSubmit }: Props) => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {data.terms.map(term => (
-                                        <SelectItem key={term.id} value={term.term_number.toString()}>
+                                        <SelectItem key={term.id} value={term.id.toString()}>
                                             {term.name} {term.is_current && "← Current"}
                                         </SelectItem>
                                     ))}

@@ -49,7 +49,7 @@ interface Props {
 export default function SubjectForm({ subject, mode, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [deptOpen, setDeptOpen] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null); // ← NEW: show backend error
+  const [submitError, setSubmitError] = useState<string | null>(null); // ← Show backend error
 
   const createMutation = useCreateSubject();
   const updateMutation = useUpdateSubject();
