@@ -35,7 +35,7 @@ export const useCreateAssignment = () => {
       toast.success("Teacher assigned successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.detail || "Failed to assign teacher");
+      toast.error(error.response?.data?.error || "Failed to assign teacher");
     },
   });
 };
