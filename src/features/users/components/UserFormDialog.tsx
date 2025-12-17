@@ -33,7 +33,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon } from "lucide-react";
+import { X, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -341,16 +341,40 @@ export default function UserFormDialog({ open, onOpenChange, user }: Props) {
                           <CommandInput placeholder="Search department..." />
                           <CommandEmpty>No department found.</CommandEmpty>
                           <CommandGroup>
-                            {ref?.departments.map((dept: any) => (
-                              <CommandItem
-                                key={dept.id}
-                                onSelect={() => field.onChange(dept.id)}
-                              >
-                                <Check className={cn("mr-2 h-4 w-4", field.value === dept.id ? "opacity-100" : "opacity-0")} />
-                                {dept.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
+                           {/* Clear option */}
+  <CommandItem
+    value="__clear__"
+    onSelect={(value) => {
+      if (value === "__clear__") {
+        field.onChange(undefined);
+      }
+    }}
+  >
+    <Check
+      className={cn(
+        "mr-2 h-4 w-4",
+        field.value === undefined ? "opacity-100" : "opacity-0"
+      )}
+    />
+    Select department
+  </CommandItem>
+
+  {ref?.departments.map((dept: any) => (
+    <CommandItem
+      key={dept.id}
+      value={String(dept.id)}
+      onSelect={(value) => field.onChange(Number(value))}
+    >
+      <Check
+        className={cn(
+          "mr-2 h-4 w-4",
+          field.value === dept.id ? "opacity-100" : "opacity-0"
+        )}
+      />
+      {dept.name}
+    </CommandItem>
+  ))}
+</CommandGroup>
                         </Command>
                       </PopoverContent>
                     </Popover>
