@@ -4,22 +4,10 @@ import { CheckCircle2, Clock, Lock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface RecentBatch {
-  id: string;
-  group_key: string;
-  subject_name: string;
-  department: string;
-  class_name: string;           // ← Now single class
-  term: string;
-  uploaded_by: string;
-  uploaded_at: string | null;
-  is_editable: boolean;
-  time_left_hours: number | null;
-}
+import type { recentBatch } from "../types";
 
 interface Props {
-  recentBatches?: RecentBatch[];
+  recentBatches?: recentBatch[];
   isLoading: boolean;
   isPrincipal: boolean;
 }

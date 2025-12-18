@@ -27,17 +27,17 @@ export type BatchDetail = {
   id: string;
   batch: {
     group_key: string;
-  subject: string;
-  subject_code?: string;
-  department: string;
-  class_name: string;
-  term: string;
-  academic_year?: string;
-  total_students: number;
-  uploaded_at: string | null;
-  can_edit: boolean;
-  time_left_hours: number | null;
-  max_score: number;
+    subject: string;
+    subject_code?: string;
+    department: string;
+    class_name: string;
+    term: string;
+    academic_year?: string;
+    total_students: number;
+    uploaded_at: string | null;
+    can_edit: boolean;
+    time_left_hours: number | null;
+    max_score: number;
   };
   pagination: {
     page: number;

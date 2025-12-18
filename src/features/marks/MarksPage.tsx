@@ -88,7 +88,6 @@ export default function MarksPage() {
                             onOpenGrid={async (batch) => {
                                 try {
                                     const response = await api.get<BatchDetail>(`/marks/batch-det/${batch.group_key}/`);
-                                    // console.log("Fetched batch detail:", response.data); // ← see real data 
                                     setCurrentBatch(response.data);
                                 } catch (err) {
                                     console.error("Failed to load batch:", err);
@@ -104,7 +103,7 @@ export default function MarksPage() {
                     open={uploadOpen}
                     onOpenChange={(open) => {
                         setUploadOpen(open);
-                        if (!open) setCurrentBatch(null);
+                        if (open) setCurrentBatch(null);
                     }}
                     scope={scope}
                     isPrincipal={isPrincipal}

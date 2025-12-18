@@ -129,7 +129,9 @@ export default function MarksGrid({
             await onSave(updates);
             toast.success("Marks saved successfully");
         } catch {
-            toast.error("Failed to save marks");
+            // toast.error("Failed to save marks", {
+            //     className: "translate-y-[60px]",
+            // });
         }
     };
 

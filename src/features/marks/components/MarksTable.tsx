@@ -73,9 +73,16 @@ export default function MarksTable({ data, isLoading, isPrincipal, onOpenGrid }:
                   <TableCell>{batch.class_name}</TableCell>
                   <TableCell>{batch.term}</TableCell>
                   <TableCell>
-                    {batch.uploaded_by || (
-                      <span className="text-muted-foreground">Unknown</span>
-                    )}
+                    <span className="font-medium">
+                      {batch.uploaded_by ? (
+                        <span className="inline-block max-w-[140px] truncate">
+                          {batch.uploaded_by}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Unknown</span>
+                      )}
+                    </span>
+
                     {batch.uploaded_at && (
                       <div className="text-xs text-muted-foreground">
                         {format(new Date(batch.uploaded_at), "dd MMM yyyy")}
@@ -90,7 +97,7 @@ export default function MarksTable({ data, isLoading, isPrincipal, onOpenGrid }:
                           {timeLeft}h left
                         </Badge>
                       ) : (
-                        <Badge variant="default">Editable</Badge>
+                        <Badge variant="default">View only</Badge>
                       )
                     ) : (
                       <Badge variant="secondary">

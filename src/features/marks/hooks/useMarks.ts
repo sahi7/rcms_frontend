@@ -40,21 +40,13 @@ export function useMarks() {
     queryFn: () => get<UploadScope>("/marks/upload-scope/"),
   });
 
-  useQuery({
-    queryKey: ["marks", "current-batch"],
-    queryFn: () => null as any,        // ← tiny dummy function
-    enabled: false,
-    initialData: null,
-    staleTime: Infinity,
-  });
-
   const uploadMutation = useMutation({
     mutationFn: (formData: FormData) => post<{ group_key: string }>("/marks/upload/", formData),
     onSuccess: async (data) => {
       const groupKey = data.group_key;
       try {
-        const batchData = await get<BatchDetail>(`/marks/batch-det/${groupKey}/`);
-        queryClient.setQueryData(["marks", "current-batch"], batchData);
+        const batchRes = await get<BatchDetail>(`/marks/batch-det/${groupKey}/`);
+        queryClient.setQueryData(["marks", "current-batch"], batchRes);
         toast.success("Marks uploaded – opening editor");
       } catch {
         toast.error("Failed to load marks for editing");
@@ -65,19 +57,39 @@ export function useMarks() {
     },
   });
 
+  const currentBatchQuery = useQuery<BatchDetail | null>({
+    queryKey: ["marks", "current-batch"],
+    queryFn: () => null, // We won't fetch with this, just use cache
+    enabled: false, // Don't automatically fetch
+    initialData: null,
+  });
+
+  const setCurrentBatch = (batch: BatchDetail | null) => {
+    queryClient.setQueryData(["marks", "current-batch"], batch);
+  };
+
   const saveMutation = useMutation({
     mutationFn: async ({ groupKey, updates }: { groupKey: string; updates: any[] }) => {
       await api.patch(`/marks/batch/${groupKey}/`, { marks: updates });
     },
     onSuccess: () => {
       toast.success("Changes saved");
-      queryClient.setQueryData(["marks", "current-batch"], null);
+      // queryClient.setQueryData(["marks", "current-batch"], null);
+      // setCurrentBatch(null);
       queryClient.invalidateQueries({ queryKey: ["marks", "recent"] });
     },
-    onError: () => toast.error("Save failed"),
+    // onError: () => toast.error("Save failed"),
+    onError: (error: any) => {
+      // Extract error message from server response
+      const errorMessage = error.response?.data?.error ||
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to save marks";
+      toast.error(errorMessage);
+    },
   });
 
-  const currentBatch = queryClient.getQueryData<BatchDetail>(["marks", "current-batch"]);
+  const currentBatch = currentBatchQuery.data as BatchDetail | null | undefined;
 
   return {
     overview: overviewQuery.data,
@@ -91,8 +103,7 @@ export function useMarks() {
     isPrincipal,
 
     currentBatch,
-    setCurrentBatch: (batch: BatchDetail | null) =>
-      queryClient.setQueryData(["marks", "current-batch"], batch),
+    setCurrentBatch: setCurrentBatch,
 
     uploadMarks: uploadMutation.mutateAsync,
     isUploading: uploadMutation.isPending,
