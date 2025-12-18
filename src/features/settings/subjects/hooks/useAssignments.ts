@@ -33,6 +33,7 @@ export const useCreateAssignment = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subject-assignments"] });
       toast.success("Teacher assigned successfully");
+      queryClient.invalidateQueries({ queryKey: ["marks","upload-scope"] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.error || "Failed to assign teacher");

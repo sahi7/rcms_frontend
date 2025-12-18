@@ -4,9 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Edit3, Clock, Lock, Users } from "lucide-react";
+import { Edit3, Clock, Lock, Users, Eye } from "lucide-react";
 import { format } from "date-fns";
-
 import type { recentBatch } from "../types";
 
 interface Props {
@@ -60,6 +59,7 @@ export default function MarksTable({ data, isLoading, isPrincipal, onOpenGrid }:
           <TableBody>
             {data.map((batch) => {
               const canEdit = isPrincipal || batch.is_editable;
+              // const canEdit = batch.is_editable;
               const timeLeft = batch.time_left_hours;
 
               return (
@@ -97,7 +97,7 @@ export default function MarksTable({ data, isLoading, isPrincipal, onOpenGrid }:
                           {timeLeft}h left
                         </Badge>
                       ) : (
-                        <Badge variant="default">View only</Badge>
+                        <Badge variant="secondary"><Eye className="w-3 h-3 mr-1" /> View only</Badge>
                       )
                     ) : (
                       <Badge variant="secondary">
@@ -110,7 +110,8 @@ export default function MarksTable({ data, isLoading, isPrincipal, onOpenGrid }:
                     <Button
                       size="sm"
                       onClick={() => onOpenGrid(batch)}
-                      disabled={!canEdit && !isPrincipal}
+                      // disabled={canEdit}
+                      // disabled={!canEdit && !isPrincipal}
                       variant={canEdit ? "default" : "outline"}
                     >
                       <Edit3 className="mr-2 h-4 w-4" />

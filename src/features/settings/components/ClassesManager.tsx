@@ -35,6 +35,7 @@ export default function ClassesManager() {
       const res = await api.get<{ results?: Class[]; data?: Class[] }>("/classrooms/");
       return (res.data.results ?? res.data.data ?? res.data ?? []) as Class[];
     },
+    staleTime: Infinity,
   });
 
   const createMutation = useMutation<unknown, Error, { name: string }>({

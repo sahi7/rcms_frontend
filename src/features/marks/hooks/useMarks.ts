@@ -25,6 +25,7 @@ export function useMarks() {
   const overviewQuery = useQuery<MarksOverview>({
     queryKey: ["marks", "overview"],
     queryFn: () => get<MarksOverview>("/marks/overview/"),
+    staleTime: 1000 * 60 * 60 * 24,
   });
 
   const recentQuery = useQuery<recentBatch[]>({
@@ -33,11 +34,13 @@ export function useMarks() {
       const data = await get<{ recent_batches: recentBatch[] }>("/marks/recent/");
       return data.recent_batches;
     },
+    staleTime: 1000 * 60 * 60 * 24,
   });
 
   const scopeQuery = useQuery<UploadScope>({
     queryKey: ["marks", "upload-scope"],
     queryFn: () => get<UploadScope>("/marks/upload-scope/"),
+    staleTime: Infinity,
   });
 
   const uploadMutation = useMutation({

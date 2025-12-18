@@ -1,6 +1,6 @@
 // src/features/settings/SettingsPage.tsx
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,14 +52,25 @@ const useSchoolSettings = () => useQuery<SchoolSettings>({
     const res = await api.get("/settings/current/");
     return res.data as SchoolSettings;
   },
+  staleTime: Infinity,
+  gcTime: Infinity,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
 });
 
 // Mutation for save
-const useSaveSettings = () => useMutation({
-  mutationFn: async (data: FormData) => await api.patch("/settings/update-branding/", data),
-  onSuccess: () => toast.success("Saved successfully"),
-  onError: () => toast.error("Save failed"),
-});
+const useSaveSettings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: FormData) => await api.patch("/settings/update-branding/", data),
+    onSuccess: () => {
+      toast.success("Saved successfully");
+      queryClient.invalidateQueries({ queryKey: ["school-settings"] });
+    },
+    onError: () => toast.error("Save failed"),
+  });
+};
 
 export default function SettingsPage() {
   const { data: settings, isLoading: isSettingsLoading, refetch } = useSchoolSettings();

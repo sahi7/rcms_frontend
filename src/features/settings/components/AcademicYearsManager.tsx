@@ -84,6 +84,10 @@ export default function AcademicYearsManager() {
       console.log("Fetched academic years:", years);
       return years;
     },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const { data: allTerms = [], isLoading: termsLoading } = useQuery<Term[]>({
@@ -92,6 +96,10 @@ export default function AcademicYearsManager() {
       const res = await api.get("/terms/");
       return res.data as Term[];
     },
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const createMutation = useMutation({

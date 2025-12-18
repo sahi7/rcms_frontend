@@ -16,6 +16,7 @@ export default function MarksPage() {
     const [uploadOpen, setUploadOpen] = useState(false);
 
     const {
+        overview,
         recent,
         scope,
         isPrincipal,
@@ -46,7 +47,11 @@ export default function MarksPage() {
                             Back to Uploads
                         </Button>
                     ) : (
-                        <h1 className="text-4xl font-bold tracking-tight">Marks Management</h1>
+                        <>
+                            <h1 className="text-4xl font-bold tracking-tight">Marks Management</h1>
+                            <p className="text-lg text-muted-foreground">
+                                Upload, edit, and track student marks across all subjects and classes
+                            </p></>
                     )}
 
                     {!currentBatch && (
@@ -76,9 +81,10 @@ export default function MarksPage() {
                 ) : (
                     <>
                         <MarksOverview
-                            recentBatches={recent}
+                            // recentBatches={recent}
+                            uploadStat={overview}
                             isLoading={isLoadingOverview}
-                            isPrincipal={isPrincipal}
+                        // isPrincipal={isPrincipal}
                         />
 
                         <MarksTable

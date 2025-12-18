@@ -49,19 +49,11 @@ export type BatchDetail = {
 };
 
 export interface MarksOverview {
-  total_subjects: number;
-  uploaded_subjects: number;
-  subjects: Array<{
-    subject_id: string;
-    subject_name: string;
-    total_classes: number;
-    uploaded_classes: number;
-  }>;
-  // For principal only
-  by_department?: Record<
-    string,
-    { uploaded: number; total: number }
-  >;
+  total_expected: number;
+  uploaded: number;
+  percentage: number;
+  term: number | string;
+  academic_year: string;
 }
 
 export interface UploadScope {

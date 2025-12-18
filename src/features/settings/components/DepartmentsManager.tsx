@@ -64,6 +64,7 @@ export default function DepartmentsManager() {
       const res = await api.get<Department[]>("/departments/");
       return res.data ?? [];
     },
+    staleTime: Infinity,
   });
 
   // Fetch classrooms for selection
@@ -73,6 +74,7 @@ export default function DepartmentsManager() {
       const res = await api.get<Classroom[]>("/classrooms/");
       return res.data ?? [];
     },
+    staleTime: Infinity,
   });
 
   // Get classroom names from IDs
