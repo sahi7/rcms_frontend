@@ -14,7 +14,7 @@ import UserProfilePage from "@/features/users/components/UserProfile/UserProfile
 import SubjectsAssignmentsManager from "@/features/settings/components/SubjectsAssignmentsManager";
 import ReportsPage from "@/features/reports/pages/ReportsPage";
 import DownloadsPage from "@/features/reports/pages/DownloadsPage";
-import LandingPage from "@/features/landing/LandingPage";
+import { LandingPage } from '@/features/landing/LandingPage';
 import LoginPage from "@/features/auth/LoginPage.tsx";
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
 // import OnboardingWizard from "@/features/onboarding/OnboardingPage.tsx";

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrandingPanel } from './BrandingPanel';
+import { BrandingPanel } from '../../../components/branding/BrandingPanel';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
