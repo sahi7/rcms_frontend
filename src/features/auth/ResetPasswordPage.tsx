@@ -1,166 +1,142 @@
 // src/features/auth/ResetPasswordPage.tsx
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
-import api from "@/lib/api";
-import { toast } from "sonner";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AuthLayout } from './components/AuthLayout';
+import { useResetPassword } from './hooks/useResetPassword';
+
+const formVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: custom * 0.1, duration: 0.5, ease: 'easeOut' },
+  }),
+};
 
 export default function ResetPasswordPage() {
-  const { uid, token } = useParams<{ uid: string; token: string }>();
-  const navigate = useNavigate();
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const { form, onSubmit, isSubmitting, uid, token } = useResetPassword();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-
-    if (!password || !confirmPassword) {
-      setError("Both password fields are required");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await api.post(`/auth/reset-password/${uid}/${token}/`, {
-        password,
-        confirm_password: confirmPassword,
-      });
-      toast.success("Password reset successful! Redirecting to login...");
-      setTimeout(() => navigate("/"), 1500);
-    } catch (err: any) {
-      const msg = err.response?.data?.error || "Invalid or expired reset link";
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   if (!uid || !token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-4" />
-            <CardTitle>Invalid Link</CardTitle>
-            <CardDescription>This password reset link is not valid.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <AuthLayout>
+        <div className="w-full max-w-md mx-auto text-center">
+          <motion.div initial="hidden" animate="visible" variants={formVariants} className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Invalid Link</h2>
+            <p className="text-gray-500 mt-2">This password reset link is not valid or has expired.</p>
+          </motion.div>
+          <Link to="/">
+            <Button className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white">
+              Back to Login
+            </Button>
+          </Link>
+        </div>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="bg-primary/10 rounded-full p-4">
-              <Lock className="w-12 h-12 text-primary" />
-            </div>
+    <AuthLayout>
+      <div className="w-full max-w-md mx-auto">
+        {/* Back button */}
+        <Link
+          to="/"
+          className="absolute top-6 left-6 sm:top-12 sm:left-12 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors z-10"
+        >
+          <ArrowLeft size={16} />
+          Back to login
+        </Link>
+
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          custom={0}
+          variants={formVariants}
+          className="mb-8 text-center lg:text-left"
+        >
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
           </div>
-          <CardTitle className="text-3xl font-bold">Reset Password</CardTitle>
-          <CardDescription>Enter your new password below</CardDescription>
-        </CardHeader>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 font-heading mb-2">
+            Set new password
+          </h2>
+          <p className="text-gray-500">Your new password must be different from previously used passwords.</p>
+        </motion.div>
 
-        <CardContent>
-          {error && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive rounded-lg flex items-center gap-3 text-destructive text-sm">
-              <AlertCircle className="h-5 w-5 flex-shrink-0" />
-              <span>{error}</span>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <motion.div custom={1} variants={formVariants} className="space-y-2">
+            <Label htmlFor="password">New password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                {...form.register('password')}
+                placeholder="••••••••"
+                className="h-11 pr-10 focus-visible:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-          )}
+            {form.formState.errors.password && (
+              <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+            )}
+          </motion.div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* New Password */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">New Password</label>
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+          <motion.div custom={2} variants={formVariants} className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm new password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirm ? 'text' : 'password'}
+                {...form.register('confirmPassword')}
+                placeholder="••••••••"
+                className="h-11 pr-10 focus-visible:ring-orange-500"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+            {form.formState.errors.confirmPassword && (
+              <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</p>
+            )}
+          </motion.div>
 
-            {/* Confirm Password */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Confirm Password</label>
-              <div className="relative">
-                <Input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  disabled={isSubmitting}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-
+          <motion.div custom={3} variants={formVariants}>
             <Button
               type="submit"
-              className="w-full"
-              size="lg"
-              disabled={isSubmitting || !password || !confirmPassword}
+              className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={isSubmitting}
             >
-              {isSubmitting ? "Resetting..." : "Reset Password"}
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Resetting password...</span>
+                </div>
+              ) : (
+                'Reset Password'
+              )}
             </Button>
-          </form>
-
-          <div className="mt-6 text-center text-sm">
-            <a href="/" className="text-primary hover:underline">
-              Back to Login
-            </a>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Lock icon (unchanged)
-function Lock({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-      />
-    </svg>
+          </motion.div>
+        </form>
+      </div>
+    </AuthLayout>
   );
 }

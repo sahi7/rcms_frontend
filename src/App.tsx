@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useAuthStore } from "@/app/store/authStore";
-import LoginPage from "@/features/auth/LoginPage";
+// import LoginPage from "@/features/auth/LoginPage";
 import DashboardLayout from "@/app/layout/DashboardLayout";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
@@ -33,7 +33,7 @@ export default function App() {
     <>
     <ReactQueryDevtools initialIsOpen={false} /> {/* remove in prod */}
       {/* LoginPage is NEVER unmounted — form state survives forever */}
-      {!isAuthenticated && <LoginPage />}
+      {/* {!isAuthenticated && <LoginPage />} */}
       {isAuthenticated && <DashboardLayout />}
     </>
   );

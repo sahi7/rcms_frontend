@@ -14,6 +14,10 @@ import UserProfilePage from "@/features/users/components/UserProfile/UserProfile
 import SubjectsAssignmentsManager from "@/features/settings/components/SubjectsAssignmentsManager";
 import ReportsPage from "@/features/reports/pages/ReportsPage";
 import DownloadsPage from "@/features/reports/pages/DownloadsPage";
+import LandingPage from "@/features/landing/LandingPage";
+import LoginPage from "@/features/auth/LoginPage.tsx";
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage';
+// import OnboardingWizard from "@/features/onboarding/OnboardingPage.tsx";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -32,8 +36,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Routes>
           {/* Public routes — always accessible, even when logged out */}
           {/* <Route path="/" element={<LoginPage />} /> */}
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          {/* <Route path="/onboarding" element={<OnboardingWizard />} /> */}
 
           {/* Everything else stays exactly as you had it */}
           <Route path="/" element={<App />}>
@@ -46,6 +54,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/marks" element={<MarksPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reports/downloads" element={<DownloadsPage />} />
+
             {/* other routes */}
           </Route>
         </Routes>

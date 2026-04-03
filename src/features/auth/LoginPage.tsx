@@ -1,181 +1,122 @@
-// src/features/auth/LoginPage.tsx
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useAuthStore } from "@/app/store/authStore";
-import { toast } from "sonner";
-import api from "@/lib/api";
-import { School } from "lucide-react";
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { AuthLayout } from './components/AuthLayout';
+import { useLogin } from './hooks/useLogin';
 
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
-const forgotSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type ForgotFormData = z.infer<typeof forgotSchema>;
+const formVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: custom * 0.1, duration: 0.5, ease: 'easeOut' },
+  }),
+};
 
 export default function LoginPage() {
-  const { login } = useAuthStore();
-  const [showForgot, setShowForgot] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // ← our own loading state
-
-  const loginForm = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-
-  const forgotForm = useForm<ForgotFormData>({
-    resolver: zodResolver(forgotSchema),
-    defaultValues: { email: "" },
-  });
-
-  const onLogin = async (data: LoginFormData) => {
-    setIsSubmitting(true);
-    try {
-      await login(data.username, data.password);
-      // Only reset password field on success
-      loginForm.setValue("password", "");
-    } catch {
-      // Do nothing — error already toasted in store
-      // Username stays filled, password stays (user can correct)
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onForgot = async (data: ForgotFormData) => {
-    setIsSubmitting(true);
-    try {
-      await api.post("/auth/forgot-password/", { email: data.email });
-      toast.success("Password reset link sent!");
-      setShowForgot(false);
-      forgotForm.reset();
-    } catch (err: any) {
-      toast.error(err.response?.data?.detail || "Email not found");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const { form, onSubmit, isSubmitting } = useLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center">
-            <div className="bg-primary/10 rounded-full p-4">
-              <School className="w-12 h-12 text-primary" />
-            </div>
-          </div>
-          <CardTitle className="text-3xl font-bold">School Management</CardTitle>
-          <CardDescription>Sign in with your username</CardDescription>
-        </CardHeader>
+    <AuthLayout>
+      <div className="w-full max-w-md mx-auto">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          custom={0}
+          variants={formVariants}
+          className="mb-8 text-center lg:text-left"
+        >
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 font-heading mb-2">
+            Welcome back
+          </h2>
+          <p className="text-gray-500">Sign in to your account to continue</p>
+        </motion.div>
 
-        <CardContent className="space-y-6">
-          <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="principal2025"
-                autoComplete="username"
-                disabled={isSubmitting}
-                {...loginForm.register("username")}
-              />
-            </div>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          {/* Username */}
+          <motion.div custom={1} variants={formVariants} className="space-y-2">
+            <Label htmlFor="username" className="text-sm font-medium text-gray-700">
+              Username
+            </Label>
+            <Input
+              id="username"
+              {...form.register('username')}
+              placeholder="principal2025"
+              className="h-11 focus-visible:ring-orange-500"
+            />
+          </motion.div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+          {/* Password */}
+          <motion.div custom={2} variants={formVariants} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                Password
+              </Label>
+              <Link
+                to="/forgot-password"
+                className="text-sm font-medium text-orange-600 hover:text-orange-500 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
               <Input
                 id="password"
-                type="password"
-                autoComplete="current-password"
-                disabled={isSubmitting}
-                {...loginForm.register("password")}
+                type={showPassword ? 'text' : 'password'}
+                {...form.register('password')}
+                placeholder="••••••••"
+                className="h-11 pr-10 focus-visible:ring-orange-500"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+          </motion.div>
 
-            <Button className="w-full" size="lg" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign In"}
-            </Button>
-          </form>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setShowForgot(true)}
-              className="text-sm text-primary hover:underline font-medium"
+          <motion.div custom={4} variants={formVariants}>
+            <Button
+              type="submit"
+              className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white"
               disabled={isSubmitting}
             >
-              Forgot your password?
-            </button>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground">
-            Try: <strong>principal2025</strong> (any password)
-          </p>
-        </CardContent>
-      </Card>
-
-      <Dialog open={showForgot} onOpenChange={setShowForgot}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Forgot Password</DialogTitle>
-            <DialogDescription>
-              Enter your email address and we'll send you a reset link
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={forgotForm.handleSubmit(onForgot)} className="space-y-4">
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="principal@school.com"
-                {...forgotForm.register("email")}
-              />
-              {forgotForm.formState.errors.email && (
-                <p className="text-sm text-destructive mt-1">
-                  {forgotForm.formState.errors.email.message}
-                </p>
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                'Sign In'
               )}
+            </Button>
+          </motion.div>
+        </form>
+
+        <motion.div custom={5} variants={formVariants} className="mt-8">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator className="w-full" />
             </div>
-            <div className="flex gap-3">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Sending..." : "Send Reset Link"}
-              </Button>
-              <Button variant="outline" type="button" onClick={() => setShowForgot(false)}>
-                Cancel
-              </Button>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-gray-500">or</span>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </div>
+          <div className="mt-8">
+            <Button variant="outline" className="w-full h-11">
+              Request Demo
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    </AuthLayout>
   );
 }
