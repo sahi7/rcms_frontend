@@ -1,5 +1,5 @@
 // src/features/onboarding/components/Step2AdminSetup.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
