@@ -44,20 +44,20 @@ const baseNavStructure = [
     icon: BookOpen,
     permission: 'view.curriculumsubject',
     children: [
-      { title: 'Subjects', path: '/dashboard/subjects', permission: 'view.subject' },
-      { title: 'Curriculum Subjects', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
-      { title: 'Subject Assignments', path: '/dashboard/subject-assignments', permission: 'view.subject_assignment' },
+      { titleKey: 'subject_naming', path: '/dashboard/subjects', permission: 'view.subject' },
+      { title: 'Curriculum subject_naming', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
     ],
   },
   {
-    title: 'School Structure',
+    title: 'Academic Structure',
     icon: Building2,
-    permission: 'view.structure',
+    permission: 'view.classroom',
     children: [
       { title: 'Faculties', path: '/dashboard/faculties', permission: 'view.faculty' },
       { title: 'Departments', path: '/dashboard/departments', permission: 'view.department' },
-      { title: 'Classrooms', path: '/dashboard/classrooms', permission: 'view.classroom' },
-      { title: 'Class Assignments', path: '/dashboard/class-assignments', permission: 'view.class_assignment' },
+      { titleKey: 'class_progression_name', path: '/dashboard/classrooms', permission: 'view.classroom' },
+      { titleKey: 'class_progression_name Assignments', path: '/dashboard/class-assignments', permission: 'view.classassignment' },
+      { titleKey: 'subject_naming Assignments', path: '/dashboard/subject-assignments', permission: 'view.subjectassignment' },
     ],
   },
   {
