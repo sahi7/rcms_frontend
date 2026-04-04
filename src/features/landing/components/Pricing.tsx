@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import { Check, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { usePricing } from '../hooks/usePricing';
+import { usePlansAndFeatures } from '@/hooks/shared/usePlansAndFeatures';
 
 export function Pricing() {
-  const { plans, features, isLoading, error, getPlanName } = usePricing();
+  const { plans, features, isLoading, error, getPlanName } = usePlansAndFeatures();
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   const getCardState = (index: number) => {
