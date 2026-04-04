@@ -13,7 +13,9 @@ interface User {
   last_name: string;
   full_name: string;
   phone_number: string;
-  role: "principal" | "teacher" | "parent" | "student";
+  role: string;
+  permissions: string[];
+
 }
 
 interface LoginResponse {
@@ -25,6 +27,8 @@ export const useAuthStore = create<{
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  permissions: string[];
+  role: string | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
@@ -32,6 +36,8 @@ export const useAuthStore = create<{
   user: null,
   isAuthenticated: false,
   isLoading: true, // Start as true — App.tsx will set it to false
+  permissions: [],
+  role: null,
 
   login: async (username: string, password: string) => {
     try {
@@ -49,6 +55,8 @@ export const useAuthStore = create<{
       set({
         user: meRes.data,
         isAuthenticated: true,
+        role: meRes.data.role,
+        permissions: meRes.data.permissions || [],
         isLoading: false,
       });
 
@@ -63,14 +71,14 @@ export const useAuthStore = create<{
   logout: () => {
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
-    set({ user: null, isAuthenticated: false, isLoading: false });
-    window.location.href = "/";
+    set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
+    window.location.href = "/login";
   },
 
   fetchMe: async () => {
     const token = Cookies.get("access_token");
     if (!token) {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
       return;
     }
 
@@ -80,6 +88,8 @@ export const useAuthStore = create<{
       set({
         user: res.data,
         isAuthenticated: true,
+        role: res.data.role,
+        permissions: res.data.permissions || [],
         isLoading: false,
       });
     } catch (err) {
