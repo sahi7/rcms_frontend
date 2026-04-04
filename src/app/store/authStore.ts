@@ -72,7 +72,6 @@ export const useAuthStore = create<{
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
     set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
-    window.location.href = "/login";
   },
 
   fetchMe: async () => {

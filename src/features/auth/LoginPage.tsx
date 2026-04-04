@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+// src/features/auth/LoginPage.tsx
+import { useState } from 'react';
+import { motion, Variants } from 'framer-motion';  
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,16 @@ import { Separator } from '@/components/ui/separator';
 import { AuthLayout } from './components/AuthLayout';
 import { useLogin } from './hooks/useLogin';
 
-const formVariants = {
+const formVariants: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: (custom: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: custom * 0.1, duration: 0.5, ease: 'easeOut' },
+    transition: {
+      delay: custom * 0.1,
+      duration: 0.5,
+      ease: 'easeOut',           // This is now accepted
+    },
   }),
 };
 
