@@ -1,9 +1,9 @@
 // src/app/layout/DashboardOverview.tsx
 import { motion } from 'framer-motion';
-import { Users, GraduationCap, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, GraduationCap, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useHasPermission, Can } from '@/hooks/shared/useHasPermission';
 
 const stats = [
@@ -11,7 +11,7 @@ const stats = [
   { title: 'Average Attendance', value: '94.2%', change: '+1.2%', isPositive: true, icon: CheckCircle2 },
   { title: 'Active Classes', value: '142', change: '0%', isPositive: true, icon: GraduationCap },
   { title: 'Pending Reports', value: '18', change: '-5', isPositive: false, icon: AlertCircle },
-];
+]
 
 const recentActivity = [
   { user: 'Sarah Jenkins', action: 'uploaded term 2 marks for', target: 'Grade 10 Science', time: '10 mins ago', avatar: 'SJ' },

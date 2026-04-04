@@ -1,10 +1,7 @@
 // src/app/layout/DashboardSidebar.tsx
-
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from "@/app/store/authStore";
-
 import {
   LayoutDashboard,
   GraduationCap,
@@ -20,28 +17,32 @@ import {
   LogOut,
   ChevronRight,
 } from 'lucide-react';
+
 import { TooltipProvider } from '../../components/ui/Tooltip';
 import { ScrollArea } from '../../components/ui/ScrollArea';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
-import { useHasPermission, Can } from '@/hooks/shared/useHasPermission';
 
-const navStructure = [
+import { useAuthStore } from '@/app/store/authStore';
+import { useHasPermission, Can } from '@/hooks/shared/useHasPermission';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+
+const baseNavStructure = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'view.dashboard' },
   {
     title: 'Academic',
     icon: GraduationCap,
-    permission: 'view.academic',
+    permission: 'view.academicyear',
     children: [
-      { title: 'Academic Years', path: '/dashboard/academic-years', permission: 'view.academic_year' },
-      { title: 'Terms', path: '/dashboard/terms', permission: 'view.term' },
-      { title: 'Sequences', path: '/dashboard/sequences', permission: 'view.sequence' },
-      { title: 'Study Levels', path: '/dashboard/study-levels', permission: 'view.study_level' },
+      { title: 'Academic Year', path: '/dashboard/academic-years', permission: 'view.academicyear' },
+      { titleKey: 'academic_period', path: '/dashboard/terms', permission: 'view.term' },
+      { title: 'Evaluation', path: '/dashboard/sequences', permission: 'view.sequence' },
+      { title: 'Study Level', path: '/dashboard/study-levels', permission: 'view.studylevel' },
     ],
   },
   {
     title: 'Curriculum',
     icon: BookOpen,
-    permission: 'view.curriculum',
+    permission: 'view.curriculumsubject',
     children: [
       { title: 'Subjects', path: '/dashboard/subjects', permission: 'view.subject' },
       { title: 'Curriculum Subjects', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
@@ -112,17 +113,26 @@ interface DashboardSidebarProps {
   setIsHovered: (hovered: boolean) => void;
 }
 
-export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovered }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  isPinned,
+  setIsPinned,
+  isHovered,
+  setIsHovered,
+}: DashboardSidebarProps) {
   const location = useLocation();
+  const { getLabel, getPlural } = useInstitutionConfig();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const isExpanded = isPinned || isHovered;
 
+  // Auto-open groups that contain active children
   useEffect(() => {
-    // Auto-open groups with active children
     const newOpenGroups: Record<string, boolean> = {};
-    navStructure.forEach((group) => {
+    baseNavStructure.forEach((group) => {
       if (group.children?.length) {
-        const hasActiveChild = group.children.some((child) => location.pathname === child.path || location.pathname.startsWith(child.path + '/'));
+        const hasActiveChild = group.children.some(
+          (child) =>
+            location.pathname === child.path || location.pathname.startsWith(child.path + '/')
+        );
         if (hasActiveChild) newOpenGroups[group.title] = true;
       }
     });
@@ -132,6 +142,15 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
   const toggleGroup = (title: string) => {
     if (!isExpanded) return;
     setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  // Helper to get dynamic title for children that use config keys
+  const getDynamicTitle = (item: any) => {
+    if (item.titleKey) {
+      const base = getLabel(item.titleKey as any);
+      return getPlural(item.titleKey as any); // most academic terms are plural
+    }
+    return item.title;
   };
 
   return (
@@ -151,7 +170,12 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
           </div>
           <AnimatePresence>
             {isExpanded && (
-              <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="text-xl font-bold font-heading text-white tracking-tight">
+              <motion.span
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="text-xl font-bold font-heading text-white tracking-tight"
+              >
                 EduFlow
               </motion.span>
             )}
@@ -160,7 +184,10 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
 
         <AnimatePresence>
           {isExpanded && (
-            <motion.button onClick={() => setIsPinned(!isPinned)} className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10">
+            <motion.button
+              onClick={() => setIsPinned(!isPinned)}
+              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10"
+            >
               {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
             </motion.button>
           )}
@@ -170,34 +197,62 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
       <ScrollArea className="flex-1 py-4">
         <nav className="px-3 space-y-1.5">
           <TooltipProvider delayDuration={0}>
-            {navStructure.map((group) => (
+            {baseNavStructure.map((group) => (
               <Can key={group.title} permission={group.permission}>
                 <div className="mb-1">
                   {/* Group Header */}
                   <div
                     onClick={() => group.children?.length && toggleGroup(group.title)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${location.pathname === group.path ? 'bg-orange-500/10 text-orange-400' : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'}`}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
+                      location.pathname === group.path
+                        ? 'bg-orange-500/10 text-orange-400'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <group.icon size={20} />
                       <AnimatePresence>
-                        {isExpanded && <motion.span className="font-medium text-sm">{group.title}</motion.span>}
+                        {isExpanded && (
+                          <motion.span
+                            initial={{ opacity: 0, width: 0 }}
+                            animate={{ opacity: 1, width: 'auto' }}
+                            exit={{ opacity: 0, width: 0 }}
+                            className="font-medium text-sm whitespace-nowrap"
+                          >
+                            {group.title}
+                          </motion.span>
+                        )}
                       </AnimatePresence>
                     </div>
-                    {isExpanded && group.children?.length && <ChevronRight size={16} className={`transition-transform ${openGroups[group.title] ? 'rotate-90' : ''}`} />}
+
+                    {isExpanded && group.children?.length && (
+                      <ChevronRight
+                        size={16}
+                        className={`shrink-0 transition-transform ${openGroups[group.title] ? 'rotate-90' : ''}`}
+                      />
+                    )}
                   </div>
 
                   {/* Children */}
                   <AnimatePresence>
                     {group.children?.length && isExpanded && openGroups[group.title] && (
-                      <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="ml-6 pl-3 border-l border-white/10 py-1 mt-1 space-y-1">
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="ml-6 pl-3 border-l border-white/10 py-1 mt-1 space-y-1"
+                      >
                         {group.children.map((child) => (
                           <Can key={child.path} permission={child.permission}>
                             <Link
                               to={child.path}
-                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${location.pathname === child.path ? 'text-orange-400 bg-orange-500/5' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                                location.pathname === child.path
+                                  ? 'text-orange-400 bg-orange-500/5'
+                                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                              }`}
                             >
-                              <span className="whitespace-nowrap">{child.title}</span>
+                              <span className="whitespace-nowrap">{getDynamicTitle(child)}</span>
                             </Link>
                           </Can>
                         ))}
@@ -211,17 +266,23 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
         </nav>
       </ScrollArea>
 
-      {/* Footer */}
+      {/* Footer / User Profile */}
       <div className="p-4 border-t border-white/10 shrink-0">
         <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border border-white/10">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <Avatar className="h-10 w-10 border border-white/10 shrink-0">
               <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
               <AvatarFallback className="bg-orange-600 text-white">JD</AvatarFallback>
             </Avatar>
+
             <AnimatePresence>
               {isExpanded && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col whitespace-nowrap"
+                >
                   <span className="text-sm font-medium text-white">John Doe</span>
                   <span className="text-xs text-gray-400">Administrator</span>
                 </motion.div>
@@ -231,7 +292,10 @@ export function DashboardSidebar({ isPinned, setIsPinned, isHovered, setIsHovere
 
           <AnimatePresence>
             {isExpanded && (
-              <motion.button onClick={() => useAuthStore.getState().logout()} className="text-gray-400 hover:text-red-400 p-2 rounded-md hover:bg-red-500/10">
+              <motion.button
+                onClick={() => useAuthStore.getState().logout()}
+                className="text-gray-400 hover:text-red-400 p-2 rounded-md hover:bg-red-500/10 shrink-0"
+              >
                 <LogOut size={18} />
               </motion.button>
             )}
