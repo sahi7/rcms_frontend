@@ -76,6 +76,7 @@ export default function Step3Subscription({ onNext, onBack, plans, features }: a
                       : selectedAddons.filter((c: string) => c !== addon.code);
                     setValue('features', newFeatures);
                   }}
+                  className="accent-orange-500"
                 />
                 <div>
                   <span className="font-medium">{addon.name}</span>

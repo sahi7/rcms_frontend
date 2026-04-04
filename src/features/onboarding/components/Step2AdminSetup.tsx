@@ -1,10 +1,12 @@
 // src/features/onboarding/components/Step2AdminSetup.tsx
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Eye, EyeOff } from 'lucide-react';
 import { useOnboardingStore } from '@/app/store/onboardingStore';
 
 const schema = z.object({
@@ -19,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function Step2AdminSetup({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
   const { data, setData } = useOnboardingStore();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -43,31 +46,45 @@ export default function Step2AdminSetup({ onNext, onBack }: { onNext: () => void
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="admin_first_name">First Name</Label>
-          <Input id="admin_first_name" {...register('admin_first_name')} />
-          {errors.admin_first_name && <p className="text-red-500 text-sm">{errors.admin_first_name.message}</p>}
+          <Input id="admin_first_name" {...register('admin_first_name')} className="focus-visible:ring-orange-500" />
+          {errors.admin_first_name && <p className="text-red-500 text-sm mt-1">{errors.admin_first_name.message}</p>}
         </div>
         <div>
           <Label htmlFor="admin_last_name">Last Name</Label>
-          <Input id="admin_last_name" {...register('admin_last_name')} />
-          {errors.admin_last_name && <p className="text-red-500 text-sm">{errors.admin_last_name.message}</p>}
+          <Input id="admin_last_name" {...register('admin_last_name')} className="focus-visible:ring-orange-500" />
+          {errors.admin_last_name && <p className="text-red-500 text-sm mt-1">{errors.admin_last_name.message}</p>}
         </div>
       </div>
 
       <div>
         <Label htmlFor="admin_email">Admin Email</Label>
-        <Input id="admin_email" type="email" {...register('admin_email')} />
-        {errors.admin_email && <p className="text-red-500 text-sm">{errors.admin_email.message}</p>}
+        <Input id="admin_email" type="email" {...register('admin_email')} className="focus-visible:ring-orange-500" />
+        {errors.admin_email && <p className="text-red-500 text-sm mt-1">{errors.admin_email.message}</p>}
       </div>
 
       <div>
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" {...register('password')} />
-        {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+        <div className="relative">
+          <Input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            {...register('password')}
+            className="focus-visible:ring-orange-500 pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
       </div>
 
       <div>
         <Label htmlFor="admin_phone">Admin Phone (optional)</Label>
-        <Input id="admin_phone" {...register('admin_phone')} />
+        <Input id="admin_phone" {...register('admin_phone')} className="focus-visible:ring-orange-500" />
       </div>
 
       <div className="flex gap-4">

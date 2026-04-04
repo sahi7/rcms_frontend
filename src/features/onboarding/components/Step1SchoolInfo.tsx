@@ -51,7 +51,7 @@ export default function Step1SchoolInfo({ onNext }: { onNext: () => void }) {
           <Label>Institution Type</Label>
           <select
             {...register('institution_type')}
-            className="w-full h-11 rounded-lg border border-gray-300 px-4 focus:ring-orange-500"
+            className="w-full h-11 rounded-lg border border-gray-300 px-4 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 focus:outline-none"
           >
             <option value="primary">K-12 School</option>
             <option value="primary">Primary / Junior</option>
@@ -62,20 +62,20 @@ export default function Step1SchoolInfo({ onNext }: { onNext: () => void }) {
 
         <div>
           <Label htmlFor="school_name">School Name</Label>
-          <Input id="school_name" {...register('school_name')} placeholder="Greenfield International School" />
+          <Input id="school_name" {...register('school_name')} placeholder="Greenfield International School" className="focus-visible:ring-orange-500" />
           {errors.school_name && <p className="text-red-500 text-sm mt-1">{errors.school_name.message}</p>}
         </div>
       </div>
 
       <div>
         <Label htmlFor="short_name">Short Name / Abbreviation</Label>
-        <Input id="short_name" {...register('short_name')} placeholder="GIS" />
+        <Input id="short_name" {...register('short_name')} placeholder="GIS" className="focus-visible:ring-orange-500" />
         {errors.short_name && <p className="text-red-500 text-sm mt-1">{errors.short_name.message}</p>}
       </div>
 
       <div>
         <Label htmlFor="email">School Email Address</Label>
-        <Input id="email" type="email" {...register('email')} placeholder="info@greenfield.edu" />
+        <Input id="email" type="email" {...register('email')} placeholder="info@greenfield.edu" className="focus-visible:ring-orange-500" />
         <p className="text-amber-600 text-xs mt-1">
           ⚠️ A verification email will be sent to this address. Please use a valid email.
         </p>
@@ -85,22 +85,27 @@ export default function Step1SchoolInfo({ onNext }: { onNext: () => void }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label htmlFor="phone">Phone Number</Label>
-          <Input id="phone" {...register('phone')} placeholder="+1234567890" />
+          <Input 
+            id="phone" 
+            {...register('phone')} 
+            placeholder="237 6XX XXX XXX" 
+            className="focus-visible:ring-orange-500" 
+          />
         </div>
         <div>
           <Label htmlFor="website">Website (optional)</Label>
-          <Input id="website" {...register('website')} placeholder="https://greenfield.edu" />
+          <Input id="website" {...register('website')} placeholder="https://greenfield.edu" className="focus-visible:ring-orange-500" />
         </div>
       </div>
 
       <div>
         <Label htmlFor="motto">School Motto (optional)</Label>
-        <Input id="motto" {...register('motto')} placeholder="Excellence and Integrity" />
+        <Input id="motto" {...register('motto')} placeholder="Excellence and Integrity" className="focus-visible:ring-orange-500" />
       </div>
 
       <div>
         <Label htmlFor="address">Address (optional)</Label>
-        <Input id="address" {...register('address')} placeholder="123 Education Lane" />
+        <Input id="address" {...register('address')} placeholder="123 Education Lane" className="focus-visible:ring-orange-500" />
       </div>
 
       <Button type="submit" className="w-full h-12 bg-orange-600 hover:bg-orange-700">
