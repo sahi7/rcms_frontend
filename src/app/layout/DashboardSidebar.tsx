@@ -45,7 +45,7 @@ const baseNavStructure = [
     permission: 'view.curriculumsubject',
     children: [
       { titleKey: 'subject_naming', path: '/dashboard/subjects', permission: 'view.subject' },
-      { title: 'Curriculum subject_naming', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
+      { title: 'subject_naming Curriculum', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
     ],
   },
   {

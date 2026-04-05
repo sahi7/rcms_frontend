@@ -8,6 +8,9 @@ import { DashboardOverview } from "@/app/layout/DashboardOverview";
 // import { PlaceholderPage } from "@/pages/dashboard/PlaceholderPage";
 import { AcademicYears } from "@/features/academic/pages/AcademicYears";
 import { Terms } from "@/features/academic/pages/Terms";
+import { Sequences } from "@/features/academic/pages/Sequences";
+import { StudyLevels } from "@/features/academic/pages/StudyLevels";
+
 
 
 export default function App() {
@@ -43,6 +46,8 @@ export default function App() {
         <Route index element={<DashboardOverview />} />
         <Route path="academic-years" element={<AcademicYears />} />
         <Route path="terms" element={<Terms />} />
+        <Route path="sequences" element={<Sequences />} />
+        <Route path="study-levels" element={<StudyLevels />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>

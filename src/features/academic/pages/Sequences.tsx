@@ -1,0 +1,431 @@
+// src/features/academic/pages/Sequences.tsx
+import { useState, useEffect, useCallback } from 'react';
+import { PlusIcon, FilterIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { DataTable } from '@/components/DataTable';
+import { Modal } from '@/components/Modal';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Sequence, PaginatedResponse, Term } from '@/types/academic';
+import { sequenceApi } from '../hooks/sequence';
+import { termsApi } from '../hooks/terms';
+import { Can } from '@/hooks/shared/useHasPermission';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+
+const sequenceSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  code: z.string().min(2, 'Code is required'),
+  term: z.string().min(1, 'Term is required'),
+  max_score: z.number().min(5, 'Max score must be at least 5'),
+  is_mandatory: z.boolean(),
+  is_current: z.boolean(),
+  is_resit: z.boolean(),
+  is_results_published: z.boolean(),
+});
+
+type FormData = z.infer<typeof sequenceSchema>;
+
+export function Sequences() {
+  const { getPlural } = useInstitutionConfig();
+
+  const [response, setResponse] = useState<PaginatedResponse<Sequence> | null>(null);
+  const [terms, setTerms] = useState<Term[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTerm, setSelectedTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Sequence | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<Sequence | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(sequenceSchema),
+    defaultValues: {
+      name: '',
+      code: '',
+      term: '',
+      max_score: 20,
+      is_mandatory: true,
+      is_current: false,
+      is_resit: false,
+      is_results_published: false,
+    },
+  });
+
+  // Fetch terms for dropdown
+  const fetchTerms = useCallback(async () => {
+    try {
+      const data = await termsApi.getAll('', 1, 100);
+      setTerms(data.data);
+    } catch (error) {
+      console.error('Failed to fetch terms:', error);
+    }
+  }, []);
+
+  // Server-side fetch (with term filter)
+  const fetchSequences = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await sequenceApi.getAll(searchTerm, currentPage, pageSize, selectedTerm);
+      setResponse(data);
+    } catch (error) {
+      console.error('Failed to fetch sequences:', error);
+      toast.error('Failed to load sequences');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchTerm, currentPage, pageSize, selectedTerm]);
+
+  useEffect(() => {
+    fetchTerms();
+  }, [fetchTerms]);
+
+  useEffect(() => {
+    fetchSequences();
+  }, [fetchSequences]);
+
+  const handleOpenModal = (item?: Sequence) => {
+    if (item) {
+      setEditingItem(item);
+      setValue('name', item.name);
+      setValue('code', item.code);
+      setValue('term', item.term);
+      setValue('max_score', item.max_score);
+      setValue('is_mandatory', item.is_mandatory);
+      setValue('is_current', item.is_current);
+      setValue('is_resit', item.is_resit);
+      setValue('is_results_published', item.is_results_published);
+    } else {
+      setEditingItem(null);
+      reset();
+    }
+    setIsModalOpen(true);
+  };
+
+  const onSubmit = async (formData: FormData) => {
+    try {
+      if (editingItem?.id) {
+        await sequenceApi.update(editingItem.id, formData);
+        toast.success('Sequence updated successfully');
+      } else {
+        await sequenceApi.create(formData);
+        toast.success('Sequence created successfully');
+      }
+      setIsModalOpen(false);
+      fetchSequences();
+    } catch (error: any) {
+      console.error('Save error:', error);
+      const serverData = error.response?.data;
+      if (serverData?.non_field_errors?.length) {
+        toast.error(serverData.non_field_errors[0]);
+      } else if (serverData?.name) {
+        toast.error(serverData.name[0]);
+      } else if (serverData?.code) {
+        toast.error(serverData.code[0]);
+      } else if (serverData?.term) {
+        toast.error(serverData.term[0]);
+      } else {
+        toast.error('Failed to save sequence. Please try again.');
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!itemToDelete?.id) return;
+    try {
+      await sequenceApi.delete(itemToDelete.id);
+      toast.success('Sequence deleted successfully');
+      fetchSequences();
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to delete sequence');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+    }
+  };
+
+  const handleSetAsCurrent = async (id: string) => {
+    try {
+      await sequenceApi.setAsCurrent(id);
+      toast.success('Sequence set as current successfully');
+      fetchSequences();
+    } catch (error: any) {
+      toast.error('Failed to set sequence as current');
+    }
+  };
+
+  const tableResponse: PaginatedResponse<Sequence> = response ?? {
+    data: [],
+    pagination: {
+      current_page: currentPage,
+      page_size: pageSize,
+      total_count: 0,
+      total_pages: 1,
+      has_next: false,
+      has_previous: false,
+    },
+    search: { term: searchTerm, has_results: false },
+    filters: {},
+  };
+
+  const columns = [
+    { header: 'Name', accessor: 'name' as keyof Sequence },
+    { header: 'Code', accessor: 'code' as keyof Sequence },
+    { header: getPlural('academic_period'), accessor: 'term' as keyof Sequence },
+    { header: 'Max Score', accessor: 'max_score' as keyof Sequence },
+    {
+      header: 'Attributes',
+      accessor: (item: Sequence) => (
+        <div className="flex flex-wrap gap-1">
+          {item.is_mandatory ? (
+            <StatusBadge status="mandatory" />
+          ) : (
+            <StatusBadge status="optional" />
+          )}
+          {item.is_resit && <StatusBadge status="resit" />}
+        </div>
+      ),
+    },
+    {
+      header: 'Status',
+      accessor: (item: Sequence) => (
+        <div className="flex flex-wrap gap-1">
+          {item.is_current && <StatusBadge status="current" />}
+          {item.is_results_published && <StatusBadge status="published" />}
+        </div>
+      ),
+    },
+    {
+      header: 'Actions',
+      accessor: (item: Sequence) => (
+        <div className="flex items-center gap-2">
+          {!item.is_current && (
+            <Can permission="set_current.sequence">
+              <button
+                onClick={() => handleSetAsCurrent(item.id)}
+                className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"
+              >
+                Set as Current
+              </button>
+            </Can>
+          )}
+
+          <Can permission="change.sequence">
+            <button
+              onClick={() => handleOpenModal(item)}
+              className="text-xs px-3 py-1 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              Edit
+            </button>
+          </Can>
+
+          <Can permission="delete.sequence">
+            <button
+              onClick={() => {
+                setItemToDelete(item);
+                setIsDeleteModalOpen(true);
+              }}
+              className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+            >
+              Delete
+            </button>
+          </Can>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="h-full flex flex-col gap-6">
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1a1a2e]">Sequences</h1>
+          <p className="text-slate-500 mt-1 text-sm">Manage evaluation sequences within {getPlural('academic_period')}.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Term Filter */}
+          <div className="relative">
+            <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <select
+              value={selectedTerm}
+              onChange={(e) => {
+                setSelectedTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white appearance-none"
+            >
+              <option value="">All {getPlural('academic_period')}</option>
+              {terms.map((t) => (
+                <option key={t.id} value={t.name}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Can permission="add.sequence">
+            <button
+              onClick={() => handleOpenModal()}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-orange-500/20"
+            >
+              <PlusIcon className="w-4 h-4" />
+              Add New
+            </button>
+          </Can>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0">
+        <DataTable
+          data={tableResponse}
+          columns={columns}
+          onPageChange={setCurrentPage}
+          onSearch={(term) => {
+            setSearchTerm(term);
+            setCurrentPage(1);
+          }}
+          searchTerm={searchTerm}
+          onEdit={handleOpenModal}
+          onDelete={(item) => {
+            setItemToDelete(item);
+            setIsDeleteModalOpen(true);
+          }}
+          loading={loading}
+          actions={false}
+        />
+      </div>
+
+      {/* Add/Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingItem ? 'Edit Sequence' : 'Add Sequence'}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
+              <input
+                {...register('name')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Code</label>
+              <input
+                {...register('code')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              />
+              {errors.code && <p className="text-red-500 text-xs mt-1">{errors.code.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Term</label>
+              <select
+                {...register('term')}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
+              >
+                <option value="">Select Term</option>
+                {terms.map((t) => (
+                  <option key={t.id} value={t.name}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              {errors.term && <p className="text-red-500 text-xs mt-1">{errors.term.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Max Score</label>
+              <input
+                type="number"
+                {...register('max_score', { valueAsNumber: true })}
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              />
+              {errors.max_score && <p className="text-red-500 text-xs mt-1">{errors.max_score.message}</p>}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" {...register('is_mandatory')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
+              <span className="text-sm text-slate-700">Mandatory</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" {...register('is_current')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
+              <span className="text-sm text-slate-700">Current</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" {...register('is_resit')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
+              <span className="text-sm text-slate-700">Resit Sequence</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" {...register('is_results_published')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
+              <span className="text-sm text-slate-700">Results Published</span>
+            </label>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirm Deletion"
+      >
+        <div className="space-y-4">
+          <p className="text-slate-600">
+            Are you sure you want to delete the sequence{' '}
+            <span className="font-semibold text-slate-800">{itemToDelete?.name}</span>? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
