@@ -205,6 +205,9 @@ export function Terms() {
 
   // Dynamic header using getPlural
   const termHeader = `${getLabel('academic_period')} #`;
+  const modalTitle = editingItem
+  ? `Edit ${termHeader}`
+  : `Add ${termHeader}`;
 
   const columns = [
     { header: 'Name', accessor: 'name' as keyof Term },
@@ -329,7 +332,7 @@ export function Terms() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingItem ? 'Edit Term' : 'Add Term'}
+        title={modalTitle}
         maxWidth="max-w-2xl"
       >
         <form onSubmit={handleSave} className="space-y-4">
@@ -361,7 +364,7 @@ export function Terms() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Term Number</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{getLabel('academic_period')} Number</label>
               <input
                 required
                 type="number"

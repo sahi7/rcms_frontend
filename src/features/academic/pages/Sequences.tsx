@@ -17,7 +17,7 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 const sequenceSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
   code: z.string().min(2, 'Code is required'),
-  term: z.string().min(1, 'Term is required'),
+  term: z.string().min(1, 'Term is required'),           // ← this will be the TERM ID
   max_score: z.number().min(5, 'Max score must be at least 5'),
   is_mandatory: z.boolean(),
   is_current: z.boolean(),
@@ -64,7 +64,7 @@ export function Sequences() {
     },
   });
 
-  // Fetch terms for dropdown
+  // Fetch terms for the dropdown (we need both id and name)
   const fetchTerms = useCallback(async () => {
     try {
       const data = await termsApi.getAll('', 1, 100);
@@ -74,7 +74,7 @@ export function Sequences() {
     }
   }, []);
 
-  // Server-side fetch (with term filter)
+  // Server-side fetch
   const fetchSequences = useCallback(async () => {
     try {
       setLoading(true);
@@ -101,8 +101,10 @@ export function Sequences() {
       setEditingItem(item);
       setValue('name', item.name);
       setValue('code', item.code);
-      setValue('term', item.term);
-      setValue('max_score', item.max_score);
+      // If backend returns term as ID, use it directly; otherwise find ID by name
+      const termId = terms.find((t) => t.name === item.term)?.id || item.term;
+      setValue('term', termId);
+      setValue('max_score', Number(item.max_score));
       setValue('is_mandatory', item.is_mandatory);
       setValue('is_current', item.is_current);
       setValue('is_resit', item.is_resit);
@@ -116,11 +118,17 @@ export function Sequences() {
 
   const onSubmit = async (formData: FormData) => {
     try {
+      // Ensure max_score is a clean integer
+      const payload = {
+        ...formData,
+        max_score: Number(formData.max_score),
+      };
+
       if (editingItem?.id) {
-        await sequenceApi.update(editingItem.id, formData);
+        await sequenceApi.update(editingItem.id, payload);
         toast.success('Sequence updated successfully');
       } else {
-        await sequenceApi.create(formData);
+        await sequenceApi.create(payload);
         toast.success('Sequence created successfully');
       }
       setIsModalOpen(false);
@@ -161,7 +169,7 @@ export function Sequences() {
       await sequenceApi.setAsCurrent(id);
       toast.success('Sequence set as current successfully');
       fetchSequences();
-    } catch (error: any) {
+    } catch (error) {
       toast.error('Failed to set sequence as current');
     }
   };
@@ -189,11 +197,7 @@ export function Sequences() {
       header: 'Attributes',
       accessor: (item: Sequence) => (
         <div className="flex flex-wrap gap-1">
-          {item.is_mandatory ? (
-            <StatusBadge status="mandatory" />
-          ) : (
-            <StatusBadge status="optional" />
-          )}
+          {item.is_mandatory ? <StatusBadge status="mandatory" /> : <StatusBadge status="optional" />}
           {item.is_resit && <StatusBadge status="resit" />}
         </div>
       ),
@@ -221,7 +225,6 @@ export function Sequences() {
               </button>
             </Can>
           )}
-
           <Can permission="change.sequence">
             <button
               onClick={() => handleOpenModal(item)}
@@ -230,7 +233,6 @@ export function Sequences() {
               Edit
             </button>
           </Can>
-
           <Can permission="delete.sequence">
             <button
               onClick={() => {
@@ -256,7 +258,6 @@ export function Sequences() {
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Term Filter */}
           <div className="relative">
             <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <select
@@ -343,7 +344,7 @@ export function Sequences() {
               >
                 <option value="">Select Term</option>
                 {terms.map((t) => (
-                  <option key={t.id} value={t.name}>
+                  <option key={t.id} value={t.id}>
                     {t.name}
                   </option>
                 ))}
