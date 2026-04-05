@@ -23,7 +23,7 @@ import { ScrollArea } from '../../components/ui/ScrollArea';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 
 import { useAuthStore } from '@/app/store/authStore';
-import { useHasPermission, Can } from '@/hooks/shared/useHasPermission';
+import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 
 const baseNavStructure = [
@@ -120,7 +120,7 @@ export function DashboardSidebar({
   setIsHovered,
 }: DashboardSidebarProps) {
   const location = useLocation();
-  const { getLabel, getPlural } = useInstitutionConfig();
+  const { getPlural } = useInstitutionConfig();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const isExpanded = isPinned || isHovered;
 
@@ -147,8 +147,7 @@ export function DashboardSidebar({
   // Helper to get dynamic title for children that use config keys
   const getDynamicTitle = (item: any) => {
     if (item.titleKey) {
-      const base = getLabel(item.titleKey as any);
-      return getPlural(item.titleKey as any); // most academic terms are plural
+      return getPlural(item.titleKey as any);
     }
     return item.title;
   };

@@ -1,17 +1,40 @@
 // src/features/academic/pages/AcademicYears.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PlusIcon } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { DataTable } from '@/components/DataTable';
 import { Modal } from '@/components/Modal';
 import { StatusBadge } from '@/components/StatusBadge';
 import { AcademicYear, PaginatedResponse } from '@/types/academic';
-import { academicYearsApi } from '../hooks/academicYear';
+import { academicYearsApi } from '../hooks/academicyear';
 import { Can } from '@/hooks/shared/useHasPermission';
+import { toast } from 'sonner';
+
+const academicYearSchema = z
+  .object({
+    name: z.string().min(3, 'Name must be at least 3 characters'),
+    start_date: z.string().min(1, 'Start date is required'),
+    end_date: z.string().min(1, 'End date is required'),
+    is_current: z.boolean().optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.start_date || !data.end_date) return true;
+      return new Date(data.end_date) > new Date(data.start_date);
+    },
+    {
+      message: 'End date must be after start date',
+      path: ['end_date'],
+    }
+  );
+
+type FormData = z.infer<typeof academicYearSchema>;
 
 export function AcademicYears() {
   const [response, setResponse] = useState<PaginatedResponse<AcademicYear> | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
@@ -20,15 +43,25 @@ export function AcademicYears() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<AcademicYear | null>(null);
   const [itemToDelete, setItemToDelete] = useState<AcademicYear | null>(null);
+  const [serverError, setServerError] = useState<string>('');
 
-  const [formData, setFormData] = useState<Partial<AcademicYear>>({
-    name: '',
-    start_date: '',
-    end_date: '',
-    is_current: false,
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(academicYearSchema),
+    defaultValues: {
+      name: '',
+      start_date: '',
+      end_date: '',
+      is_current: false,
+    },
   });
 
-  // Server-side fetch (pagination + search)
+  // Fetch data
   const fetchAcademicYears = useCallback(async () => {
     try {
       setLoading(true);
@@ -36,7 +69,7 @@ export function AcademicYears() {
       setResponse(data);
     } catch (error) {
       console.error('Failed to fetch academic years:', error);
-      // TODO: Add toast notification here if you have one
+      toast.error('Failed to load academic years');
     } finally {
       setLoading(false);
     }
@@ -46,54 +79,87 @@ export function AcademicYears() {
     fetchAcademicYears();
   }, [fetchAcademicYears]);
 
+  // Open modal
   const handleOpenModal = (item?: AcademicYear) => {
+    setServerError('');
     if (item) {
       setEditingItem(item);
-      setFormData(item);
+      setValue('name', item.name);
+      setValue('start_date', item.start_date);
+      setValue('end_date', item.end_date);
+      setValue('is_current', item.is_current);
     } else {
       setEditingItem(null);
-      setFormData({ name: '', start_date: '', end_date: '', is_current: false });
+      reset({ name: '', start_date: '', end_date: '', is_current: false });
     }
     setIsModalOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Save (create or update)
+  const onSubmit = async (formData: FormData) => {
+    setServerError('');
     try {
       if (editingItem?.id) {
         await academicYearsApi.update(editingItem.id, formData);
+        toast.success('Academic year updated successfully');
       } else {
         await academicYearsApi.create(formData);
+        toast.success('Academic year created successfully');
       }
       setIsModalOpen(false);
       fetchAcademicYears(); // refresh list
-    } catch (error) {
-      console.error('Failed to save academic year:', error);
+    } catch (error: any) {
+      console.error('Save error:', error);
+
+      // Handle server validation / non_field_errors
+      if (error.response?.data) {
+        const serverData = error.response.data;
+
+        // Case 1: non_field_errors
+        if (serverData.non_field_errors && Array.isArray(serverData.non_field_errors)) {
+          setServerError(serverData.non_field_errors[0]);
+          return;
+        }
+
+        // Case 2: field-specific errors (start_date, end_date, name, etc.)
+        if (serverData.start_date) setServerError(serverData.start_date[0]);
+        else if (serverData.end_date) setServerError(serverData.end_date[0]);
+        else if (serverData.name) setServerError(serverData.name[0]);
+        else if (typeof serverData === 'string') setServerError(serverData);
+        else setServerError('An unexpected error occurred. Please try again.');
+      } else {
+        setServerError('Failed to save. Please check your connection.');
+      }
     }
   };
 
+  // Delete
   const handleDelete = async () => {
     if (!itemToDelete?.id) return;
     try {
       await academicYearsApi.delete(itemToDelete.id);
+      toast.success('Academic year deleted');
       fetchAcademicYears();
-    } catch (error) {
-      console.error('Failed to delete academic year:', error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to delete');
     } finally {
       setIsDeleteModalOpen(false);
+      setItemToDelete(null);
     }
   };
 
+  // Set as Current (only for past years)
   const handleSetAsCurrent = async (id: string) => {
     try {
       await academicYearsApi.setAsCurrent(id);
+      toast.success('Academic year set as current');
       fetchAcademicYears();
-    } catch (error) {
-      console.error('Failed to set academic year as current:', error);
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to set as current');
     }
   };
 
-  // Fallback while loading / first render
+  // Fallback table data
   const tableResponse: PaginatedResponse<AcademicYear> = response ?? {
     data: [],
     pagination: {
@@ -115,17 +181,13 @@ export function AcademicYears() {
     {
       header: 'Status',
       accessor: (item: AcademicYear) => (
-        <StatusBadge
-          status={item.is_current ? 'current' : 'inactive'}
-          label={item.is_current ? 'Current' : 'Past'}
-        />
+        <StatusBadge status={item.is_current ? 'current' : 'inactive'} label={item.is_current ? 'Current' : 'Past'} />
       ),
     },
     {
       header: 'Actions',
       accessor: (item: AcademicYear) => (
         <div className="flex items-center gap-2">
-          {/* Set as Current – only for past years */}
           {!item.is_current && (
             <Can permission="set_current.academicyear">
               <button
@@ -137,7 +199,6 @@ export function AcademicYears() {
             </Can>
           )}
 
-          {/* Edit – only for current year */}
           {item.is_current && (
             <Can permission="change.academicyear">
               <button
@@ -149,7 +210,6 @@ export function AcademicYears() {
             </Can>
           )}
 
-          {/* Delete */}
           <Can permission="delete.academicyear">
             <button
               onClick={() => {
@@ -200,7 +260,7 @@ export function AcademicYears() {
             setItemToDelete(item);
             setIsDeleteModalOpen(true);
           }}
-          loading={loading} // ← DataTable can show a spinner if you add support for this prop
+          loading={loading}
           actions={false}
         />
       </div>
@@ -208,55 +268,62 @@ export function AcademicYears() {
       {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setServerError('');
+        }}
         title={editingItem ? 'Edit Academic Year' : 'Add Academic Year'}
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {serverError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {serverError}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Name</label>
             <input
-              required
-              type="text"
-              value={formData.name || ''}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              {...register('name')}
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               placeholder="e.g. 2024/2025"
             />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
               <input
-                required
                 type="date"
-                value={formData.start_date || ''}
-                onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                {...register('start_date')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
+              {errors.start_date && <p className="text-red-500 text-xs mt-1">{errors.start_date.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">End Date</label>
               <input
-                required
                 type="date"
-                value={formData.end_date || ''}
-                onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                {...register('end_date')}
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
+              {errors.end_date && <p className="text-red-500 text-xs mt-1">{errors.end_date.message}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2">
+
+          {/* <div className="flex items-center gap-2 pt-2">
             <input
               type="checkbox"
               id="is_current"
-              checked={formData.is_current || false}
-              onChange={(e) => setFormData({ ...formData, is_current: e.target.checked })}
+              {...register('is_current')}
               className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
             />
             <label htmlFor="is_current" className="text-sm text-slate-700">
               Set as current academic year
             </label>
-          </div>
+          </div> */}
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button
               type="button"

@@ -7,6 +7,7 @@ import { DashboardLayout } from "@/app/layout/DashboardLayout";
 import { DashboardOverview } from "@/app/layout/DashboardOverview";
 // import { PlaceholderPage } from "@/pages/dashboard/PlaceholderPage";
 import { AcademicYears } from "@/features/academic/pages/AcademicYears";
+import { Terms } from "@/features/academic/pages/Terms";
 
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverview />} />
         <Route path="academic-years" element={<AcademicYears />} />
+        <Route path="terms" element={<Terms />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>

@@ -6,23 +6,50 @@ import { Search, Bell, ChevronRight } from 'lucide-react';
 import { DashboardSidebar } from './DashboardSidebar';
 import { Input } from '../../components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 
 export function DashboardLayout() {
   const [isPinned, setIsPinned] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const location = useLocation();
 
+  // Institutional config for dynamic labels
+  const { getLabel, getPlural } = useInstitutionConfig();
+
   const sidebarWidth = isPinned ? 280 : 72;
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
+
+  // Dynamic breadcrumb mapping
+  const getBreadcrumbLabel = (segment: string, index: number): string => {
+    const lower = segment.toLowerCase();
+
+    // Map common routes to config keys
+    if (lower === 'terms') return getPlural('academic_period');
+    if (lower === 'study-levels') return getPlural('class_progression_name');
+    if (lower === 'sequences') return getPlural('academic_period'); // or a dedicated key if you have one
+    if (lower === 'subjects') return getLabel('subject') || 'Subjects';
+    if (lower === 'faculties') return getLabel('faculty') || 'Faculties';
+    if (lower === 'departments') return getLabel('department') || 'Departments';
+    if (lower === 'classrooms') return getLabel('classroom') || 'Classrooms';
+
+    // Fallback: capitalize and replace dashes
+    return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
+  };
+
   const breadcrumbs = pathSegments.map((segment, i) => ({
-    name: segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' '),
+    name: getBreadcrumbLabel(segment, i),
     path: `/${pathSegments.slice(0, i + 1).join('/')}`,
   }));
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <DashboardSidebar isPinned={isPinned} setIsPinned={setIsPinned} isHovered={isHovered} setIsHovered={setIsHovered} />
+      <DashboardSidebar
+        isPinned={isPinned}
+        setIsPinned={setIsPinned}
+        isHovered={isHovered}
+        setIsHovered={setIsHovered}
+      />
 
       <motion.main
         animate={{ marginLeft: sidebarWidth }}
@@ -35,7 +62,9 @@ export function DashboardLayout() {
             {breadcrumbs.map((crumb, i) => (
               <React.Fragment key={crumb.path}>
                 {i > 0 && <ChevronRight size={16} className="mx-2 text-gray-400" />}
-                <span className={i === breadcrumbs.length - 1 ? 'text-gray-900 font-semibold' : ''}>{crumb.name}</span>
+                <span className={i === breadcrumbs.length - 1 ? 'text-gray-900 font-semibold' : ''}>
+                  {crumb.name}
+                </span>
               </React.Fragment>
             ))}
           </div>
@@ -43,7 +72,10 @@ export function DashboardLayout() {
           <div className="flex items-center gap-6">
             <div className="relative hidden md:block w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <Input placeholder="Search students, classes..." className="pl-10 h-9 bg-gray-50 border-gray-200 focus-visible:ring-orange-500 rounded-full" />
+              <Input
+                placeholder="Search students, classes..."
+                className="pl-10 h-9 bg-gray-50 border-gray-200 focus-visible:ring-orange-500 rounded-full"
+              />
             </div>
 
             <button className="relative text-gray-500 hover:text-orange-600">
