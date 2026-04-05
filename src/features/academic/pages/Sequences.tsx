@@ -1,5 +1,5 @@
 // src/features/academic/pages/Sequences.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PlusIcon, FilterIcon } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,12 +42,19 @@ export function Sequences() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTermId, setSelectedTermId] = useState('');   // ← Now holds Term ID
     const [currentPage, setCurrentPage] = useState(1);
-    const pageSize = 20;
+    const pageSize = 10;
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Sequence | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Sequence | null>(null);
+
+    const currentTermId = useMemo(() => {
+        const currentSeq = response?.data?.find((s: Sequence) => s.is_current);
+        if (!currentSeq || !terms.length) return null;
+        const matchingTerm = terms.find((t) => t.name === currentSeq.term);
+        return matchingTerm ? String(matchingTerm.id) : null;
+    }, [response, terms]);
 
     const {
         register,
@@ -106,9 +113,9 @@ export function Sequences() {
             setEditingItem(item);
             setValue('name', item.name);
             setValue('code', item.code);
-            // Ensure we set the real Term ID
+            // Ensure we set the real Term ID as string to prevent Zod validation error (expected string, received number)
             const termId = terms.find((t) => t.name === item.term)?.id || item.term;
-            setValue('term', termId);
+            setValue('term', String(termId));
             setValue('max_score', Number(item.max_score));
             setValue('is_mandatory', item.is_mandatory);
             setValue('is_current', item.is_current);
@@ -165,16 +172,6 @@ export function Sequences() {
         } finally {
             setIsDeleteModalOpen(false);
             setItemToDelete(null);
-        }
-    };
-
-    const handleSetAsCurrent = async (id: string) => {
-        try {
-            await sequenceApi.setAsCurrent(id);
-            toast.success('Sequence set as current successfully');
-            fetchSequences();
-        } catch (error) {
-            toast.error('Failed to set sequence as current');
         }
     };
 
@@ -277,11 +274,15 @@ export function Sequences() {
                             className="w-full pl-9 pr-8 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white appearance-none"
                         >
                             <option value="">All {getPlural('academic_period')}</option>
-                            {terms.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.name}
-                                </option>
-                            ))}
+                            {terms.map((t) => {
+                                const termIdStr = String(t.id);
+                                const isCurrentTerm = currentTermId === termIdStr;
+                                return (
+                                    <option key={t.id} value={t.id}>
+                                        {t.name}{isCurrentTerm ? ' (Current)' : ''}
+                                    </option>
+                                );
+                            })}
                         </select>
                     </div>
 
@@ -345,11 +346,20 @@ export function Sequences() {
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
                             >
                                 <option value="">Select {getLabel('academic_period')}</option>
-                                {terms.map((t) => (
-                                    <option key={t.id} value={t.id}>
-                                        {t.name}
-                                    </option>
-                                ))}
+                                {terms.map((t) => {
+                                    const termIdStr = String(t.id);
+                                    const isCurrentTerm = currentTermId === termIdStr;
+                                    const disabledForCreate = !editingItem && currentTermId !== null && !isCurrentTerm;
+                                    return (
+                                        <option
+                                            key={t.id}
+                                            value={t.id}
+                                            disabled={disabledForCreate}
+                                        >
+                                            {t.name}{isCurrentTerm ? ' (Current)' : ''}
+                                        </option>
+                                    );
+                                })}
                             </select>
                             {errors.term && <p className="text-red-500 text-xs mt-1">{errors.term.message}</p>}
                         </div>
@@ -365,17 +375,16 @@ export function Sequences() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                         <label className="flex items-center gap-2">
                             <input type="checkbox" {...register('is_mandatory')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
                             <span className="text-sm text-slate-700">Mandatory</span>
                         </label>
                         <Can permission="set_current.sequence">
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('is_current')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
-                            <span className="text-sm text-slate-700">Current</span>
-                        </label>
-
+                            <label className="flex items-center gap-2">
+                                <input type="checkbox" {...register('is_current')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
+                                <span className="text-sm text-slate-700">Current</span>
+                            </label>
                         </Can>
                         <label className="flex items-center gap-2">
                             <input type="checkbox" {...register('is_resit')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
