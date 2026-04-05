@@ -28,10 +28,10 @@ export function DashboardLayout() {
     if (lower === 'terms') return getPlural('academic_period');
     if (lower === 'study-levels') return getPlural('class_progression_name');
     if (lower === 'sequences') return getPlural('academic_period'); // or a dedicated key if you have one
-    if (lower === 'subjects') return getLabel('subject') || 'Subjects';
+    if (lower === 'subjects') return getLabel('subject_naming') || 'Subjects';
     if (lower === 'faculties') return getLabel('faculty') || 'Faculties';
     if (lower === 'departments') return getLabel('department') || 'Departments';
-    if (lower === 'classrooms') return getLabel('classroom') || 'Classrooms';
+    if (lower === 'classrooms') return getLabel('class_progression_name') || 'Classrooms';
 
     // Fallback: capitalize and replace dashes
     return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');

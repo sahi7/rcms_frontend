@@ -10,7 +10,10 @@ import { AcademicYears } from "@/features/academic/pages/AcademicYears";
 import { Terms } from "@/features/academic/pages/Terms";
 import { Sequences } from "@/features/academic/pages/Sequences";
 import { StudyLevels } from "@/features/academic/pages/StudyLevels";
-
+import { ClassAssignments } from "@/features/curriculum/pages/ClassAssignmentsPage";
+import { CurriculumSubjects } from "@/features/curriculum/pages/CurriculumSubjectsPage";
+import { SubjectAssignments } from "@/features/curriculum/pages/SubjectAssignmentsPage";
+import { Subjects } from "@/features/curriculum/pages/SubjectsPage";
 
 
 export default function App() {
@@ -48,6 +51,11 @@ export default function App() {
         <Route path="terms" element={<Terms />} />
         <Route path="sequences" element={<Sequences />} />
         <Route path="study-levels" element={<StudyLevels />} />
+        <Route path="class-assignments" element={<ClassAssignments />} />
+        <Route path="curriculum-subjects" element={<CurriculumSubjects />} />
+        <Route path="subject-assignments" element={<SubjectAssignments />} />
+        <Route path="subjects" element={<Subjects />} />
+
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>

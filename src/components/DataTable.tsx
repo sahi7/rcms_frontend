@@ -7,7 +7,7 @@ import {
   Edit2Icon,
   Trash2Icon,
   SearchIcon,
-  Loader2Icon,          // ← new import for spinner
+  Loader2Icon,
 } from 'lucide-react'
 import { PaginatedResponse } from '@/types/academic'
 
@@ -16,7 +16,7 @@ interface Column<T> {
   accessor: keyof T | ((item: T) => React.ReactNode)
 }
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends { id: React.Key }> {
   data: PaginatedResponse<T>
   columns: Column<T>[]
   onPageChange: (page: number) => void
@@ -25,14 +25,10 @@ interface DataTableProps<T> {
   onDelete: (item: T) => void
   searchTerm: string
   actions?: boolean
-  loading?: boolean          // ← NEW: loading prop
+  loading?: boolean
 }
 
-export function DataTable<
-  T extends {
-    id: string
-  },
->({
+export function DataTable<T extends { id: React.Key }>({
   data,
   columns,
   onPageChange,
@@ -41,7 +37,7 @@ export function DataTable<
   onDelete,
   searchTerm,
   actions = true,
-  loading = false,           // ← default false
+  loading = false,
 }: DataTableProps<T>) {
   const { pagination } = data
 
@@ -55,7 +51,7 @@ export function DataTable<
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => onSearch(e.target.value)}
-            disabled={loading}                     // ← disable search while loading
+            disabled={loading}
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white disabled:opacity-50"
           />
         </div>
@@ -96,7 +92,7 @@ export function DataTable<
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2Icon className="w-8 h-8 animate-spin text-orange-500" />
                     <span className="text-slate-500 text-sm font-medium">
-                      Loading academic years...
+                      Loading...
                     </span>
                   </div>
                 </td>
@@ -115,19 +111,10 @@ export function DataTable<
               /* DATA ROWS */
               data.data.map((item, rowIndex) => (
                 <motion.tr
-                  initial={{
-                    opacity: 0,
-                    y: 10,
-                  }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                  }}
-                  transition={{
-                    duration: 0.2,
-                    delay: rowIndex * 0.05,
-                  }}
-                  key={item.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: rowIndex * 0.05 }}
+                  key={item.id}                    // ← works with number OR string now
                   className="hover:bg-slate-50/80 transition-colors group"
                 >
                   {columns.map((col, colIndex) => (
@@ -167,7 +154,7 @@ export function DataTable<
         </table>
       </div>
 
-      {/* Pagination footer – remains visible but can be disabled during loading */}
+      {/* Pagination footer */}
       <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">
           <button
@@ -177,33 +164,34 @@ export function DataTable<
           >
             <ChevronLeftIcon className="w-4 h-4" />
           </button>
+
           <div className="flex items-center gap-1">
-            {Array.from(
-              {
-                length: Math.min(5, pagination.total_pages),
-              },
-              (_, i) => {
-                let pageNum = i + 1
-                if (pagination.total_pages > 5 && pagination.current_page > 3) {
-                  pageNum = pagination.current_page - 2 + i
-                  if (pageNum > pagination.total_pages) {
-                    pageNum = pagination.total_pages - (4 - i)
-                  }
+            {Array.from({ length: Math.min(5, pagination.total_pages) }, (_, i) => {
+              let pageNum = i + 1
+              if (pagination.total_pages > 5 && pagination.current_page > 3) {
+                pageNum = pagination.current_page - 2 + i
+                if (pageNum > pagination.total_pages) {
+                  pageNum = pagination.total_pages - (4 - i)
                 }
-                if (pageNum > pagination.total_pages) return null
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => onPageChange(pageNum)}
-                    disabled={loading}
-                    className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${pagination.current_page === pageNum ? 'bg-orange-500 text-white' : 'text-slate-600 hover:bg-slate-200'} disabled:opacity-50`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              },
-            )}
+              }
+              if (pageNum > pagination.total_pages) return null
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => onPageChange(pageNum)}
+                  disabled={loading}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                    pagination.current_page === pageNum
+                      ? 'bg-orange-500 text-white'
+                      : 'text-slate-600 hover:bg-slate-200'
+                  } disabled:opacity-50`}
+                >
+                  {pageNum}
+                </button>
+              )
+            })}
           </div>
+
           <button
             onClick={() => onPageChange(pagination.current_page + 1)}
             disabled={!pagination.has_next || loading}
