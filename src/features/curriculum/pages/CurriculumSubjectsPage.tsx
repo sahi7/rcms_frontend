@@ -13,7 +13,7 @@ import { SearchableSelect } from '@/components/SearchableSelect'
 import { MultiSelect } from '@/components/MultiSelect'
 import {
   CurriculumSubject,
-  CurriculumSubjectPayload, // still imported (only for the hook)
+  CurriculumSubjectPayload,
 } from '@/types/curriculum'
 import {
   useCurriculumSubjects,
@@ -23,14 +23,16 @@ import {
 import { useSubjects } from '../hooks/useSubjects'
 import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
+import { useListQuery } from '@/hooks/shared/useApiQuery'
+import { Term } from '@/types/academic'
 
-// Local payload type that exactly matches what the server expects (plural subjects + term_number)
+// Local payload type that exactly matches the server (plural subjects + nullable term_number)
 type CurriculumSubjectCreatePayload = {
   department: number
   class_room: number
-  subjects: number[]          // ← plural array (what the server wants)
+  subjects: number[]
   subject_role: 1 | 2
-  term_number: number
+  term_number: number | null   // ← now nullable as requested
 }
 
 export function CurriculumSubjects() {
@@ -49,10 +51,17 @@ export function CurriculumSubjects() {
   const createMutation = useCreateCurriculumSubject()
   const deleteMutation = useDeleteCurriculumSubject()
 
-  // Lookup maps
+  // Lookup data
   const { data: subjectsData } = useSubjects({ page_size: 200 })
   const { data: departmentsData } = useDepartments({ page_size: 200 })
   const { data: classroomsData } = useClassRooms({ page_size: 200 })
+
+  // ← NEW: Fetch available terms (exactly like academic-years in other pages)
+  const { data: termsData } = useListQuery<Term>(
+    'terms',
+    '/terms/',
+    { page_size: 50 }
+  )
 
   const subjectMap = useMemo(() => {
     const map: Record<number, string> = {}
@@ -71,6 +80,14 @@ export function CurriculumSubjects() {
     classroomsData?.data.forEach((c) => (map[c.id] = c.name))
     return map
   }, [classroomsData])
+
+  // ← NEW: Term options (value = term_number, label = name)
+  const termOptions = useMemo(() => {
+    return (termsData?.data || []).map((t) => ({
+      value: t.term_number,
+      label: t.name,
+    }))
+  }, [termsData])
 
   const departmentOptions = (departmentsData?.data || []).map((d) => ({
     value: d.id,
@@ -91,16 +108,15 @@ export function CurriculumSubjects() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<CurriculumSubject | null>(null)
 
-  // Form data now matches server payload exactly
+  // Form data now matches server + nullable term_number
   const [formData, setFormData] = useState<CurriculumSubjectCreatePayload>({
     department: 0,
     class_room: 0,
     subjects: [],
     subject_role: 1,
-    term_number: 1,
+    term_number: null,          // ← nullable
   })
 
-  // Fixed columns – now correctly uses `subjects` (plural) to match the actual type + server response
   const columns = [
     {
       header: 'Department',
@@ -149,7 +165,6 @@ export function CurriculumSubjects() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Cast only for the mutation hook – no other files are touched
       await createMutation.mutateAsync(formData as CurriculumSubjectPayload)
       setIsModalOpen(false)
     } catch (error) {
@@ -226,7 +241,7 @@ export function CurriculumSubjects() {
                 class_room: 0,
                 subjects: [],
                 subject_role: 1,
-                term_number: 1,
+                term_number: null,
               })
               setIsModalOpen(true)
             }}
@@ -324,23 +339,20 @@ export function CurriculumSubjects() {
               </select>
             </div>
 
+            {/* ← UPDATED: Term Number is now a searchable dropdown populated from /terms/ */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Term Number
-              </label>
-              <input
-                required
-                type="number"
-                min="1"
-                max="4"
-                value={formData.term_number}
-                onChange={(e) =>
+              <SearchableSelect
+                label="Term"
+                options={termOptions}
+                value={formData.term_number ?? null}
+                onChange={(v) =>
                   setFormData({
                     ...formData,
-                    term_number: parseInt(e.target.value) || 1,
+                    term_number: (v as number) ?? null,   // nullable
                   })
                 }
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                placeholder="Select term..."
+                // not required → field is nullable
               />
             </div>
           </div>
