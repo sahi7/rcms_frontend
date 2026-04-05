@@ -6,14 +6,20 @@ import { useAuthStore } from "@/app/store/authStore";
 import { DashboardLayout } from "@/app/layout/DashboardLayout";
 import { DashboardOverview } from "@/app/layout/DashboardOverview";
 // import { PlaceholderPage } from "@/pages/dashboard/PlaceholderPage";
+
 import { AcademicYears } from "@/features/academic/pages/AcademicYears";
 import { Terms } from "@/features/academic/pages/Terms";
 import { Sequences } from "@/features/academic/pages/Sequences";
 import { StudyLevels } from "@/features/academic/pages/StudyLevels";
+
 import { ClassAssignments } from "@/features/curriculum/pages/ClassAssignmentsPage";
 import { CurriculumSubjects } from "@/features/curriculum/pages/CurriculumSubjectsPage";
 import { SubjectAssignments } from "@/features/curriculum/pages/SubjectAssignmentsPage";
 import { Subjects } from "@/features/curriculum/pages/SubjectsPage";
+
+import { Departments } from "@/features/structure/pages/DepartmentsPage";
+import { ClassRooms } from "@/features/structure/pages/ClassRoomsPage";
+import { Faculties } from "@/features/structure/pages/FacultiesPage";
 
 
 export default function App() {
@@ -55,6 +61,9 @@ export default function App() {
         <Route path="curriculum-subjects" element={<CurriculumSubjects />} />
         <Route path="subject-assignments" element={<SubjectAssignments />} />
         <Route path="subjects" element={<Subjects />} />
+        <Route path="departments" element={<Departments />} />
+        <Route path="classrooms" element={<ClassRooms />} />
+        <Route path="faculties" element={<Faculties />} />
 
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
