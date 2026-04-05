@@ -10,7 +10,7 @@ import {
 } from '@/types/curriculum'
 
 const KEY = 'curriculum-subjects'
-const ENDPOINT = '/curriculum-subjects/'
+const ENDPOINT = '/c-subjects/'
 
 export function useCurriculumSubjects(params: Record<string, any> = {}) {
   return useListQuery<CurriculumSubject>(KEY, ENDPOINT, params)
