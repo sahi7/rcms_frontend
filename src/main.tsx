@@ -26,6 +26,7 @@ const queryClient = new QueryClient({
     },
   },
 });
+export { queryClient };
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

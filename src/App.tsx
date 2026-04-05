@@ -6,6 +6,8 @@ import { useAuthStore } from "@/app/store/authStore";
 import { DashboardLayout } from "@/app/layout/DashboardLayout";
 import { DashboardOverview } from "@/app/layout/DashboardOverview";
 // import { PlaceholderPage } from "@/pages/dashboard/PlaceholderPage";
+import { AcademicYears } from "@/features/academic/pages/AcademicYears";
+
 
 export default function App() {
   const { isAuthenticated, fetchMe } = useAuthStore();
@@ -38,6 +40,8 @@ export default function App() {
     <Routes>
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverview />} />
+        <Route path="academic-years" element={<AcademicYears />} />
+        
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>
 

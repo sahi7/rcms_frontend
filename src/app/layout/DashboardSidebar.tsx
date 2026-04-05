@@ -29,7 +29,7 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 const baseNavStructure = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'view.dashboard' },
   {
-    title: 'Academic',
+    title: 'Academics',
     icon: GraduationCap,
     permission: 'view.academicyear',
     children: [
@@ -66,24 +66,24 @@ const baseNavStructure = [
     permission: 'view.student',
     children: [
       { title: 'All Students', path: '/dashboard/students', permission: 'view.student' },
-      { title: 'Bulk Upload', path: '/dashboard/students/bulk-upload', permission: 'add.student' },
+      { title: 'Bulk Upload', path: '/dashboard/students/bulk-upload', permission: 'add.studentbulkupload' },
     ],
   },
   {
     title: 'Marks & Assessments',
     icon: ClipboardCheck,
-    permission: 'view.marks',
+    permission: 'view.studentmarks',
     children: [
-      { title: 'Overview', path: '/dashboard/marks/overview', permission: 'view.marks' },
-      { title: 'Upload Marks', path: '/dashboard/marks/upload', permission: 'add.marks' },
+      { title: 'Overview', path: '/dashboard/marks/overview', permission: 'view.studentmarks' },
+      { title: 'Upload Marks', path: '/dashboard/marks/upload', permission: 'add.studentmarks' },
     ],
   },
   {
     title: 'Reports',
     icon: FileBarChart,
-    permission: 'view.report',
+    permission: 'view.generate_reports',
     children: [
-      { title: 'Generate Reports', path: '/dashboard/reports/generate', permission: 'view.report' },
+      { title: 'Generate Reports', path: '/dashboard/reports/generate', permission: 'view.generate_reports' },
     ],
   },
   {

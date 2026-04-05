@@ -88,7 +88,7 @@ export default function Step1SchoolInfo({ onNext }: { onNext: () => void }) {
           <Input 
             id="phone" 
             {...register('phone')} 
-            placeholder="237 6XX XXX XXX" 
+            placeholder="6XX XXX XXX" 
             className="focus-visible:ring-orange-500" 
           />
         </div>

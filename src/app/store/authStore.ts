@@ -4,6 +4,7 @@ import { create } from "zustand";
 import Cookies from "js-cookie";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { clearStorage } from "@/lib/clearStorage";
 
 interface User {
   id: number;
@@ -72,6 +73,7 @@ export const useAuthStore = create<{
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
     set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
+    clearStorage();
   },
 
   fetchMe: async () => {

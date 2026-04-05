@@ -84,7 +84,7 @@ export default function Step2AdminSetup({ onNext, onBack }: { onNext: () => void
 
       <div>
         <Label htmlFor="admin_phone">Admin Phone (optional)</Label>
-        <Input id="admin_phone" {...register('admin_phone')} className="focus-visible:ring-orange-500" />
+        <Input id="admin_phone" {...register('admin_phone')} placeholder="6XX XXX XXX" className="focus-visible:ring-orange-500" />
       </div>
 
       <div className="flex gap-4">
