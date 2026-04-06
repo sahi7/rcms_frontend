@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { MultiSelect } from '@/components/MultiSelect'
 
-export function UserDetailsPage() {
+
+export function UserDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'taught_subjects'>('overview')

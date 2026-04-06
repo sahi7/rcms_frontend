@@ -8,7 +8,7 @@ import { useUsersList, useDeleteUser } from '@/hooks/shared/useUsers'
 import { User } from '@/types/shared'
 import { Can } from '@/hooks/shared/useHasPermission'
 
-export function UsersListPage() {
+export function UsersList() {
   const navigate = useNavigate()
 
   const [page, setPage] = useState(1)

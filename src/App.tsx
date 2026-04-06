@@ -26,6 +26,12 @@ import { StudentsList } from "@/features/students/pages/StudentsListPage";
 import { StudentDetails } from "@/features/students/pages/StudentDetailsPage";
 import { StudentForm } from "@/features/students/pages/StudentFormPage";
 
+import { Roles } from "@/features/users/pages/RolesPage";
+import { UsersList } from "@/features/users/pages/UsersListPage";
+import { UserDetails } from "@/features/users/pages/UserDetailsPage";
+import { UserForm } from "@/features/users/pages/UserFormPage";
+
+
 export default function App() {
   const { isAuthenticated, fetchMe } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +82,11 @@ export default function App() {
         <Route path="students" element={<StudentsList />} />
         <Route path="students" element={<StudentDetails />} />
         <Route path="students" element={<StudentForm />} />
+
+        <Route path="roles" element={<Roles />} />
+        <Route path="users" element={<UsersList />} />
+        <Route path="users/detail" element={<UserDetails />} />
+        <Route path="users/form" element={<UserForm />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>

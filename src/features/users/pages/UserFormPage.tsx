@@ -54,7 +54,7 @@ const predefinedRoles = [
     'student',
 ]
 
-export function UserFormPage() {
+export function UserForm() {
     const navigate = useNavigate()
     const { getLabel } = useInstitutionConfig()
 

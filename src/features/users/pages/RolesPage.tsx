@@ -1,3 +1,4 @@
+// src/features/users/pages/RolesPage.tsx
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -6,65 +7,42 @@ import {
   Trash2,
   Edit,
   Save,
-  X,
   Loader2,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  useListQuery,
-  useCreateMutation,
-  useUpdateMutation,
-  useDeleteMutation,
-} from '@/hooks/shared/useApiQuery'
+import { useRoles } from '../hooks/useRoles'
 import { Modal } from '@/components/Modal'
 import { cn } from '@/lib/utils'
-interface Role {
-  role_type: string
-  name: string
-  description: string
-  is_system: boolean
-  permissions: string[]
-  created_at: string
-  updated_at: string
-}
-// Helper to group permissions
+
+// Helper to group permissions (kept exactly as you had it)
 const groupPermissions = (permissions: string[]) => {
   const groups: Record<string, string[]> = {}
   permissions.forEach((perm) => {
-    // Extract category (e.g., 'add_user' -> 'user', 'view_marks' -> 'marks')
     const parts = perm.split('_')
     const category = parts.length > 1 ? parts.slice(1).join(' ') : 'other'
-    if (!groups[category]) {
-      groups[category] = []
-    }
+    if (!groups[category]) groups[category] = []
     groups[category].push(perm)
   })
   return groups
 }
-export function RolesPage() {
+
+export function Roles() {
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingRole, setEditingRole] = useState<Role | null>(null)
+  const [editingRole, setEditingRole] = useState<any>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ roleType: string; name: string } | null>(null)
   const [expandedRole, setExpandedRole] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     role_type: '',
     name: '',
     description: '',
   })
-  const { data: rolesData, isLoading } = useListQuery<Role>(
-    ['roles'],
-    '/roles/',
-  )
-  const createMutation = useCreateMutation<Role, any>('/roles/', [['roles']])
-  const updateMutation = useUpdateMutation<Role, any>(
-    (id) => `/roles/${id}/`,
-    // Assuming role_type is the ID for updates
-    [['roles']],
-  )
-  const deleteMutation = useDeleteMutation((id) => `/roles/${id}/`, [['roles']])
-  const handleOpenModal = (role?: Role) => {
+
+  const { rolesData, isLoading, createMutation, updateMutation, deleteMutation } = useRoles()
+
+  const handleOpenModal = (role?: any) => {
     if (role) {
       setEditingRole(role)
       setFormData({
@@ -74,21 +52,18 @@ export function RolesPage() {
       })
     } else {
       setEditingRole(null)
-      setFormData({
-        role_type: '',
-        name: '',
-        description: '',
-      })
+      setFormData({ role_type: '', name: '', description: '' })
     }
     setIsModalOpen(true)
   }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       if (editingRole) {
         await updateMutation.mutateAsync({
           id: editingRole.role_type,
-          data: formData,
+          payload: formData,
         })
       } else {
         await createMutation.mutateAsync(formData)
@@ -98,15 +73,27 @@ export function RolesPage() {
       console.error('Failed to save role', error)
     }
   }
-  const handleDelete = async (roleType: string) => {
-    if (window.confirm('Are you sure you want to delete this role?')) {
-      try {
-        await deleteMutation.mutateAsync(roleType)
-      } catch (error) {
-        console.error('Failed to delete role', error)
-      }
+
+  const handleDeleteClick = (role: any) => {
+    setDeleteConfirm({
+      roleType: role.role_type,
+      name: role.name,
+    })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
+    try {
+      await deleteMutation.mutateAsync(deleteConfirm.roleType)
+    } catch (error) {
+      console.error('Failed to delete role', error)
+    } finally {
+      setDeleteConfirm(null)
     }
   }
+
+  const roles = rolesData?.data || []
+
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between">
@@ -131,16 +118,17 @@ export function RolesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(rolesData?.results || []).map((role) => {
+          {roles.map((role: any) => {
             const isExpanded = expandedRole === role.role_type
             const groupedPerms = groupPermissions(role.permissions || [])
             const categories = Object.keys(groupedPerms).sort()
+
             return (
               <div
                 key={role.role_type}
                 className={cn(
                   'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col transition-all duration-300',
-                  isExpanded ? 'md:col-span-2 lg:col-span-3' : '',
+                  isExpanded ? 'md:col-span-2 lg:col-span-3' : ''
                 )}
               >
                 <div className="p-5 border-b border-gray-100 flex items-start justify-between">
@@ -150,18 +138,14 @@ export function RolesPage() {
                         'h-10 w-10 rounded-lg flex items-center justify-center',
                         role.is_system
                           ? 'bg-blue-50 text-blue-600'
-                          : 'bg-purple-50 text-purple-600',
+                          : 'bg-purple-50 text-purple-600'
                       )}
                     >
                       <Shield className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {role.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 font-mono">
-                        {role.role_type}
-                      </p>
+                      <h3 className="font-semibold text-gray-900">{role.name}</h3>
+                      <p className="text-xs text-gray-500 font-mono">{role.role_type}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -171,9 +155,7 @@ export function RolesPage() {
                       </span>
                     )}
                     <button
-                      onClick={() =>
-                        setExpandedRole(isExpanded ? null : role.role_type)
-                      }
+                      onClick={() => setExpandedRole(isExpanded ? null : role.role_type)}
                       className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors flex items-center gap-1 text-xs font-medium"
                     >
                       {isExpanded ? (
@@ -189,6 +171,7 @@ export function RolesPage() {
                     </button>
                   </div>
                 </div>
+
                 <div className="p-5 flex-1">
                   <p className="text-sm text-gray-600 mb-4">
                     {role.description || 'No description provided.'}
@@ -197,21 +180,10 @@ export function RolesPage() {
                   <AnimatePresence initial={false}>
                     {isExpanded ? (
                       <motion.div
-                        initial={{
-                          height: 0,
-                          opacity: 0,
-                        }}
-                        animate={{
-                          height: 'auto',
-                          opacity: 1,
-                        }}
-                        exit={{
-                          height: 0,
-                          opacity: 0,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                        }}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
                         <div className="pt-4 border-t border-gray-100">
@@ -231,9 +203,7 @@ export function RolesPage() {
                                       className="text-sm text-gray-700 flex items-start gap-2"
                                     >
                                       <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-                                      <span className="break-all">
-                                        {perm.split('_')[0]}
-                                      </span>
+                                      <span className="break-all">{perm}</span>
                                     </li>
                                   ))}
                                 </ul>
@@ -248,7 +218,7 @@ export function RolesPage() {
                           Quick View
                         </p>
                         <div className="flex flex-wrap gap-1.5">
-                          {role.permissions?.slice(0, 8).map((perm, i) => (
+                          {role.permissions?.slice(0, 8).map((perm: string, i: number) => (
                             <span
                               key={i}
                               className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-50 border border-gray-200 text-gray-600"
@@ -266,6 +236,7 @@ export function RolesPage() {
                     )}
                   </AnimatePresence>
                 </div>
+
                 {!role.is_system && (
                   <div className="px-5 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
                     <button
@@ -275,7 +246,7 @@ export function RolesPage() {
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(role.role_type)}
+                      onClick={() => handleDeleteClick(role)}
                       className="p-1.5 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -288,6 +259,7 @@ export function RolesPage() {
         </div>
       )}
 
+      {/* Edit / Create Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -316,6 +288,7 @@ export function RolesPage() {
               Lowercase, no spaces. Used internally.
             </p>
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Display Name *
@@ -324,28 +297,19 @@ export function RolesPage() {
               type="text"
               required
               value={formData.name}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  name: e.target.value,
-                })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g. Guest Lecturer"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Description
             </label>
             <textarea
               value={formData.description}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  description: e.target.value,
-                })
-              }
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none"
             />
@@ -364,7 +328,7 @@ export function RolesPage() {
               disabled={createMutation.isPending || updateMutation.isPending}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-70"
             >
-              {createMutation.isPending || updateMutation.isPending ? (
+              {(createMutation.isPending || updateMutation.isPending) ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
@@ -374,6 +338,38 @@ export function RolesPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Branded Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <Modal
+          isOpen={true}
+          onClose={() => setDeleteConfirm(null)}
+          title="Delete Role"
+        >
+          <div className="p-6">
+            <p className="text-gray-600">
+              Are you sure you want to delete{' '}
+              <span className="font-medium text-gray-900">{deleteConfirm.name}</span>?
+            </p>
+            <p className="text-sm text-rose-600 mt-2">This action cannot be undone.</p>
+          </div>
+          <div className="flex border-t">
+            <button
+              onClick={() => setDeleteConfirm(null)}
+              className="flex-1 py-4 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+              className="flex-1 py-4 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 transition-colors disabled:opacity-50"
+            >
+              {deleteMutation.isPending ? 'Deleting...' : 'Delete Role'}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
