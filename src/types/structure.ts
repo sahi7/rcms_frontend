@@ -1,3 +1,4 @@
+// src/types/structure.ts
 // ============ Faculty ============
 export interface FacultyBase {
   id: number

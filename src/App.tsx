@@ -80,6 +80,8 @@ export default function App() {
 
         <Route path="students/bulk-upload" element={<StudentBulkUpload />} />
         <Route path="students" element={<StudentsList />} />
+        <Route path="students/create" element={<StudentForm/>} />   {/* Create new student */}
+        <Route path="students/:id" element={<StudentDetails/>} />  {/* Edit existing student (by ID) */}
         <Route path="students" element={<StudentDetails />} />
         <Route path="students" element={<StudentForm />} />
 

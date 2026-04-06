@@ -130,7 +130,7 @@ export function StudentsList() {
       accessor: (student: Student) => (
         <div className="flex items-center justify-end gap-2">
           <button
-            onClick={() => navigate(`/students/${student.id}`)}
+            onClick={() => navigate(`/dashboard/students/${student.id}`)}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
             title="View Details"
           >
@@ -138,7 +138,7 @@ export function StudentsList() {
           </button>
           <Can permission="edit_student">
             <button
-              onClick={() => navigate(`/students/create?id=${student.id}`)}
+              onClick={() => navigate(`/dashboard/students/create?id=${student.id}`)}
               className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
               title="Edit"
             >

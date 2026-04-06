@@ -368,7 +368,14 @@ export function StudentBulkUpload() {
                 ) : (
                   <CheckCircle2 className="h-6 w-6 text-emerald-600" />
                 )}
-                <h2 className="text-lg font-semibold text-slate-800">{uploadResult.message}</h2>
+                {/* <h2 className="text-lg font-semibold text-slate-800">{uploadResult.errors}</h2> */}
+                <h2 className="text-lg font-semibold text-slate-800">
+                  {uploadResult.error_count > 0 && (uploadResult.success_count || 0) === 0
+                    ? 'Upload failed'
+                    : uploadResult.error_count > 0
+                    ? 'Upload completed with errors'
+                    : 'Upload successful'}
+                </h2>
               </div>
               <div className="p-6 bg-white space-y-6">
                 <div className="flex gap-8">
@@ -394,9 +401,10 @@ export function StudentBulkUpload() {
                     <h3 className="text-sm font-medium text-slate-900 mb-2">Error Details</h3>
                     <div className="bg-rose-50 rounded-2xl p-4 max-h-60 overflow-y-auto">
                       <ul className="list-disc list-inside space-y-1 text-sm text-rose-700">
-                        {uploadResult.errors.map((err, i) => (
+                        <li>{uploadResult.message}</li>
+                        {/* {uploadResult.errors.map((err, i) => (
                           <li key={i}>{err}</li>
-                        ))}
+                        ))} */}
                       </ul>
                     </div>
                   </div>
