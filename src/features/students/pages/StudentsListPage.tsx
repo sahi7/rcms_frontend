@@ -1,5 +1,5 @@
-// src/features/students/pages/StudentsListPage.tsx
-import { useState } from 'react'
+// src/features/students/pages/StudentsList.tsx
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus,
@@ -21,10 +21,25 @@ import {
   useDeleteStudent,
 } from '../hooks/useStudents'
 import { Student } from '@/types/academic'
+import type { PaginatedResponse } from '@/types/academic'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { Can } from '@/hooks/shared/useHasPermission'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
 import { useDepartments } from '../../structure/hooks/useDepartments'
+
+const emptyPaginatedResponse: PaginatedResponse<Student> = {
+  data: [],
+  pagination: {
+    current_page: 1,
+    page_size: 20,
+    total_pages: 1,
+    total_count: 0,
+    has_next: false,
+    has_previous: false,
+  },
+  search: { term: '', has_results: false },
+  filters: {},
+}
 
 export function StudentsList() {
   const navigate = useNavigate()
@@ -35,6 +50,9 @@ export function StudentsList() {
   const [classFilter, setClassFilter] = useState<string | number | null>(null)
   const [departmentFilter, setDepartmentFilter] = useState<string | number | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('')
+
+  // Delete confirmation modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string | number; name: string } | null>(null)
 
   const { data: classroomsData } = useClassRooms()
   const { data: departmentsData } = useDepartments()
@@ -49,13 +67,21 @@ export function StudentsList() {
 
   const deleteMutation = useDeleteStudent()
 
-  const handleDelete = async (id: string | number) => {
-    if (window.confirm('Are you sure you want to delete this student?')) {
-      try {
-        await deleteMutation.mutateAsync(id)
-      } catch (error) {
-        console.error('Failed to delete student', error)
-      }
+  const handleDeleteClick = (student: Student) => {
+    setDeleteConfirm({
+      id: student.id,
+      name: `${student.first_name} ${student.last_name}`,
+    })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return
+    try {
+      await deleteMutation.mutateAsync(deleteConfirm.id)
+    } catch (error) {
+      console.error('Failed to delete student', error)
+    } finally {
+      setDeleteConfirm(null)
     }
   }
 
@@ -121,7 +147,7 @@ export function StudentsList() {
           </Can>
           <Can permission="delete_student">
             <button
-              onClick={() => handleDelete(student.id)}
+              onClick={() => handleDeleteClick(student)}
               disabled={deleteMutation.isPending}
               className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors disabled:opacity-50"
               title="Delete"
@@ -230,16 +256,51 @@ export function StudentsList() {
       </div>
 
       <DataTable<Student>
-        data={data || { data: [], pagination: { current_page: 1, page_size: 20, total_pages: 1, total_count: 0, has_next: false, has_previous: false } }}
+        data={data ?? emptyPaginatedResponse}
         columns={columns}
-        isLoading={isLoading}
+        loading={isLoading}
         onSearch={setSearchTerm}
         searchTerm={searchTerm}
         onPageChange={setPage}
         onEdit={(student) => navigate(`/students/create?id=${student.id}`)}
-        onDelete={handleDelete}
-        actions={false}   // we use custom Actions column instead
+        onDelete={(student) => handleDeleteClick(student)}
+        actions={false}
       />
+
+      {/* Branded Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Delete Student</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600">
+                Are you sure you want to delete{' '}
+                <span className="font-medium text-gray-900">{deleteConfirm.name}</span>?
+              </p>
+              <p className="text-sm text-rose-600 mt-2">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex border-t">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-4 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-4 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 transition-colors disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete Student'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

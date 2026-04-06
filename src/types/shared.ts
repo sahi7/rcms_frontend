@@ -1,3 +1,5 @@
+import { Department } from '@/types/structure'
+
 export interface PaginatedResponse<T> {
   data: T[]
   pagination: {
@@ -18,6 +20,8 @@ export interface PaginatedResponse<T> {
 export interface User {
   id: number
   first_name: string
+  role: string
+  department?: Department;
   last_name: string
   email: string
   username?: string

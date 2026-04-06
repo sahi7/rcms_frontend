@@ -22,6 +22,14 @@ export interface CurriculumSubjectBase {
   class_room: number
 }
 
+export interface CurriculumSubjectListItem {
+  id: number
+  department: number
+  subject: number 
+  subject_role: number
+  class_room: number
+}
+
 export type CurriculumSubject = CurriculumSubjectBase
 export type CurriculumSubjectPayload = Omit<CurriculumSubjectBase, 'id'>
 

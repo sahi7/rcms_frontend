@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react'
+// src/features/students/pages/StudentFormPage.tsx
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { z } from 'zod'
-import {
-  useCreateMutation,
-  useUpdateMutation,
-  useDetailQuery,
-} from '@/hooks/shared/useApiQuery'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
-import { Student } from '@/types/academic'
+// import { Student } from '@/types/academic'
 import { cn } from '@/lib/utils'
 import { SearchableSelect } from '@/components/SearchableSelect'
-import { useClassRoomsList } from '@/features/structure/hooks/useClassRooms'
-import { useDepartmentsList } from '@features/structure/hooks/useDepartments'
-// Validation schema
+import { useStudentForm } from '../hooks/useStudentForm'
+
+// Validation schema (unchanged from your original)
 const studentSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
@@ -37,7 +33,9 @@ const studentSchema = z.object({
   emergency_guardian_address: z.string().optional(),
   relationship_to_guardian: z.string().optional(),
 })
+
 type StudentFormData = z.infer<typeof studentSchema>
+
 const initialData: StudentFormData = {
   first_name: '',
   last_name: '',
@@ -45,25 +43,28 @@ const initialData: StudentFormData = {
   registration_number: '',
   enrollment_status: 'active',
 }
-export function StudentFormPage() {
+
+
+export function StudentForm() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const studentId = searchParams.get('id')
-  const isEditing = !!studentId
   const { getLabel } = useInstitutionConfig()
+
   const [formData, setFormData] = useState<StudentFormData>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const { data: classroomsData } = useClassRoomsList()
-  const { data: departmentsData } = useDepartmentsList()
-  // Fetch existing student if editing
-  const { data: existingStudent, isLoading: isLoadingStudent } =
-    useDetailQuery<Student>(
-      ['student', studentId!],
-      `/students/${studentId}/`,
-      {
-        enabled: isEditing,
-      },
-    )
+
+  const {
+    existingStudent,
+    isLoadingStudent,
+    createMutation,
+    updateMutation,
+    isEditing,
+    classroomsData,
+    departmentsData,
+  } = useStudentForm(studentId || undefined)
+
+  // Populate form when editing
   useEffect(() => {
     if (existingStudent) {
       setFormData({
@@ -80,36 +81,18 @@ export function StudentFormPage() {
         preferred_language: existingStudent.preferred_language || '',
         enrollment_status: existingStudent.enrollment_status || 'active',
         emergency_guardian_name: existingStudent.emergency_guardian_name || '',
-        emergency_guardian_email:
-          existingStudent.emergency_guardian_email || '',
-        emergency_guardian_phone:
-          existingStudent.emergency_guardian_phone || '',
-        emergency_guardian_address:
-          existingStudent.emergency_guardian_address || '',
-        relationship_to_guardian:
-          existingStudent.relationship_to_guardian || '',
+        emergency_guardian_email: existingStudent.emergency_guardian_email || '',
+        emergency_guardian_phone: existingStudent.emergency_guardian_phone || '',
+        emergency_guardian_address: existingStudent.emergency_guardian_address || '',
+        relationship_to_guardian: existingStudent.relationship_to_guardian || '',
       })
     }
   }, [existingStudent])
-  const createMutation = useCreateMutation<Student, StudentFormData>(
-    '/students/create/',
-    [['students']],
-  )
-  const updateMutation = useUpdateMutation<
-    Student,
-    StudentFormData & {
-      update: string
-    }
-  >(
-    () => `/students/create/`,
-    // API uses same endpoint with update: "True"
-    [['students'], ['student', studentId!]],
-  )
+
   const isSubmitting = createMutation.isPending || updateMutation.isPending
+
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -121,33 +104,34 @@ export function StudentFormPage() {
             : undefined
           : value,
     }))
-    // Clear error for this field
+
+    // Clear field error
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = {
-          ...prev,
-        }
+        const newErrors = { ...prev }
         delete newErrors[name]
         return newErrors
       })
     }
   }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      // Validate
       const validatedData = studentSchema.parse(formData)
-      // Calculate initials
+
       const initials =
         `${validatedData.first_name[0] || ''}${validatedData.last_name[0] || ''}`.toUpperCase()
+
       const payload = {
         ...validatedData,
         initials,
       }
+
       if (isEditing) {
         await updateMutation.mutateAsync({
-          id: studentId,
-          data: {
+          id: studentId!,
+          payload: {
             ...payload,
             update: 'True',
           },
@@ -155,22 +139,23 @@ export function StudentFormPage() {
       } else {
         await createMutation.mutateAsync(payload)
       }
+
       navigate('/students')
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {}
-        error.errors.forEach((err) => {
-          if (err.path[0]) {
-            newErrors[err.path[0].toString()] = err.message
+        error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            newErrors[issue.path[0].toString()] = issue.message;
           }
-        })
+        });
         setErrors(newErrors)
       } else {
         console.error('API Error:', error)
-        // Handle API errors (could use a toast here)
       }
     }
   }
+
   if (isEditing && isLoadingStudent) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -178,6 +163,7 @@ export function StudentFormPage() {
       </div>
     )
   }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       <div className="flex items-center gap-4">
@@ -221,13 +207,11 @@ export function StudentFormPage() {
                   'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
                   errors.first_name
                     ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300',
+                    : 'border-gray-300'
                 )}
               />
               {errors.first_name && (
-                <p className="mt-1 text-xs text-rose-500">
-                  {errors.first_name}
-                </p>
+                <p className="mt-1 text-xs text-rose-500">{errors.first_name}</p>
               )}
             </div>
             <div>
@@ -243,7 +227,7 @@ export function StudentFormPage() {
                   'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
                   errors.last_name
                     ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300',
+                    : 'border-gray-300'
                 )}
               />
               {errors.last_name && (
@@ -344,16 +328,16 @@ export function StudentFormPage() {
               </label>
               <SearchableSelect
                 options={
-                  classroomsData?.results.map((c) => ({
+                  classroomsData?.data?.map((c: any) => ({
                     value: c.id,
                     label: c.name,
                   })) || []
                 }
-                value={formData.current_class || null}
+                value={formData.current_class || ''}
                 onChange={(val) =>
                   setFormData((prev) => ({
                     ...prev,
-                    current_class: Number(val),
+                    current_class: val ? Number(val) : undefined,
                   }))
                 }
                 placeholder={`Select ${getLabel('classLabel')}...`}
@@ -365,16 +349,16 @@ export function StudentFormPage() {
               </label>
               <SearchableSelect
                 options={
-                  departmentsData?.results.map((d) => ({
+                  departmentsData?.data?.map((d: any) => ({
                     value: d.id,
                     label: d.name,
                   })) || []
                 }
-                value={formData.department || null}
+                value={formData.department || ''}
                 onChange={(val) =>
                   setFormData((prev) => ({
                     ...prev,
-                    department: Number(val),
+                    department: val ? Number(val) : undefined,
                   }))
                 }
                 placeholder={`Select ${getLabel('departmentLabel')}...`}
@@ -404,7 +388,7 @@ export function StudentFormPage() {
                   'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
                   errors.email
                     ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300',
+                    : 'border-gray-300'
                 )}
               />
               {errors.email && (
@@ -423,11 +407,13 @@ export function StudentFormPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
               />
             </div>
+
             <div className="md:col-span-2 pt-4 border-t border-gray-100 mt-2">
               <h3 className="text-sm font-medium text-gray-900 mb-4">
                 Guardian Information
               </h3>
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Guardian Name
@@ -478,7 +464,7 @@ export function StudentFormPage() {
                   'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
                   errors.emergency_guardian_email
                     ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300',
+                    : 'border-gray-300'
                 )}
               />
               {errors.emergency_guardian_email && (

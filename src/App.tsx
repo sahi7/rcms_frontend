@@ -23,6 +23,8 @@ import { Faculties } from "@/features/structure/pages/FacultiesPage";
 
 import { StudentBulkUpload } from "@/features/students/pages/StudentBulkUploadPage";
 import { StudentsList } from "@/features/students/pages/StudentsListPage";
+import { StudentDetails } from "@/features/students/pages/StudentDetailsPage";
+import { StudentForm } from "@/features/students/pages/StudentFormPage";
 
 export default function App() {
   const { isAuthenticated, fetchMe } = useAuthStore();
@@ -55,7 +57,7 @@ export default function App() {
     <Routes>
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverview />} />
-        
+
         <Route path="academic-years" element={<AcademicYears />} />
         <Route path="terms" element={<Terms />} />
         <Route path="sequences" element={<Sequences />} />
@@ -72,6 +74,8 @@ export default function App() {
 
         <Route path="students/bulk-upload" element={<StudentBulkUpload />} />
         <Route path="students" element={<StudentsList />} />
+        <Route path="students" element={<StudentDetails />} />
+        <Route path="students" element={<StudentForm />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>

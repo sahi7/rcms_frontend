@@ -1,9 +1,10 @@
+// src/features/users/hooks/useTaughtSubjects.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import api from '@/lib/api'
 import {
   useListQuery,
   useCreateMutation,
 } from '@/hooks/shared/useApiQuery'
-import { useAuthStore } from '../../../app/store/authStore'
 
 export interface TaughtSubject {
   subject_id: number
@@ -15,16 +16,19 @@ export interface TaughtSubject {
 
 export function useTaughtSubjects(userId: string | number) {
   return useListQuery<TaughtSubject>(
-    ['taught-subjects', String(userId)],
-    `/users/${userId}/taught-subjects/`,
+    `taught-subjects-${userId}`,                    // string key (required by your useListQuery)
+    `/users/${userId}/taught-subjects/`
   )
 }
 
 export function useAddTaughtSubject(userId: string | number) {
   return useCreateMutation<
-    any,
-    { subject_id: number; department_id: number; classroom_ids: number[] }
-  >(`/users/${userId}/taught-subjects/`, [['taught-subjects', String(userId)]])
+    { subject_id: number; department_id: number; classroom_ids: number[] },
+    any
+  >(
+    `/users/${userId}/taught-subjects/`,
+    [`taught-subjects-${userId}`]                  // flat string[] as required by your hook
+  )
 }
 
 export function useRemoveTaughtSubject(userId: string | number) {
@@ -32,36 +36,13 @@ export function useRemoveTaughtSubject(userId: string | number) {
 
   return useMutation({
     mutationFn: async (data: { subject_id: number; department_id: number }) => {
-      const token = useAuthStore.getState().token
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      }
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-
-      const response = await fetch(`/api/users/${userId}/taught-subjects/`, {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify(data),
+      await api.delete(`/users/${userId}/taught-subjects/`, {
+        data,                                    
       })
-
-      if (!response.ok) {
-        let errorData
-        try {
-          errorData = await response.json()
-        } catch {
-          errorData = { message: 'Failed to remove taught subject' }
-        }
-        throw errorData
-      }
-
-      if (response.status === 204) return null
-      return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['taught-subjects', String(userId)],
+        queryKey: [`taught-subjects-${userId}`],
       })
     },
   })

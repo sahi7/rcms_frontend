@@ -36,6 +36,6 @@ export const termsApi = {
   },
 };
 
-export function useTermsList() {
+export function useTerms() {
   return useListQuery<Term>(['terms'], '/terms/')
 }
