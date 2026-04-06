@@ -30,6 +30,13 @@ import { Roles } from "@/features/users/pages/RolesPage";
 import { UsersList } from "@/features/users/pages/UsersListPage";
 import { UserDetails } from "@/features/users/pages/UserDetailsPage";
 import { UserForm } from "@/features/users/pages/UserFormPage";
+import { RoleScopesPage } from '@/features/users/pages/RoleScopesPage'
+
+import { MarkUploadPage } from '@/features/marks/pages/MarkUploadPage'
+import { MarkPreviewPage } from '@/features/marks/pages/MarkPreviewPage'
+import { UploadStatusPage } from '@/features/marks/pages/UploadStatusPage'
+import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
+
 
 
 export default function App() {
@@ -82,13 +89,21 @@ export default function App() {
         <Route path="students" element={<StudentsList />} />
         <Route path="students/create" element={<StudentForm/>} />   {/* Create new student */}
         <Route path="students/:id" element={<StudentDetails/>} />  {/* Edit existing student (by ID) */}
-        <Route path="students" element={<StudentDetails />} />
-        <Route path="students" element={<StudentForm />} />
+        <Route path="students/report" element={<StudentReportPage />} />
+        <Route path="students/report/:studentId" element={<StudentReportPage />} />
+        {/* <Route path="students" element={<StudentDetails />} />
+        <Route path="students" element={<StudentForm />} /> */}
 
         <Route path="roles" element={<Roles />} />
         <Route path="users" element={<UsersList />} />
         <Route path="users/detail" element={<UserDetails />} />
         <Route path="users/form" element={<UserForm />} />
+        <Route path="users/scopes" element={<RoleScopesPage />} />
+
+        <Route path="marks/upload" element={<MarkUploadPage />} />
+        <Route path="marks/preview" element={<MarkPreviewPage />} />
+        <Route path="marks/preview/:groupKey" element={<MarkPreviewPage />} />
+        <Route path="marks/upload-status" element={<UploadStatusPage />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>
