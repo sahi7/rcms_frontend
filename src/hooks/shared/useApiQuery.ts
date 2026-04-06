@@ -1,3 +1,4 @@
+// src/hooks/useApiQuery.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { PaginatedResponse, ListQueryParams } from '@/types/shared'

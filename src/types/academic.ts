@@ -1,3 +1,4 @@
+// src/types/academic
 export interface PaginatedResponse<T> {
   data: T[]
   pagination: {
@@ -55,4 +56,34 @@ export interface Sequence {
   term: string
   is_resit: boolean
   is_results_published: boolean
+}
+
+export interface Student {
+  id: string | number
+  registration_number?: string
+  first_name: string
+  last_name: string
+  email?: string
+  current_class?: number
+  department?: number
+  phone_number?: string
+  initials?: string
+  date_of_birth?: string
+  place_of_birth?: string
+  nationality?: string
+  preferred_language?: string
+  enrollment_status?: string
+  emergency_guardian_name?: string
+  emergency_guardian_email?: string
+  emergency_guardian_phone?: string
+  emergency_guardian_address?: string
+  relationship_to_guardian?: string
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Subject {
+  id: number
+  name: string
+  code: string
 }

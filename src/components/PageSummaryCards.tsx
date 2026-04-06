@@ -1,5 +1,7 @@
+// src/components/PageSummaryCards
+
 import { motion } from 'framer-motion'
-import { type LucideIcon, BoxIcon } from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 
 interface SummaryCard {
   title: string

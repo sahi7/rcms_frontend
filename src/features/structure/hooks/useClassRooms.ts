@@ -1,3 +1,4 @@
+// src/features/structure/hooks/useClassRooms.ts
 import {
   useListQuery,
   useCreateMutation,

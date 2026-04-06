@@ -1,6 +1,7 @@
 // src/features/academic/hooks/terms.ts
 import api from "@/lib/api";
 import { Term, PaginatedResponse } from '@/types/academic';
+import { useListQuery } from '@/hooks/shared/useApiQuery'
 
 export const termsApi = {
   getAll: async (search = '', page = 1, pageSize = 20, academicYearId = '') => {
@@ -34,3 +35,7 @@ export const termsApi = {
     return response.data;
   },
 };
+
+export function useTermsList() {
+  return useListQuery<Term>(['terms'], '/terms/')
+}

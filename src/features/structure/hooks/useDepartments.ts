@@ -1,3 +1,4 @@
+// src/features/structure/hooks/useDepartments.ts
 import {
   useListQuery,
   useCreateMutation,

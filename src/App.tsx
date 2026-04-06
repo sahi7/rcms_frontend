@@ -21,6 +21,8 @@ import { Departments } from "@/features/structure/pages/DepartmentsPage";
 import { ClassRooms } from "@/features/structure/pages/ClassRoomsPage";
 import { Faculties } from "@/features/structure/pages/FacultiesPage";
 
+import { StudentBulkUpload } from "@/features/students/pages/StudentBulkUploadPage";
+import { StudentsList } from "@/features/students/pages/StudentsListPage";
 
 export default function App() {
   const { isAuthenticated, fetchMe } = useAuthStore();
@@ -53,18 +55,23 @@ export default function App() {
     <Routes>
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardOverview />} />
+        
         <Route path="academic-years" element={<AcademicYears />} />
         <Route path="terms" element={<Terms />} />
         <Route path="sequences" element={<Sequences />} />
         <Route path="study-levels" element={<StudyLevels />} />
+
         <Route path="class-assignments" element={<ClassAssignments />} />
         <Route path="curriculum-subjects" element={<CurriculumSubjects />} />
         <Route path="subject-assignments" element={<SubjectAssignments />} />
         <Route path="subjects" element={<Subjects />} />
+
         <Route path="departments" element={<Departments />} />
         <Route path="classrooms" element={<ClassRooms />} />
         <Route path="faculties" element={<Faculties />} />
 
+        <Route path="students/bulk-upload" element={<StudentBulkUpload />} />
+        <Route path="students" element={<StudentsList />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>
