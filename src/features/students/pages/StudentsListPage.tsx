@@ -194,14 +194,14 @@ export function StudentsList() {
         <div className="flex items-center gap-3">
           <Can permission="add_student">
             <button
-              onClick={() => navigate('/students/bulk-upload')}
+              onClick={() => navigate('/dashboard/students/bulk-upload')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50"
             >
               <Upload className="h-4 w-4" />
               Bulk Upload
             </button>
             <button
-              onClick={() => navigate('/students/create')}
+              onClick={() => navigate('/dashboard/students/create')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 shadow-sm"
             >
               <Plus className="h-4 w-4" />
@@ -262,7 +262,7 @@ export function StudentsList() {
         onSearch={setSearchTerm}
         searchTerm={searchTerm}
         onPageChange={setPage}
-        onEdit={(student) => navigate(`/students/create?id=${student.id}`)}
+        onEdit={(student) => navigate(`/dashboard/students/create?id=${student.id}`)}
         onDelete={(student) => handleDeleteClick(student)}
         actions={false}
       />

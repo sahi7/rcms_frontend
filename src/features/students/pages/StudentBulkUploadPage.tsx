@@ -163,7 +163,7 @@ export function StudentBulkUpload() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <button
-          onClick={() => navigate('/students')}
+          onClick={() => navigate('/dashboard/students')}
           className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />

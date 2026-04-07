@@ -18,8 +18,8 @@ export function useStudentForm(studentId?: string) {
   // Fetch existing student when editing
   const { data: existingStudent, isLoading: isLoadingStudent } = useDetailQuery<Student>(
     'student',
-    `/students/${studentId}/`,
-    null
+    `/students/`,
+    `${studentId}`
   )
 
   // Classrooms and departments for dropdowns (reusing your existing hooks)

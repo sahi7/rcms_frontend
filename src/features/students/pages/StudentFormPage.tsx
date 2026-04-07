@@ -140,7 +140,7 @@ export function StudentForm() {
         await createMutation.mutateAsync(payload)
       }
 
-      navigate('/students')
+      navigate('/dashboard/students')
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {}
@@ -168,7 +168,7 @@ export function StudentForm() {
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/students')}
+          onClick={() => navigate('/dashboard/students')}
           className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
