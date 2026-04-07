@@ -30,7 +30,7 @@ export function useStudentElectives(
   const { data: termsData } = useTerms()
 
   const saveElectivesMutation = usePutMutation<
-    { electives: number[] },
+    { electives: number[], term: number | null },
     any
   >(
     `/students/`,

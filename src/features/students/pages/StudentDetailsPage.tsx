@@ -282,7 +282,8 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
       await saveElectivesMutation.mutateAsync({
         id: studentId,
         payload: {
-          electives: selectedElectiveIds.map(Number)
+          electives: selectedElectiveIds.map(Number),
+          term: termId ? Number(termId) : null,
         }
       })
     } catch (error: any) {
