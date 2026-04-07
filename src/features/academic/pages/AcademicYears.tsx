@@ -17,7 +17,7 @@ const academicYearSchema = z
     name: z.string().min(3, 'Name must be at least 3 characters'),
     start_date: z.string().min(1, 'Start date is required'),
     end_date: z.string().min(1, 'End date is required'),
-    is_current: z.boolean().optional(),
+    is_completed: z.boolean().optional(),
   })
   .refine(
     (data) => {
@@ -44,12 +44,14 @@ export function AcademicYears() {
   const [editingItem, setEditingItem] = useState<AcademicYear | null>(null);
   const [itemToDelete, setItemToDelete] = useState<AcademicYear | null>(null);
   const [serverError, setServerError] = useState<string>('');
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(academicYearSchema),
@@ -57,9 +59,11 @@ export function AcademicYears() {
       name: '',
       start_date: '',
       end_date: '',
-      is_current: false,
+      is_completed: false,
     },
   });
+
+  const watchedIsCompleted = watch('is_completed') ?? false;
 
   // Fetch data
   const fetchAcademicYears = useCallback(async () => {
@@ -82,15 +86,16 @@ export function AcademicYears() {
   // Open modal
   const handleOpenModal = (item?: AcademicYear) => {
     setServerError('');
+    setShowCompletionConfirm(false);
     if (item) {
       setEditingItem(item);
       setValue('name', item.name);
       setValue('start_date', item.start_date);
       setValue('end_date', item.end_date);
-      setValue('is_current', item.is_current);
+      setValue('is_completed', item.is_completed ?? false);
     } else {
       setEditingItem(null);
-      reset({ name: '', start_date: '', end_date: '', is_current: false });
+      reset({ name: '', start_date: '', end_date: '', is_completed: false });
     }
     setIsModalOpen(true);
   };
@@ -111,17 +116,14 @@ export function AcademicYears() {
     } catch (error: any) {
       console.error('Save error:', error);
 
-      // Handle server validation / non_field_errors
       if (error.response?.data) {
         const serverData = error.response.data;
 
-        // Case 1: non_field_errors
         if (serverData.non_field_errors && Array.isArray(serverData.non_field_errors)) {
           setServerError(serverData.non_field_errors[0]);
           return;
         }
 
-        // Case 2: field-specific errors (start_date, end_date, name, etc.)
         if (serverData.start_date) setServerError(serverData.start_date[0]);
         else if (serverData.end_date) setServerError(serverData.end_date[0]);
         else if (serverData.name) setServerError(serverData.name[0]);
@@ -175,20 +177,36 @@ export function AcademicYears() {
   };
 
   const columns = [
-    { header: 'Name', accessor: 'name' as keyof AcademicYear },
+    { 
+      header: 'Name', 
+      accessor: (item: AcademicYear) => (
+        <span className={item.is_completed ? 'line-through text-slate-400' : ''}>
+          {item.name}
+        </span>
+      ) 
+    },
     { header: 'Start Date', accessor: 'start_date' as keyof AcademicYear },
     { header: 'End Date', accessor: 'end_date' as keyof AcademicYear },
     {
       header: 'Status',
-      accessor: (item: AcademicYear) => (
-        <StatusBadge status={item.is_current ? 'current' : 'inactive'} label={item.is_current ? 'Current' : 'Past'} />
-      ),
+      accessor: (item: AcademicYear) => {
+        if (item.is_completed) {
+          return (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+              Completed
+            </span>
+          );
+        }
+        return (
+          <StatusBadge status={item.is_current ? 'current' : 'inactive'} label={item.is_current ? 'Current' : 'Past'} />
+        );
+      },
     },
     {
       header: 'Actions',
       accessor: (item: AcademicYear) => (
         <div className="flex items-center gap-2">
-          {!item.is_current && (
+          {!item.is_current && !item.is_completed && (
             <Can permission="set_current.academicyear">
               <button
                 onClick={() => handleSetAsCurrent(item.id)}
@@ -312,17 +330,59 @@ export function AcademicYears() {
             </div>
           </div>
 
-          {/* <div className="flex items-center gap-2 pt-2">
-            <input
-              type="checkbox"
-              id="is_current"
-              {...register('is_current')}
-              className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
-            />
-            <label htmlFor="is_current" className="text-sm text-slate-700">
-              Set as current academic year
-            </label>
-          </div> */}
+          {/* is_completed Toggle - Edit only */}
+          {editingItem && (
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">Completed</label>
+              <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <button
+                  type="button"
+                  disabled={watchedIsCompleted}
+                  onClick={() => {
+                    if (watchedIsCompleted) return;
+                    setShowCompletionConfirm(true);
+                  }}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
+                    watchedIsCompleted || showCompletionConfirm ? 'bg-emerald-500' : 'bg-slate-200'
+                  } ${watchedIsCompleted ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                      watchedIsCompleted || showCompletionConfirm ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+
+                <div className="flex-1 text-sm">
+                  <div className="font-medium text-slate-700">Mark as completed</div>
+                  <div className="text-xs text-amber-600">This action cannot be undone.</div>
+                </div>
+
+                {showCompletionConfirm && !watchedIsCompleted && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCompletionConfirm(false)}
+                      className="px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue('is_completed', true);
+                        setShowCompletionConfirm(false);
+                        toast.success('Academic year marked as completed');
+                      }}
+                      className="h-8 w-8 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors"
+                    >
+                      ✓
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button
