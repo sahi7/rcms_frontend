@@ -36,6 +36,10 @@ export function Terms() {
   const [editingItem, setEditingItem] = useState<Term | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Term | null>(null);
 
+  // New states for collapsible status section + sensitive completed confirmation
+  const [isStatusesOpen, setIsStatusesOpen] = useState(false);
+  const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
+
   const { getPlural, getLabel } = useInstitutionConfig();
   const [formData, setFormData] = useState<Partial<Term>>({
     name: '',
@@ -47,6 +51,9 @@ export function Terms() {
     is_resit: false,
     is_completed: false,
   });
+
+  // Find the current academic year (used for the restricted dropdown)
+  const currentAcademicYear = academicYears.find((ay) => ay.is_current);
 
   const getErrorMessage = (error: any): string => {
     if (!error) return 'An unexpected error occurred';
@@ -103,6 +110,9 @@ export function Terms() {
   }, [fetchTerms]);
 
   const handleOpenModal = (item?: Term) => {
+    setIsStatusesOpen(false);
+    setShowCompletionConfirm(false);
+
     if (item) {
       setEditingItem(item);
       setFormData(item);
@@ -110,7 +120,7 @@ export function Terms() {
       setEditingItem(null);
       setFormData({
         name: '',
-        academic_year: academicYears[0]?.id || '',
+        academic_year: currentAcademicYear?.id || '',
         term_number: 1,
         start_date: '',
         end_date: '',
@@ -206,11 +216,18 @@ export function Terms() {
   // Dynamic header using getPlural
   const termHeader = `${getLabel('academic_period')} #`;
   const modalTitle = editingItem
-  ? `Edit ${termHeader}`
-  : `Add ${termHeader}`;
+    ? `Edit ${termHeader}`
+    : `Add ${termHeader}`;
 
   const columns = [
-    { header: 'Name', accessor: 'name' as keyof Term },
+    { 
+      header: 'Name', 
+      accessor: (item: Term) => (
+        <span className={item.is_completed ? 'line-through text-slate-400' : ''}>
+          {item.name}
+        </span>
+      ) 
+    },
     { header: 'Academic Year', accessor: 'academic_year_name' as keyof Term },
     { header: termHeader, accessor: 'term_number' as keyof Term },   // ← Dynamic!
     { header: 'Start Date', accessor: 'start_date' as keyof Term },
@@ -231,8 +248,8 @@ export function Terms() {
       header: 'Actions',
       accessor: (item: Term) => (
         <div className="flex items-center gap-2">
-          {/* Set as Current – only for non-current terms */}
-          {!item.is_current && (
+          {/* Set as Current – only for non-current AND non-completed terms (user request) */}
+          {!item.is_current && !item.is_completed && (
             <Can permission="set_current.term">
               <button
                 onClick={() => handleSetAsCurrent(item.id)}
@@ -328,7 +345,7 @@ export function Terms() {
         />
       </div>
 
-      {/* Add/Edit Modal – Current Term checkbox removed */}
+      {/* Add/Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -356,11 +373,11 @@ export function Terms() {
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
               >
                 <option value="">Select Year</option>
-                {academicYears.map((ay) => (
-                  <option key={ay.id} value={ay.id}>
-                    {ay.name}
+                {currentAcademicYear && (
+                  <option key={currentAcademicYear.id} value={currentAcademicYear.id}>
+                    {currentAcademicYear.name}
                   </option>
-                ))}
+                )}
               </select>
             </div>
             <div>
@@ -397,36 +414,130 @@ export function Terms() {
             </div>
           </div>
 
-          {/* Remaining checkboxes – orange theme */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.is_completed || false}
-                onChange={(e) => setFormData({ ...formData, is_completed: e.target.checked })}
-                className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
+          {/* Resit Term – moved outside Status Settings as a normal toggle (always visible) */}
+          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+            <div>
+              <div className="font-medium text-slate-700">Resit Term</div>
+              <div className="text-xs text-slate-500">This term is designated for resits only</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, is_resit: !formData.is_resit })}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                formData.is_resit ? 'bg-orange-500' : 'bg-slate-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                  formData.is_resit ? 'translate-x-5' : 'translate-x-1'
+                }`}
               />
-              <span className="text-sm text-slate-700">Completed</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.is_results_published || false}
-                onChange={(e) => setFormData({ ...formData, is_results_published: e.target.checked })}
-                className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
-              />
-              <span className="text-sm text-slate-700">Results Published</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={formData.is_resit || false}
-                onChange={(e) => setFormData({ ...formData, is_resit: e.target.checked })}
-                className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500"
-              />
-              <span className="text-sm text-slate-700">Resit Term</span>
-            </label>
+            </button>
           </div>
+
+          {/* Status Settings – only shown during editing + compact + animated */}
+          {editingItem && (
+            <div className="pt-4 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsStatusesOpen(!isStatusesOpen)}
+                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-xl transition-colors"
+              >
+                <span className="flex items-center gap-2">Status Settings</span>
+                <span className={`text-xl transition-transform duration-300 ${isStatusesOpen ? 'rotate-180' : ''}`}>
+                  ▼
+                </span>
+              </button>
+
+              {/* Animated + compact content */}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                  isStatusesOpen ? 'max-h-80 opacity-100 mt-3' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <div className="space-y-3 px-1">
+                  {/* Completed – sensitive animated toggle with confirmation */}
+                  <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <button
+                      type="button"
+                      disabled={formData.is_completed || false}
+                      onClick={() => {
+                        if (formData.is_completed) return;
+                        setShowCompletionConfirm(true);
+                      }}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
+                        (formData.is_completed || showCompletionConfirm) ? 'bg-emerald-500' : 'bg-slate-200'
+                      } ${(formData.is_completed || false) ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                          (formData.is_completed || showCompletionConfirm) ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+
+                    <div className="flex-1 text-sm">
+                      <div className="font-medium text-slate-700">Mark as completed</div>
+                      <div className="text-xs text-slate-500">This term has ended and is now closed</div>
+                      <div className="text-xs text-amber-600 mt-px">This action cannot be undone.</div>
+                    </div>
+
+                    {showCompletionConfirm && !(formData.is_completed || false) && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowCompletionConfirm(false)}
+                          className="px-4 py-1.5 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (editingItem?.id) {
+                              try {
+                                await termsApi.setAsCompleted(editingItem.id);
+                              } catch (error) {
+                                toast.error(getErrorMessage(error));
+                                return;
+                              }
+                            }
+                            setFormData({ ...formData, is_completed: true });
+                            setShowCompletionConfirm(false);
+                            toast.success('Term marked as completed');
+                          }}
+                          className="h-8 w-8 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full transition-colors"
+                        >
+                          ✓
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Results Published – normal animated toggle */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                      <div className="font-medium text-slate-700">Results Published</div>
+                      <div className="text-xs text-slate-500">Results for the term are available and students can check their portal</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, is_results_published: !formData.is_results_published })}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                        formData.is_results_published ? 'bg-orange-500' : 'bg-slate-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                          formData.is_results_published ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button

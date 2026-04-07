@@ -34,6 +34,12 @@ export const termsApi = {
     const response = await api.post(`/terms/${id}/set-current/`);
     return response.data;
   },
+
+  // Dedicated backend action that runs AFTER a term is marked completed
+  setAsCompleted: async (id: string) => {
+    const response = await api.post(`/terms/${id}/mark-complete/`);
+    return response.data;
+  },
 };
 
 export function useTerms() {
