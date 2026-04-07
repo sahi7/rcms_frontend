@@ -18,6 +18,7 @@ export interface CurriculumSubjectBase {
   id: number
   department: number
   subjects: number[],
+  subject?: number
   subject_role: number
   class_room: number
 }

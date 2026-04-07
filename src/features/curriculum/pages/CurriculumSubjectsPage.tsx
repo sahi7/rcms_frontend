@@ -26,6 +26,7 @@ import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import { Term } from '@/types/academic'
+import { toast } from 'sonner'
 
 // Local payload type that exactly matches the server (plural subjects + nullable term_number)
 type CurriculumSubjectCreatePayload = {
@@ -167,8 +168,10 @@ export function CurriculumSubjects() {
     try {
       await createMutation.mutateAsync(formData as CurriculumSubjectPayload)
       setIsModalOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save curriculum subject', error)
+      const errorMsg = error.response?.data?.error || 'An unexpected error occurred'
+      toast.error(errorMsg)
     }
   }
 
@@ -176,14 +179,15 @@ export function CurriculumSubjects() {
     e.preventDefault()
     if (!editingItem) return
     try {
-      // PATCH uses the same endpoint as create but with single subject
       await createMutation.mutateAsync({
         ...editFormData,
-        subjects: [editFormData.subject], // backend expects array even for edit
+        subjects: [editFormData.subject],
       } as any)
       setIsEditModalOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update', error)
+      const errorMsg = error.response?.data?.error || 'An unexpected error occurred'
+      toast.error(errorMsg)
     }
   }
 
@@ -193,8 +197,10 @@ export function CurriculumSubjects() {
         await deleteMutation.mutateAsync(itemToDelete.id)
         setIsDeleteModalOpen(false)
         setItemToDelete(null)
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to delete', error)
+        const errorMsg = error.response?.data?.error || 'An unexpected error occurred'
+        toast.error(errorMsg)
       }
     }
   }
@@ -288,9 +294,9 @@ export function CurriculumSubjects() {
               setEditFormData({
                 department: item.department,
                 class_room: item.class_room,
-                subject: item.subject,
+                subject: item.subject || 0,
                 subject_role: item.subject_role,
-                term_number: null, // term_number not present in list response
+                term_number: null,
               })
               setIsEditModalOpen(true)
             }}
@@ -304,7 +310,7 @@ export function CurriculumSubjects() {
         )}
       </div>
 
-      {/* CREATE MODAL - larger width to prevent cutoff when many subjects are selected */}
+      {/* CREATE MODAL */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -399,7 +405,7 @@ export function CurriculumSubjects() {
         </form>
       </Modal>
 
-      {/* EDIT MODAL - separate dialog for single-subject editing */}
+      {/* EDIT MODAL */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -494,7 +500,7 @@ export function CurriculumSubjects() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal - shows subject name */}
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
