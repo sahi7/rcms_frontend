@@ -2,11 +2,10 @@
 import {
   useDetailQuery,
   useCreateMutation,
-  useListQuery,
 } from '@/hooks/shared/useApiQuery'
 import { useCurriculumSubjects } from '../../curriculum/hooks/useCurriculumSubjects'
+import { useSubjects } from '../../curriculum/hooks/useSubjects'
 import { useTerms } from '@/features/academic/hooks/terms'
-import { Subject } from '@/types/academic'
 
 export function useStudentElectives(
   studentId: string,
@@ -17,8 +16,8 @@ export function useStudentElectives(
     subject_ids: number[]
   }>(
     'student-electives',
-    `/students/${studentId}/electives/`,
-    null
+    `/students/`,
+    `${studentId}/electives`
   )
 
   const { data: curriculumSubjectsData } = useCurriculumSubjects({
@@ -26,18 +25,15 @@ export function useStudentElectives(
     department,
   })
 
-  const { data: allSubjectsData } = useListQuery<Subject>(
-    'subjects',
-    '/subjects/'
-  )
+  const { data: allSubjectsData } = useSubjects()
 
   const { data: termsData } = useTerms()
 
   const saveElectivesMutation = useCreateMutation<
-    { subject_ids: number[]; term: number | null },
+    { electives: number[] },
     any
   >(
-    `/students/${studentId}/electives/`,
+    `/students/`,
     ['student-electives']
   )
 

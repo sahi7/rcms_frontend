@@ -81,7 +81,7 @@ export function StudentDetails() {
           </div>
         </div>
         <button
-          onClick={() => navigate(`/students/create?id=${student.id}`)}
+          onClick={() => navigate(`/dashboard/students/create?id=${student.id}`)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
         >
           <Edit className="h-4 w-4" />
@@ -247,8 +247,8 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     setErrorMsg(null)
     try {
       await saveElectivesMutation.mutateAsync({
-        subject_ids: selectedSubjectIds.map(Number),
-        term: termId ? Number(termId) : null,
+        electives: selectedSubjectIds.map(Number),
+        // term: termId ? Number(termId) : null,
       })
       setSelectedSubjectIds([])
     } catch (error: any) {
