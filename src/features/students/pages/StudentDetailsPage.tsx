@@ -338,12 +338,14 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {getPlural('subjectLabel')} (Electives)
               </label>
-              <MultiSelect
-                options={availableElectives}
-                value={selectedElectiveIds}
-                onChange={setSelectedElectiveIds}
-                placeholder={`Select ${getPlural('electiveLabel')?.toLowerCase() || 'electives'}...`}
-              />
+              <div className="min-h-[160px]">
+                <MultiSelect
+                  options={availableElectives}
+                  value={selectedElectiveIds}
+                  onChange={setSelectedElectiveIds}
+                  placeholder={`Select ${getPlural('electiveLabel')?.toLowerCase() || 'electives'}...`}
+                />
+              </div>
             </div>
           </div>
 
