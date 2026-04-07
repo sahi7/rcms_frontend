@@ -111,13 +111,23 @@ export function StudentsList() {
     },
     {
       header: getLabel('classLabel'),
-      accessor: (student: Student) =>
-        student.current_class ? `Class ${student.current_class}` : '-',
+      accessor: (student: Student) => {
+        if (!student.current_class) return '-'
+        const classroom = classroomsData?.data?.find(
+          (c: any) => c.id === student.current_class
+        )
+        return classroom ? classroom.name : `Class ${student.current_class}`
+      },
     },
     {
       header: getLabel('departmentLabel'),
-      accessor: (student: Student) =>
-        student.department ? `Dept ${student.department}` : '-',
+      accessor: (student: Student) => {
+        if (!student.department) return '-'
+        const department = departmentsData?.data?.find(
+          (d: any) => d.id === student.department
+        )
+        return department ? department.name : `Dept ${student.department}`
+      },
     },
     {
       header: 'Status',
