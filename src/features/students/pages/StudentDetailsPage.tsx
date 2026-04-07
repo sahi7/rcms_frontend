@@ -17,6 +17,7 @@ import { cn, formatDate } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentElectives } from '../hooks/useStudentElectives'
+import { toast } from 'sonner'
 
 export function StudentDetails() {
   const { id } = useParams<{ id: string }>()
@@ -286,6 +287,7 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
           term: termId ? Number(termId) : null,
         }
       })
+      toast.success('Electives updated successfully')
     } catch (error: any) {
       setErrorMsg(error?.response?.data?.error || 'Failed to update electives')
     }
