@@ -1,5 +1,6 @@
+// src/features/curriculum/pages/Subjects.tsx
 import React, { useState } from 'react'
-import { PlusIcon, BookOpenIcon, AwardIcon } from 'lucide-react'
+import { PlusIcon, BookOpenIcon } from 'lucide-react'
 import { DataTable } from '@/components/DataTable'
 import { Modal } from '@/components/Modal'
 import { PageSummaryCards } from '@/components/PageSummaryCards'
@@ -11,7 +12,7 @@ import {
   useUpdateSubject,
   useDeleteSubject,
 } from '../hooks/useSubjects'
-
+import { toast } from 'sonner'
 
 export function Subjects() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,10 +34,11 @@ export function Subjects() {
     name: '',
     code: '',
     credit_value: 1,
-    max_score: 100,
+    max_score: 20,
   })
 
   const { getLabel, getPlural } = useInstitutionConfig();
+
   const columns = [
     {
       header: 'Name',
@@ -55,6 +57,7 @@ export function Subjects() {
       accessor: 'max_score' as keyof Subject,
     },
   ]
+
   const handleOpenModal = (item?: Subject) => {
     if (item) {
       setEditingItem(item)
@@ -70,11 +73,12 @@ export function Subjects() {
         name: '',
         code: '',
         credit_value: 1,
-        max_score: 100,
+        max_score: 20,
       })
     }
     setIsModalOpen(true)
   }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -87,21 +91,40 @@ export function Subjects() {
         await createMutation.mutateAsync(formData)
       }
       setIsModalOpen(false)
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to save ${getLabel('subject_naming')}`, error)
+
+      // Handle server error format: {"error": "duplicate entry exists"}
+      const serverError = error.response?.data?.error ||
+                         error.response?.data?.message ||
+                         error.response?.data?.detail ||
+                         error.message ||
+                         'An unexpected error occurred'
+
+      toast.error(serverError)
     }
   }
+
   const handleDelete = async () => {
     if (itemToDelete) {
       try {
         await deleteMutation.mutateAsync(itemToDelete.id)
         setIsDeleteModalOpen(false)
         setItemToDelete(null)
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Failed to delete ${getLabel('subject_naming')}`, error)
+
+        const serverError = error.response?.data?.error ||
+                           error.response?.data?.message ||
+                           error.response?.data?.detail ||
+                           error.message ||
+                           'Failed to delete'
+
+        toast.error(serverError)
       }
     }
   }
+
   const summaryCards = [
     {
       title: `Total ${getPlural('subject_naming')}`,
@@ -109,18 +132,8 @@ export function Subjects() {
       icon: BookOpenIcon,
       color: 'blue' as const,
     },
-    {
-      title: 'Avg Credit Value',
-      value: data?.data.length
-        ? (
-            data.data.reduce((acc, s) => acc + s.credit_value, 0) /
-            data.data.length
-          ).toFixed(1)
-        : 0,
-      icon: AwardIcon,
-      color: 'emerald' as const,
-    },
   ]
+
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="flex items-center justify-between shrink-0">
@@ -242,7 +255,7 @@ export function Subjects() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    max_score: parseInt(e.target.value) || 100,
+                    max_score: parseInt(e.target.value) || 20,
                   })
                 }
                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"

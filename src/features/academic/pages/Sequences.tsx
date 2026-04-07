@@ -1,6 +1,6 @@
 // src/features/academic/pages/Sequences.tsx
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { PlusIcon, FilterIcon } from 'lucide-react';
+import { PlusIcon, FilterIcon, Info } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,8 +27,6 @@ function createSequenceSchema(termErrorMessage: string) {
     });
 }
 
-// type FormData = z.infer<typeof sequenceSchema>;
-
 export function Sequences() {
     const { getLabel, getPlural } = useInstitutionConfig();
     const termErrorMessage = `${getLabel('academic_period')} is required`;
@@ -40,7 +38,7 @@ export function Sequences() {
     const [loading, setLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedTermId, setSelectedTermId] = useState('');   // ← Now holds Term ID
+    const [selectedTermId, setSelectedTermId] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
 
@@ -62,6 +60,7 @@ export function Sequences() {
         reset,
         setValue,
         formState: { errors },
+        watch,
     } = useForm<FormData>({
         resolver: zodResolver(sequenceSchema),
         defaultValues: {
@@ -76,6 +75,11 @@ export function Sequences() {
         },
     });
 
+    const watchedIsMandatory = watch('is_mandatory');
+    const watchedIsCurrent = watch('is_current');
+    const watchedIsResit = watch('is_resit');
+    const watchedIsResultsPublished = watch('is_results_published');
+
     // Fetch terms for dropdowns
     const fetchTerms = useCallback(async () => {
         try {
@@ -86,7 +90,7 @@ export function Sequences() {
         }
     }, []);
 
-    // Server-side fetch with term filter (now uses ID)
+    // Server-side fetch with term filter
     const fetchSequences = useCallback(async () => {
         try {
             setLoading(true);
@@ -113,7 +117,6 @@ export function Sequences() {
             setEditingItem(item);
             setValue('name', item.name);
             setValue('code', item.code);
-            // Ensure we set the real Term ID as string to prevent Zod validation error (expected string, received number)
             const termId = terms.find((t) => t.name === item.term)?.id || item.term;
             setValue('term', String(termId));
             setValue('max_score', Number(item.max_score));
@@ -132,7 +135,7 @@ export function Sequences() {
         try {
             const payload = {
                 ...formData,
-                max_score: Number(formData.max_score),   // ensure integer
+                max_score: Number(formData.max_score),
             };
 
             if (editingItem?.id) {
@@ -192,7 +195,13 @@ export function Sequences() {
     const columns = [
         { header: 'Name', accessor: 'name' as keyof Sequence },
         { header: 'Code', accessor: 'code' as keyof Sequence },
-        { header: getPlural('academic_period'), accessor: 'term' as keyof Sequence },
+        {
+            header: getPlural('academic_period'),
+            accessor: (item: Sequence) => {
+                const termObj = terms.find((t) => String(t.id) === String(item.term));
+                return termObj ? termObj.name : item.term;
+            },
+        },
         { header: 'Max Score', accessor: 'max_score' as keyof Sequence },
         {
             header: 'Attributes',
@@ -262,7 +271,6 @@ export function Sequences() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                    {/* Term Filter - now sends ID */}
                     <div className="relative flex-1 sm:w-72">
                         <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <select
@@ -340,7 +348,15 @@ export function Sequences() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">{getLabel('academic_period')}</label>
+                            <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700 mb-1">
+                                {getLabel('academic_period')}
+                                <span
+                                    className="cursor-help"
+                                    title="Term is auto-set to the current one. You can only create/update sequences for the current term."
+                                >
+                                    <Info className="w-3.5 h-3.5 text-amber-500" />
+                                </span>
+                            </label>
                             <select
                                 {...register('term')}
                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
@@ -375,25 +391,93 @@ export function Sequences() {
                         </div>
                     </div>
 
+                    {/* === ANIMATED TOGGLES (exactly like Terms page) === */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('is_mandatory')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
-                            <span className="text-sm text-slate-700">Mandatory</span>
-                        </label>
+                        {/* Mandatory */}
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div>
+                                <div className="font-medium text-slate-700">Mandatory</div>
+                                <div className="text-xs text-slate-500">This sequence is required for all students</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setValue('is_mandatory', !watchedIsMandatory)}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                                    watchedIsMandatory ? 'bg-orange-500' : 'bg-slate-200'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                        watchedIsMandatory ? 'translate-x-5' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Current (permission protected) */}
                         <Can permission="set_current.sequence">
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" {...register('is_current')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
-                                <span className="text-sm text-slate-700">Current</span>
-                            </label>
+                            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <div>
+                                    <div className="font-medium text-slate-700">Current</div>
+                                    <div className="text-xs text-slate-500">This is the active sequence</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setValue('is_current', !watchedIsCurrent)}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                                        watchedIsCurrent ? 'bg-orange-500' : 'bg-slate-200'
+                                    }`}
+                                >
+                                    <span
+                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                            watchedIsCurrent ? 'translate-x-5' : 'translate-x-1'
+                                        }`}
+                                    />
+                                </button>
+                            </div>
                         </Can>
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('is_resit')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
-                            <span className="text-sm text-slate-700">Resit Sequence</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input type="checkbox" {...register('is_results_published')} className="w-4 h-4 text-orange-500 border-slate-300 rounded focus:ring-orange-500" />
-                            <span className="text-sm text-slate-700">Results Published</span>
-                        </label>
+
+                        {/* Resit Sequence */}
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div>
+                                <div className="font-medium text-slate-700">Resit Sequence</div>
+                                <div className="text-xs text-slate-500">This sequence is for resit students only</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setValue('is_resit', !watchedIsResit)}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                                    watchedIsResit ? 'bg-orange-500' : 'bg-slate-200'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                        watchedIsResit ? 'translate-x-5' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+
+                        {/* Results Published */}
+                        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                            <div>
+                                <div className="font-medium text-slate-700">Results Published</div>
+                                <div className="text-xs text-slate-500">Students can view their results</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setValue('is_results_published', !watchedIsResultsPublished)}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
+                                    watchedIsResultsPublished ? 'bg-orange-500' : 'bg-slate-200'
+                                }`}
+                            >
+                                <span
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                                        watchedIsResultsPublished ? 'translate-x-5' : 'translate-x-1'
+                                    }`}
+                                />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">

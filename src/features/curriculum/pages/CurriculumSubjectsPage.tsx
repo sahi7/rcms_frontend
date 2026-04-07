@@ -1,3 +1,4 @@
+// src/features/curriculum/pages/CurriculumSubjects.tsx
 import React, { useMemo, useState } from 'react'
 import {
   PlusIcon,
@@ -32,7 +33,7 @@ type CurriculumSubjectCreatePayload = {
   class_room: number
   subjects: number[]
   subject_role: 1 | 2
-  term_number: number | null   // ← now nullable as requested
+  term_number: number | null
 }
 
 export function CurriculumSubjects() {
@@ -56,7 +57,6 @@ export function CurriculumSubjects() {
   const { data: departmentsData } = useDepartments({ page_size: 200 })
   const { data: classroomsData } = useClassRooms({ page_size: 200 })
 
-  // ← NEW: Fetch available terms (exactly like academic-years in other pages)
   const { data: termsData } = useListQuery<Term>(
     'terms',
     '/terms/',
@@ -81,7 +81,6 @@ export function CurriculumSubjects() {
     return map
   }, [classroomsData])
 
-  // ← NEW: Term options (value = term_number, label = name)
   const termOptions = useMemo(() => {
     return (termsData?.data || []).map((t) => ({
       value: t.term_number,
@@ -106,49 +105,50 @@ export function CurriculumSubjects() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<CurriculumSubject | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<any>(null)
 
-  // Form data now matches server + nullable term_number
+  // NEW: Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<any>(null)
+
+  // Form data for CREATE (multi-subject)
   const [formData, setFormData] = useState<CurriculumSubjectCreatePayload>({
     department: 0,
     class_room: 0,
     subjects: [],
     subject_role: 1,
-    term_number: null,          // ← nullable
+    term_number: null,
+  })
+
+  // Form data for EDIT (single subject)
+  const [editFormData, setEditFormData] = useState({
+    department: 0,
+    class_room: 0,
+    subject: 0,
+    subject_role: 1,
+    term_number: null as number | null,
   })
 
   const columns = [
     {
       header: 'Department',
-      accessor: (item: CurriculumSubject) => (
+      accessor: (item: any) => (
         <span className="font-medium">
           {departmentMap[item.department] || `#${item.department}`}
         </span>
       ),
     },
     {
-      header: 'Subjects',
-      accessor: (item: CurriculumSubject) => (
-        <div className="flex flex-wrap gap-1">
-          {item.subjects?.slice(0, 3).map((id: number) => (
-            <span
-              key={id}
-              className="inline-flex px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs"
-            >
-              {subjectMap[id] || `#${id}`}
-            </span>
-          ))}
-          {item.subjects?.length > 3 && (
-            <span className="text-xs text-slate-400">
-              +{item.subjects.length - 3} more
-            </span>
-          )}
-        </div>
+      header: 'Subject',
+      accessor: (item: any) => (
+        <span className="font-medium">
+          {subjectMap[item.subject] || `#${item.subject}`}
+        </span>
       ),
     },
     {
       header: 'Role',
-      accessor: (item: CurriculumSubject) => (
+      accessor: (item: any) => (
         <StatusBadge
           status={item.subject_role === 1 ? 'mandatory' : 'optional'}
           label={item.subject_role === 1 ? 'Core' : 'Elective'}
@@ -157,18 +157,33 @@ export function CurriculumSubjects() {
     },
     {
       header: 'Classroom',
-      accessor: (item: CurriculumSubject) =>
+      accessor: (item: any) =>
         classroomMap[item.class_room] || `#${item.class_room}`,
     },
   ]
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSaveCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       await createMutation.mutateAsync(formData as CurriculumSubjectPayload)
       setIsModalOpen(false)
     } catch (error) {
       console.error('Failed to save curriculum subject', error)
+    }
+  }
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingItem) return
+    try {
+      // PATCH uses the same endpoint as create but with single subject
+      await createMutation.mutateAsync({
+        ...editFormData,
+        subjects: [editFormData.subject], // backend expects array even for edit
+      } as any)
+      setIsEditModalOpen(false)
+    } catch (error) {
+      console.error('Failed to update', error)
     }
   }
 
@@ -184,8 +199,8 @@ export function CurriculumSubjects() {
     }
   }
 
-  const coreCount = data?.data.filter((c) => c.subject_role === 1).length || 0
-  const electiveCount = data?.data.filter((c) => c.subject_role === 2).length || 0
+  const coreCount = data?.data.filter((c: any) => c.subject_role === 1).length || 0
+  const electiveCount = data?.data.filter((c: any) => c.subject_role === 2).length || 0
 
   const summaryCards = [
     {
@@ -268,7 +283,17 @@ export function CurriculumSubjects() {
               setCurrentPage(1)
             }}
             searchTerm={searchTerm}
-            onEdit={() => {}}
+            onEdit={(item) => {
+              setEditingItem(item)
+              setEditFormData({
+                department: item.department,
+                class_room: item.class_room,
+                subject: item.subject,
+                subject_role: item.subject_role,
+                term_number: null, // term_number not present in list response
+              })
+              setIsEditModalOpen(true)
+            }}
             onDelete={(item) => {
               setItemToDelete(item)
               setIsDeleteModalOpen(true)
@@ -279,22 +304,22 @@ export function CurriculumSubjects() {
         )}
       </div>
 
+      {/* CREATE MODAL - larger width to prevent cutoff when many subjects are selected */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Assign Curriculum Subjects"
-        maxWidth="max-w-lg"
+        maxWidth="max-w-2xl"
       >
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSaveCreate} className="space-y-4">
           <SearchableSelect
             label="Department"
-            required
             options={departmentOptions}
             value={formData.department || null}
             onChange={(v) =>
               setFormData({ ...formData, department: (v as number) || 0 })
             }
-            placeholder="Select department..."
+            placeholder="Select department... (optional)"
           />
 
           <SearchableSelect
@@ -339,7 +364,6 @@ export function CurriculumSubjects() {
               </select>
             </div>
 
-            {/* ← UPDATED: Term Number is now a searchable dropdown populated from /terms/ */}
             <div>
               <SearchableSelect
                 label="Term"
@@ -348,11 +372,10 @@ export function CurriculumSubjects() {
                 onChange={(v) =>
                   setFormData({
                     ...formData,
-                    term_number: (v as number) ?? null,   // nullable
+                    term_number: (v as number) ?? null,
                   })
                 }
-                placeholder="Select term..."
-                // not required → field is nullable
+                placeholder="Select term... (optional)"
               />
             </div>
           </div>
@@ -376,6 +399,102 @@ export function CurriculumSubjects() {
         </form>
       </Modal>
 
+      {/* EDIT MODAL - separate dialog for single-subject editing */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title="Edit Curriculum Subject"
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <SearchableSelect
+            label="Department"
+            options={departmentOptions}
+            value={editFormData.department || null}
+            onChange={(v) =>
+              setEditFormData({ ...editFormData, department: (v as number) || 0 })
+            }
+            placeholder="Select department... (optional)"
+          />
+
+          <SearchableSelect
+            label="Classroom"
+            required
+            options={classroomOptions}
+            value={editFormData.class_room || null}
+            onChange={(v) =>
+              setEditFormData({ ...editFormData, class_room: (v as number) || 0 })
+            }
+            placeholder="Select classroom..."
+          />
+
+          <SearchableSelect
+            label="Subject"
+            required
+            options={subjectOptions}
+            value={editFormData.subject || null}
+            onChange={(v) =>
+              setEditFormData({ ...editFormData, subject: (v as number) || 0 })
+            }
+            placeholder="Select subject..."
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Subject Role
+              </label>
+              <select
+                value={editFormData.subject_role}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    subject_role: parseInt(e.target.value) as 1 | 2,
+                  })
+                }
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
+              >
+                <option value={1}>Core</option>
+                <option value={2}>Elective</option>
+              </select>
+            </div>
+
+            <div>
+              <SearchableSelect
+                label="Term"
+                options={termOptions}
+                value={editFormData.term_number ?? null}
+                onChange={(v) =>
+                  setEditFormData({
+                    ...editFormData,
+                    term_number: (v as number) ?? null,
+                  })
+                }
+                placeholder="Select term... (optional)"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsEditModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
+            >
+              {createMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal - shows subject name */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -383,7 +502,11 @@ export function CurriculumSubjects() {
       >
         <div className="space-y-4">
           <p className="text-slate-600">
-            Are you sure you want to remove this curriculum subject assignment? This action cannot be undone.
+            Are you sure you want to remove the assignment for{' '}
+            <span className="font-semibold text-slate-800">
+              {subjectMap[itemToDelete?.subject] || `#${itemToDelete?.subject}`}
+            </span>
+            ? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button

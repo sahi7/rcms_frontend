@@ -121,10 +121,10 @@ export function InstitutionSettings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="university">University</SelectItem>
-                  <SelectItem value="college">College</SelectItem>
-                  <SelectItem value="high_school">High School</SelectItem>
-                  <SelectItem value="primary_school">Primary School</SelectItem>
-                  <SelectItem value="vocational">Vocational</SelectItem>
+                  <SelectItem value="scondary">College</SelectItem>
+                  <SelectItem value="secondary">High School</SelectItem>
+                  <SelectItem value="primary">Primary School</SelectItem>
+                  <SelectItem value="university">Vocational</SelectItem>
                 </SelectContent>
               </Select>
             </div>

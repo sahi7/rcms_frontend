@@ -2,7 +2,7 @@
 import { useAuthStore } from '@/app/store/authStore';
 
 // Top-level roles that have FULL access to everything
-const FULL_ACCESS_ROLES = ['chancellor', ];
+const FULL_ACCESS_ROLES = ['chancellor', 'principal' ];
 
 // Helper to normalize permission string (handles both "add.user" and "add_user")
 const normalizePermission = (perm: string): string => {

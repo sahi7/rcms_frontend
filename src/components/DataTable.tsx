@@ -1,5 +1,5 @@
 // src/components/DataTable.tsx
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   ChevronLeftIcon,
@@ -41,6 +41,25 @@ export function DataTable<T extends { id: React.Key }>({
 }: DataTableProps<T>) {
   const { pagination } = data
 
+  // Local search state prevents focus loss on every keystroke
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
+
+  // Sync local state when parent prop changes (external reset, filter, etc.)
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm)
+  }, [searchTerm])
+
+  // Debounced search (600ms) + minimum 3 characters
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (localSearchTerm.length >= 3 || localSearchTerm.length === 0) {
+        onSearch(localSearchTerm)
+      }
+    }, 600)
+
+    return () => clearTimeout(timeoutId)
+  }, [localSearchTerm, onSearch])
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
       <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
@@ -49,8 +68,8 @@ export function DataTable<T extends { id: React.Key }>({
           <input
             type="text"
             placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => onSearch(e.target.value)}
+            value={localSearchTerm}
+            onChange={(e) => setLocalSearchTerm(e.target.value)}
             disabled={loading}
             className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all bg-white disabled:opacity-50"
           />
@@ -114,7 +133,7 @@ export function DataTable<T extends { id: React.Key }>({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: rowIndex * 0.05 }}
-                  key={item.id}                    // ← works with number OR string now
+                  key={item.id}
                   className="hover:bg-slate-50/80 transition-colors group"
                 >
                   {columns.map((col, colIndex) => (
