@@ -12,7 +12,8 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useRoles } from '../hooks/useRoles'
+// import { useRoles } from '../hooks/useRoles'
+import { useRoles, useCreateRole, useUpdateRole, useDeleteRole } from '../hooks/useRoles'
 import { Modal } from '@/components/Modal'
 import { cn } from '@/lib/utils'
 
@@ -40,7 +41,11 @@ export function Roles() {
     description: '',
   })
 
-  const { rolesData, isLoading, createMutation, updateMutation, deleteMutation } = useRoles()
+    //   const { rolesData, isLoading, createMutation, updateMutation, deleteMutation } = useRoles()
+    const { data: rolesData, isLoading } = useRoles()
+    const createMutation = useCreateRole()
+    const updateMutation = useUpdateRole()
+    const deleteMutation = useDeleteRole()
 
   const handleOpenModal = (role?: any) => {
     if (role) {

@@ -71,6 +71,23 @@ export function useUpdateMutation<TPayload, TResponse = any>(
   })
 }
 
+// PUT mutation (full replacement) – used for updating user records including taught_subjects
+export function usePutMutation<TPayload, TResponse = any>(
+  endpoint: string,
+  invalidateKeys: string[],
+) {
+  const queryClient = useQueryClient()
+  return useMutation<TResponse, Error, { id: number | string; payload: TPayload }>({
+    mutationFn: ({ id, payload }) =>
+      api.put<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
+    onSuccess: () => {
+      invalidateKeys.forEach((key) =>
+        queryClient.invalidateQueries({ queryKey: [key] }),
+      )
+    },
+  })
+}
+
 export function useDeleteMutation(endpoint: string, invalidateKeys: string[]) {
   const queryClient = useQueryClient()
   return useMutation<void, Error, number | string>({

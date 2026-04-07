@@ -122,7 +122,7 @@ export function UserForm() {
         <div className="max-w-4xl mx-auto space-y-6 pb-12">
             <div className="flex items-center gap-4">
                 <button
-                    onClick={() => navigate('/users')}
+                    onClick={() => navigate('/dashboard/users')}
                     className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
                 >
                     <ArrowLeft className="h-5 w-5" />

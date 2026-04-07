@@ -5,11 +5,13 @@ import { Plus, Shield, Trash2, Eye } from 'lucide-react'
 import { DataTable } from '@/components/DataTable'
 import { PageSummaryCards } from '@/components/PageSummaryCards'
 import { useUsersList, useDeleteUser } from '@/hooks/shared/useUsers'
+import { useRoles } from '@/features/users/hooks/useRoles'
 import { User } from '@/types/shared'
 import { Can } from '@/hooks/shared/useHasPermission'
 
 export function UsersList() {
   const navigate = useNavigate()
+  const { data: rolesData } = useRoles()
 
   const [page, setPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
@@ -62,18 +64,24 @@ export function UsersList() {
     },
     {
       header: 'Role',
-      accessor: (user: User) => (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
-          {user.role.replace('_', ' ')}
-        </span>
-      ),
+      accessor: (user: User) => {
+        // Use the reusable role logic (role ID → role_type)
+        const roleObj = rolesData?.find((r: any) => String(r.id) === String(user.role))
+        const displayRole = roleObj?.role_type || user.role || '—'
+
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 capitalize">
+            {displayRole.replace('_', ' ')}
+          </span>
+        )
+      },
     },
     {
       header: 'Actions',
       accessor: (user: User) => (
         <div className="flex items-center justify-end gap-2">
           <button
-            onClick={() => navigate(`/users/${user.id}`)}
+            onClick={() => navigate(`/dashboard/users/${user.id}`)}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
             title="View Details"
           >
@@ -115,7 +123,7 @@ export function UsersList() {
         <div className="flex items-center gap-3">
           <Can permission="manage_roles">
             <button
-              onClick={() => navigate('/users/roles')}
+              onClick={() => navigate('/dashboard/users/roles')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Shield className="h-4 w-4" />
@@ -143,7 +151,7 @@ export function UsersList() {
         onSearch={setSearchTerm}
         searchTerm={searchTerm}
         onPageChange={setPage}
-        onEdit={(user) => navigate(`/users/${user.id}`)}
+        onEdit={(user) => navigate(`/dashboard/users/${user.id}`)}
         onDelete={handleDeleteClick}
         actions={false}
       />

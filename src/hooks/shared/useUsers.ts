@@ -1,10 +1,28 @@
+// src/features/users/hooks/useUsers.ts
 import { useState } from 'react'
 import { useSearchQuery, useListQuery, useDeleteMutation, useCreateMutation, useDetailQuery } from './useApiQuery'
 import { useDepartments } from '@/features/structure/hooks/useDepartments'
 import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
-import { useTaughtSubjects, useAddTaughtSubject, useRemoveTaughtSubject } from '@/features/users/hooks/useTaughtSubjects'
+import { useSubjects } from '@/features/curriculum/hooks/useSubjects'
+import { useRoles } from '@/features/users/hooks/useRoles'
 import { User } from '@/types/shared'
-import { Subject } from '@/types/academic'
+
+// Reusable hook: takes ONLY the role ID and internally uses useRoles to check if it's a teacher
+// Global reusable hook: pass a role ID → get role_type
+export function useRoleType(roleId: number | string | null | undefined): string | null {
+  const { data: rolesData } = useRoles()
+
+  if (!roleId || !rolesData?.length) return null
+
+  const role = rolesData.find((r: any) => String(r.id) === String(roleId))
+  return role?.role_type || null
+}
+
+// Convenience hook built on top of useRoleType
+export function useIsTeacher(roleId: number | string | null | undefined): boolean {
+  const roleType = useRoleType(roleId)
+  return roleType === 'teacher'
+}
 
 export function useUsers(params: Record<string, any> = {}) {
   // We can use useListQuery if we need a full list, but usually we just search
@@ -49,15 +67,9 @@ export function useDeleteUser() {
 export function useUserForm() {
   const { data: departmentsData } = useDepartments()
 
-  const { data: rolesData } = useListQuery<any>(
-    'roles',
-    '/roles/'
-  )
+  const { data: rolesData } = useRoles()
 
-  const { data: subjectsData } = useListQuery<Subject>(
-    'subjects',
-    '/subjects/'
-  )
+  const { data: subjectsData } = useSubjects()
 
   const createMutation = useCreateMutation<any, any>(
     '/auth/register/',
@@ -76,28 +88,19 @@ export function useUserDetails(userId: string) {
   // User details
   const { data: user, isLoading: isLoadingUser } = useDetailQuery<User>(
     'user',
-    `/users/${userId}/`,
-    null
+    `/users/`,
+    userId
   )
 
-  // Taught subjects (full data + mutations)
-  const taughtSubjectsHook = useTaughtSubjects(userId)
-
-  const addTaughtSubject = useAddTaughtSubject(userId)
-  const removeTaughtSubject = useRemoveTaughtSubject(userId)
-
   // Supporting data
-  const { data: subjectsData } = useListQuery<Subject>('subjects', '/subjects/')
+  const { data: subjectsData } = useSubjects()
   const { data: departmentsData } = useDepartments()
   const { data: classroomsData } = useClassRooms()
 
   return {
     user,
     isLoadingUser,
-    taughtSubjectsData: taughtSubjectsHook.data,           // ← explicitly returned
-    isLoading: taughtSubjectsHook.isLoading,               // taught subjects loading
-    addTaughtSubject,
-    removeTaughtSubject,
+    isTeacher: useIsTeacher(user?.role),   // ← now only passes the role (ID)
     subjectsData,
     departmentsData,
     classroomsData,

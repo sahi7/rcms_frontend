@@ -98,7 +98,7 @@ export default function App() {
         <Route path="users">
           <Route index element={<UsersList />} />
           <Route path="roles" element={<Roles />} />
-          <Route path="detail" element={<UserDetails />} />
+          <Route path=":id" element={<UserDetails />} />
           <Route path="create" element={<UserForm />} />
           <Route path="scopes" element={<RoleScopesPage />} />
         </Route>

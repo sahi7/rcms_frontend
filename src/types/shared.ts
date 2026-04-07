@@ -27,6 +27,7 @@ export interface User {
   email: string
   username?: string
   // NEW FIELDS - all optional with ?
+  taught_subjects?: number[],
   phone_number?: string
   enrollment_status?: string
   place_of_birth?: string
