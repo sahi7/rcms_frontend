@@ -37,6 +37,7 @@ import { MarkPreviewPage } from '@/features/marks/pages/MarkPreviewPage'
 import { UploadStatusPage } from '@/features/marks/pages/UploadStatusPage'
 import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 
+import { SettingsPage } from './features/settings/pages/SettingsPage'
 
 
 export default function App() {
@@ -106,6 +107,8 @@ export default function App() {
         <Route path="marks/preview" element={<MarkPreviewPage />} />
         <Route path="marks/preview/:groupKey" element={<MarkPreviewPage />} />
         <Route path="marks/upload-status" element={<UploadStatusPage />} />
+
+        <Route path="settings" element={<SettingsPage />} />
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>
