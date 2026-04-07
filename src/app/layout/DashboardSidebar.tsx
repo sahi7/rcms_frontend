@@ -45,7 +45,7 @@ const baseNavStructure = [
     permission: 'view.curriculumsubject',
     children: [
       { titleKey: 'subject_naming', path: '/dashboard/subjects', permission: 'view.subject' },
-      { title: 'subject_naming Curriculum', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
+      { titleKey: 'Curriculum subject_naming', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
       { titleKey: 'class_progression_name Assignments', path: '/dashboard/class-assignments', permission: 'view.classassignment' },
       { titleKey: 'subject_naming Assignments', path: '/dashboard/subject-assignments', permission: 'view.subjectassignment' },
     ],
@@ -92,7 +92,7 @@ const baseNavStructure = [
     permission: 'view.user',
     children: [
       { title: 'Users', path: '/dashboard/users', permission: 'view.user' },
-      { title: 'Roles', path: '/dashboard/roles', permission: 'view.role' },
+      { title: 'Roles', path: '/dashboard/users/roles', permission: 'view.role' },
     ],
   },
   {

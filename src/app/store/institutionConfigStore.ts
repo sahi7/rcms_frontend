@@ -97,7 +97,8 @@ export const useInstitutionConfigStore = create<ConfigStore>()(
                 if (lower.endsWith('y')) return label.slice(0, -1) + 'ies';
                 if (lower.endsWith('s')) return label;
                 const plural = label + 's';
-                return toSentenceCase(plural);
+                return plural;
+                // return toSentenceCase(plural);
             },
         }),
         {

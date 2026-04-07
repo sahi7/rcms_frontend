@@ -124,7 +124,7 @@ export function UsersList() {
           </Can>
           <Can permission="add_user">
             <button
-              onClick={() => navigate('/users/create')}
+              onClick={() => navigate('/dashboard/users/create')}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors shadow-sm"
             >
               <Plus className="h-4 w-4" />

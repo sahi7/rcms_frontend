@@ -1,3 +1,4 @@
+// src/types/shared.ts
 import { Department } from '@/types/structure'
 
 export interface PaginatedResponse<T> {
@@ -25,6 +26,14 @@ export interface User {
   last_name: string
   email: string
   username?: string
+  // NEW FIELDS - all optional with ?
+  phone_number?: string
+  enrollment_status?: string
+  place_of_birth?: string
+  profile_picture?: string
+  date_joined?: string
+  date_of_birth?: string
+  initials?: string
 }
 
 export interface ListQueryParams {

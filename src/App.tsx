@@ -85,20 +85,22 @@ export default function App() {
         <Route path="classrooms" element={<ClassRooms />} />
         <Route path="faculties" element={<Faculties />} />
 
-        <Route path="students/bulk-upload" element={<StudentBulkUpload />} />
-        <Route path="students" element={<StudentsList />} />
-        <Route path="students/create" element={<StudentForm/>} />   {/* Create new student */}
-        <Route path="students/:id" element={<StudentDetails/>} />  {/* Edit existing student (by ID) */}
-        <Route path="students/report" element={<StudentReportPage />} />
-        <Route path="students/report/:studentId" element={<StudentReportPage />} />
-        {/* <Route path="students" element={<StudentDetails />} />
-        <Route path="students" element={<StudentForm />} /> */}
+        <Route path="students">
+          <Route index element={<StudentsList />} />
+          <Route path="bulk-upload" element={<StudentBulkUpload />} />
+          <Route path="create" element={<StudentForm/>} />   {/* Create new student */}
+          <Route path=":id" element={<StudentDetails/>} />  {/* Edit existing student (by ID) */}
+          <Route path="report" element={<StudentReportPage />} />
+          <Route path="report/:studentId" element={<StudentReportPage />} />
+        </Route>
 
-        <Route path="roles" element={<Roles />} />
-        <Route path="users" element={<UsersList />} />
-        <Route path="users/detail" element={<UserDetails />} />
-        <Route path="users/form" element={<UserForm />} />
-        <Route path="users/scopes" element={<RoleScopesPage />} />
+        <Route path="users">
+          <Route index element={<UsersList />} />
+          <Route path="roles" element={<Roles />} />
+          <Route path="detail" element={<UserDetails />} />
+          <Route path="create" element={<UserForm />} />
+          <Route path="scopes" element={<RoleScopesPage />} />
+        </Route>
 
         <Route path="marks/upload" element={<MarkUploadPage />} />
         <Route path="marks/preview" element={<MarkPreviewPage />} />
