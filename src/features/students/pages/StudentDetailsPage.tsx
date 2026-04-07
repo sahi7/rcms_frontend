@@ -15,6 +15,7 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { StatusBadge } from '@/components/StatusBadge'
 import { cn, formatDate } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentElectives } from '../hooks/useStudentElectives'
 
 export function StudentDetails() {
@@ -227,6 +228,7 @@ function OverviewTab({ student }: { student: Student }) {
 function StudentElectivesTab({ studentId, student }: { studentId: string; student: Student }) {
   const { getLabel, getPlural } = useInstitutionConfig()
   const [selectedElectiveIds, setSelectedElectiveIds] = useState<(string | number)[]>([])
+  const [termId, setTermId] = useState<string | number | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const {
@@ -234,6 +236,7 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     isLoadingElectives,
     curriculumSubjectsData,
     allSubjectsData,
+    termsData,
     saveElectivesMutation,
   } = useStudentElectives(studentId, student.current_class, student.department)
 
@@ -261,6 +264,11 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     currentElectiveIds.includes(s.id)
   ) || []
 
+  const termOptions = termsData?.data?.map((t: any) => ({
+    value: t.id,
+    label: t.name,
+  })) || []
+
   // Pre-fill selected electives when data loads
   useEffect(() => {
     if (currentElectiveIds.length > 0) {
@@ -284,7 +292,7 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
 
   return (
     <div className="space-y-6">
-      {/* Completely redesigned Manage Electives – clean multi-select + update layout */}
+      {/* Redesigned Manage Electives with Term selection restored */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Manage Electives</h2>
@@ -293,22 +301,47 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
           </p>
         </div>
         <div className="p-6">
+          {!termId && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                Warning: No {getLabel('termLabel').toLowerCase()} selected. Electives will be automatically added to the current {getLabel('termLabel').toLowerCase()}.
+              </p>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-sm">
               {errorMsg}
             </div>
           )}
 
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {getPlural('subjectLabel')} (Electives)
-            </label>
-            <MultiSelect
-              options={availableElectives}
-              value={selectedElectiveIds}
-              onChange={setSelectedElectiveIds}
-              placeholder={`Select ${getPlural('electiveLabel')?.toLowerCase() || 'electives'}...`}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Term selector restored */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select {getLabel('termLabel')} (Optional)
+              </label>
+              <SearchableSelect
+                options={termOptions}
+                value={termId}
+                onChange={setTermId}
+                placeholder={`Select ${getLabel('termLabel')}...`}
+              />
+            </div>
+
+            {/* Multi-select for electives */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {getPlural('subjectLabel')} (Electives)
+              </label>
+              <MultiSelect
+                options={availableElectives}
+                value={selectedElectiveIds}
+                onChange={setSelectedElectiveIds}
+                placeholder={`Select ${getPlural('electiveLabel')?.toLowerCase() || 'electives'}...`}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end">
@@ -328,7 +361,7 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
         </div>
       </div>
 
-      {/* Current Electives Display (kept for visibility) */}
+      {/* Current Electives Display */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Current Electives</h2>
