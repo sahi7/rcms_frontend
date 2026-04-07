@@ -13,7 +13,6 @@ import { PageSummaryCards } from '@/components/PageSummaryCards'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { MultiSelect } from '@/components/MultiSelect'
 import {
-  CurriculumSubject,
   CurriculumSubjectPayload,
 } from '@/types/curriculum'
 import {
@@ -41,6 +40,7 @@ export function CurriculumSubjects() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [filterDepartment, setFilterDepartment] = useState<string>('')
+  const [filterClassroom, setFilterClassroom] = useState<string>('') // ← classroom filter
   const pageSize = 20
 
   const { data, isLoading } = useCurriculumSubjects({
@@ -48,6 +48,7 @@ export function CurriculumSubjects() {
     page: currentPage,
     page_size: pageSize,
     department: filterDepartment || undefined,
+    class_room: filterClassroom || undefined, // ← pass classroom filter to hook
   })
 
   const createMutation = useCreateCurriculumSubject()
@@ -167,6 +168,7 @@ export function CurriculumSubjects() {
     e.preventDefault()
     try {
       await createMutation.mutateAsync(formData as CurriculumSubjectPayload)
+      toast.success('Curriculum subject assigned successfully')
       setIsModalOpen(false)
     } catch (error: any) {
       console.error('Failed to save curriculum subject', error)
@@ -183,6 +185,7 @@ export function CurriculumSubjects() {
         ...editFormData,
         subjects: [editFormData.subject],
       } as any)
+      toast.success('Curriculum subject updated successfully')
       setIsEditModalOpen(false)
     } catch (error: any) {
       console.error('Failed to update', error)
@@ -195,6 +198,7 @@ export function CurriculumSubjects() {
     if (itemToDelete) {
       try {
         await deleteMutation.mutateAsync(itemToDelete.id)
+        toast.success('Curriculum subject deleted successfully')
         setIsDeleteModalOpen(false)
         setItemToDelete(null)
       } catch (error: any) {
@@ -238,19 +242,37 @@ export function CurriculumSubjects() {
             Assign subjects to departments and classrooms.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"> {/* ← mobile-friendly filters */}
+          {/* Department filter */}
           <select
             value={filterDepartment}
             onChange={(e) => {
               setFilterDepartment(e.target.value)
               setCurrentPage(1)
             }}
-            className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
+            className="w-full sm:w-auto px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
           >
             <option value="">All Departments</option>
             {departmentOptions.map((d) => (
               <option key={d.value} value={d.value}>
                 {d.label}
+              </option>
+            ))}
+          </select>
+
+          {/* NEW: Classroom filter (mobile-friendly) */}
+          <select
+            value={filterClassroom}
+            onChange={(e) => {
+              setFilterClassroom(e.target.value)
+              setCurrentPage(1)
+            }}
+            className="w-full sm:w-auto px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-white"
+          >
+            <option value="">All Classrooms</option>
+            {classroomOptions.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
               </option>
             ))}
           </select>
