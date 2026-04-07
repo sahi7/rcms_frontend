@@ -1,5 +1,5 @@
 // src/features/students/pages/StudentDetailsPage.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -8,7 +8,6 @@ import {
   User,
   AlertCircle,
   Loader2,
-  Plus,
 } from 'lucide-react'
 import { useDetailQuery } from '@/hooks/shared/useApiQuery'
 import { Student } from '@/types/academic'
@@ -16,13 +15,11 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { StatusBadge } from '@/components/StatusBadge'
 import { cn, formatDate } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
-import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentElectives } from '../hooks/useStudentElectives'
 
 export function StudentDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  // const { getLabel, getPlural } = useInstitutionConfig()
 
   const [activeTab, setActiveTab] = useState<'overview' | 'electives'>('overview')
 
@@ -229,9 +226,7 @@ function OverviewTab({ student }: { student: Student }) {
 
 function StudentElectivesTab({ studentId, student }: { studentId: string; student: Student }) {
   const { getLabel, getPlural } = useInstitutionConfig()
-  const [selectedSubjectIds, setSelectedSubjectIds] = useState<(string | number)[]>([])
-  const [termId, setTermId] = useState<string | number | null>(null)
-  const [subjectRoleFilter, setSubjectRoleFilter] = useState<string>('')
+  const [selectedElectiveIds, setSelectedElectiveIds] = useState<(string | number)[]>([])
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const {
@@ -239,123 +234,101 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     isLoadingElectives,
     curriculumSubjectsData,
     allSubjectsData,
-    termsData,
     saveElectivesMutation,
   } = useStudentElectives(studentId, student.current_class, student.department)
 
-  const handleSaveElectives = async () => {
+  // 2 + 3: Filter electives from curriculumSubjectsData (subject_role=2 + matches student's department or class)
+  // then map to real subject names/codes from allSubjectsData
+  const availableElectives = curriculumSubjectsData?.data
+    ?.filter((cs: any) => {
+      const isElective = cs.subject_role === 2
+      const matchesDepartment = cs.department === student.department
+      const matchesClass = cs.class_room === student.current_class
+      return isElective && (matchesDepartment || matchesClass)
+    })
+    .map((cs: any) => {
+      const subjectDetail = allSubjectsData?.data?.find((s: any) => s.id === cs.subject)
+      return {
+        value: cs.subject,
+        label: subjectDetail
+          ? `${subjectDetail.name} (${subjectDetail.code})`
+          : `Subject ${cs.subject}`,
+      }
+    }) || []
+
+  const currentElectiveIds = electivesData?.subject_ids || []
+  const currentElectiveSubjects = allSubjectsData?.data?.filter((s: any) =>
+    currentElectiveIds.includes(s.id)
+  ) || []
+
+  // Pre-fill selected electives when data loads
+  useEffect(() => {
+    if (currentElectiveIds.length > 0) {
+      setSelectedElectiveIds(currentElectiveIds)
+    }
+  }, [currentElectiveIds])
+
+  const handleUpdateElectives = async () => {
     setErrorMsg(null)
     try {
       await saveElectivesMutation.mutateAsync({
-        electives: selectedSubjectIds.map(Number),
-        // term: termId ? Number(termId) : null,
+        id: studentId,
+        payload: {
+          electives: selectedElectiveIds.map(Number)
+        }
       })
-      setSelectedSubjectIds([])
     } catch (error: any) {
-      setErrorMsg(error?.response?.data?.error || 'Failed to save electives')
+      setErrorMsg(error?.response?.data?.error || 'Failed to update electives')
     }
   }
 
-  // FIXED: Safe mapping with any to avoid CurriculumSubjectBase vs CurriculumSubjectListItem conflict
-  const availableSubjects = curriculumSubjectsData?.data?.map((cs: any) => ({
-    id: cs.subject,
-    name: '',
-    code: '',
-  })) || []
-
-  const currentElectiveIds = electivesData?.subject_ids || []
-  const currentElectiveSubjects = (allSubjectsData?.data || []).filter((s) =>
-    currentElectiveIds.includes(s.id)
-  )
-
-  const termOptions = termsData?.data?.map((t) => ({
-    value: t.id,
-    label: t.name,
-  })) || []
-
   return (
     <div className="space-y-6">
+      {/* Completely redesigned Manage Electives – clean multi-select + update layout */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Manage Electives</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Choose elective subjects available for this student (based on their class and department)
+          </p>
         </div>
         <div className="p-6">
-          {!termId && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">
-                Warning: No {getLabel('termLabel').toLowerCase()} selected. Electives will be automatically added to the current {getLabel('termLabel').toLowerCase()}.
-              </p>
-            </div>
-          )}
-
           {errorMsg && (
-            <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-rose-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-rose-800">{errorMsg}</p>
+            <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-sm">
+              {errorMsg}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select {getLabel('termLabel')} (Optional)
-              </label>
-              <SearchableSelect
-                options={termOptions}
-                value={termId}
-                onChange={setTermId}
-                placeholder={`Select ${getLabel('termLabel')}...`}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subject Role Filter
-              </label>
-              <select
-                value={subjectRoleFilter}
-                onChange={(e) => setSubjectRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-1 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white"
-              >
-                <option value="">All Roles</option>
-                <option value="core">Core</option>
-                <option value="elective">Elective</option>
-                <option value="optional">Optional</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Add {getPlural('subjectLabel')}
-              </label>
-              <MultiSelect
-                options={availableSubjects.map((s) => ({
-                  value: s.id,
-                  label: `${s.name} (${s.code})`,
-                }))}
-                value={selectedSubjectIds}
-                onChange={setSelectedSubjectIds}
-                placeholder={`Select ${getPlural('subjectLabel').toLowerCase()}...`}
-              />
-            </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {getPlural('subjectLabel')} (Electives)
+            </label>
+            <MultiSelect
+              options={availableElectives}
+              value={selectedElectiveIds}
+              onChange={setSelectedElectiveIds}
+              placeholder={`Select ${getPlural('electiveLabel')?.toLowerCase() || 'electives'}...`}
+            />
           </div>
 
           <div className="flex justify-end">
             <button
-              onClick={handleSaveElectives}
-              disabled={selectedSubjectIds.length === 0 || saveElectivesMutation.isPending}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
+              onClick={handleUpdateElectives}
+              disabled={saveElectivesMutation.isPending}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:opacity-50 transition-colors shadow-sm"
             >
               {saveElectivesMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="h-4 w-4" />
+                <BookOpen className="h-4 w-4" />
               )}
-              Add Electives
+              Update Electives
             </button>
           </div>
         </div>
       </div>
 
+      {/* Current Electives Display (kept for visibility) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Current Electives</h2>
@@ -368,23 +341,21 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
         ) : currentElectiveSubjects.length === 0 ? (
           <div className="p-12 text-center">
             <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No electives assigned to this student yet.</p>
+            <p className="text-gray-500">No electives assigned yet.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {currentElectiveSubjects.map((subject) => (
+            {currentElectiveSubjects.map((subject: any) => (
               <li
                 key={subject.id}
-                className="p-4 sm:px-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="p-4 sm:px-6 flex items-center gap-3 hover:bg-gray-50"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                    <BookOpen className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{subject.name}</p>
-                    <p className="text-xs text-gray-500">{subject.code}</p>
-                  </div>
+                <div className="h-9 w-9 rounded-lg bg-orange-50 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{subject.name}</p>
+                  <p className="text-xs text-gray-500">{subject.code}</p>
                 </div>
               </li>
             ))}

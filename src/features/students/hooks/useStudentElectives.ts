@@ -1,7 +1,7 @@
 // src/features/students/hooks/useStudentElectives.ts
 import {
   useDetailQuery,
-  useCreateMutation,
+  usePutMutation,
 } from '@/hooks/shared/useApiQuery'
 import { useCurriculumSubjects } from '../../curriculum/hooks/useCurriculumSubjects'
 import { useSubjects } from '../../curriculum/hooks/useSubjects'
@@ -15,7 +15,7 @@ export function useStudentElectives(
   const { data: electivesData, isLoading: isLoadingElectives } = useDetailQuery<{
     subject_ids: number[]
   }>(
-    'student-electives',
+    `student-electives-${studentId}`,
     `/students/`,
     `${studentId}/electives`
   )
@@ -29,12 +29,12 @@ export function useStudentElectives(
 
   const { data: termsData } = useTerms()
 
-  const saveElectivesMutation = useCreateMutation<
+  const saveElectivesMutation = usePutMutation<
     { electives: number[] },
     any
   >(
     `/students/`,
-    ['student-electives']
+    [`student-electives-${studentId}`]  // Array for mutation invalidation
   )
 
   return {
