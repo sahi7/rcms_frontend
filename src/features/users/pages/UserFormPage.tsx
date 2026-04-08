@@ -16,8 +16,7 @@ const userSchema = z.object({
     last_name: z.string().min(1, 'Last name is required'),
     email: z.string().email('Invalid email address'),
     role: z.string().min(1, 'Role is required'),
-    phone_number: z.string().optional(),
-    phone: z.string().optional(),
+    phone_number: z.string().min(1, 'Phone number is required'),
     department: z.number().nullable(),
     date_of_birth: z.string().min(1, 'Date of birth is required'),
     place_of_birth: z.string().min(1, 'Place of birth is required'),
@@ -108,8 +107,8 @@ export function UserForm() {
                 profile_picture: existingUser.profile_picture || undefined,
             })
 
-            if (existingUser.subject_ids && Array.isArray(existingUser.subject_ids)) {
-                setSubjectIds(existingUser.subject_ids)
+            if (existingUser.taught_subjects && Array.isArray(existingUser.taught_subjects)) {
+                setSubjectIds(existingUser.taught_subjects)
             }
 
             if (existingUser.profile_picture) {
@@ -187,7 +186,7 @@ export function UserForm() {
             let payload: any = {
                 ...validatedData,
                 initials,                   // ← send ID, not string
-                subject_ids: validatedData.role === (teacherRole?.id || 'teacher') ? subjectIds.map(Number) : [],
+                taught_subjects: validatedData.role === (teacherRole?.id || 'teacher') ? subjectIds.map(Number) : [],
             }
 
             // Upload profile picture if selected
