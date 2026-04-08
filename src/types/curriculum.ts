@@ -16,7 +16,7 @@ export type SubjectPayload = Omit<SubjectBase, 'id' | 'departments'>
 // Curriculum
 export interface CurriculumSubjectBase {
   id: number
-  department: number
+  department: number | null
   subjects: number[],
   subject?: number
   subject_role: number
@@ -25,7 +25,7 @@ export interface CurriculumSubjectBase {
 
 export interface CurriculumSubjectListItem {
   id: number
-  department: number
+  department: number | null
   subject: number 
   subject_role: number
   class_room: number

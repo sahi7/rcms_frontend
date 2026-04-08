@@ -18,6 +18,7 @@ import {
 import {
   useCurriculumSubjects,
   useCreateCurriculumSubject,
+  useUpdateCurriculumSubject,
   useDeleteCurriculumSubject,
 } from '../hooks/useCurriculumSubjects'
 import { useSubjects } from '../hooks/useSubjects'
@@ -29,7 +30,7 @@ import { toast } from 'sonner'
 
 // Local payload type that exactly matches the server (plural subjects + nullable term_number)
 type CurriculumSubjectCreatePayload = {
-  department: number
+  department: number | null
   class_room: number
   subjects: number[]
   subject_role: 1 | 2
@@ -40,7 +41,7 @@ export function CurriculumSubjects() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [filterDepartment, setFilterDepartment] = useState<string>('')
-  const [filterClassroom, setFilterClassroom] = useState<string>('') // ← classroom filter
+  const [filterClassroom, setFilterClassroom] = useState<string>('')
   const pageSize = 20
 
   const { data, isLoading } = useCurriculumSubjects({
@@ -48,10 +49,11 @@ export function CurriculumSubjects() {
     page: currentPage,
     page_size: pageSize,
     department: filterDepartment || undefined,
-    class_room: filterClassroom || undefined, // ← pass classroom filter to hook
+    class_room: filterClassroom || undefined,
   })
 
   const createMutation = useCreateCurriculumSubject()
+  const updateMutation = useUpdateCurriculumSubject()
   const deleteMutation = useDeleteCurriculumSubject()
 
   // Lookup data
@@ -115,7 +117,7 @@ export function CurriculumSubjects() {
 
   // Form data for CREATE (multi-subject)
   const [formData, setFormData] = useState<CurriculumSubjectCreatePayload>({
-    department: 0,
+    department: null,
     class_room: 0,
     subjects: [],
     subject_role: 1,
@@ -124,7 +126,7 @@ export function CurriculumSubjects() {
 
   // Form data for EDIT (single subject)
   const [editFormData, setEditFormData] = useState({
-    department: 0,
+    department: null,
     class_room: 0,
     subject: 0,
     subject_role: 1,
@@ -136,7 +138,7 @@ export function CurriculumSubjects() {
       header: 'Department',
       accessor: (item: any) => (
         <span className="font-medium">
-          {departmentMap[item.department] || `#${item.department}`}
+          {departmentMap[item.department] || `#General`}
         </span>
       ),
     },
@@ -181,9 +183,15 @@ export function CurriculumSubjects() {
     e.preventDefault()
     if (!editingItem) return
     try {
-      await createMutation.mutateAsync({
-        ...editFormData,
-        subjects: [editFormData.subject],
+      await updateMutation.mutateAsync({
+        id: editingItem.id,
+        payload: {
+          department: editFormData.department,
+          class_room: editFormData.class_room,
+          subject: editFormData.subject,
+          subject_role: editFormData.subject_role,
+          term_number: editFormData.term_number,
+        }
       } as any)
       toast.success('Curriculum subject updated successfully')
       setIsEditModalOpen(false)
@@ -242,7 +250,7 @@ export function CurriculumSubjects() {
             Assign subjects to departments and classrooms.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"> {/* ← mobile-friendly filters */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Department filter */}
           <select
             value={filterDepartment}
@@ -280,7 +288,7 @@ export function CurriculumSubjects() {
           <button
             onClick={() => {
               setFormData({
-                department: 0,
+                department: null,
                 class_room: 0,
                 subjects: [],
                 subject_role: 1,
@@ -345,7 +353,7 @@ export function CurriculumSubjects() {
             options={departmentOptions}
             value={formData.department || null}
             onChange={(v) =>
-              setFormData({ ...formData, department: (v as number) || 0 })
+              setFormData({ ...formData, department: v !== null && v !== undefined ? (v as number) : null })
             }
             placeholder="Select department... (optional)"
           />
@@ -440,7 +448,7 @@ export function CurriculumSubjects() {
             options={departmentOptions}
             value={editFormData.department || null}
             onChange={(v) =>
-              setEditFormData({ ...editFormData, department: (v as number) || 0 })
+              setEditFormData({ ...editFormData, department: v !== null && v !== undefined ? (v as number) : null })
             }
             placeholder="Select department... (optional)"
           />
@@ -513,10 +521,10 @@ export function CurriculumSubjects() {
             </button>
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={updateMutation.isPending}
               className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
             >
-              {createMutation.isPending ? 'Saving...' : 'Save Changes'}
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
