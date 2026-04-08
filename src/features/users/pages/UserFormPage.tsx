@@ -75,6 +75,11 @@ export function UserForm() {
         rolesData,
         subjectsData,
     } = useUserForm(userId || undefined)
+    console.log("Subjects Taught: ", subjectsData);
+    const subjectOptions = (subjectsData?.data || []).map((s) => ({
+        value: s.id,
+        label: `${s.name} (${s.code})`,
+    }))
 
     const teacherRole = rolesData?.find((role: any) => role.role_type === 'teacher')
 
@@ -496,10 +501,7 @@ export function UserForm() {
                                             Subjects Taught
                                         </label>
                                         <MultiSelect
-                                            options={(subjectsData?.data || []).map((s) => ({
-                                                value: s.id,
-                                                label: `${s.name} (${s.code})`,
-                                            }))}
+                                            options={subjectOptions}
                                             value={subjectIds}
                                             onChange={setSubjectIds}
                                             placeholder="Select subjects..."
