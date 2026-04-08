@@ -1,8 +1,9 @@
 // src/features/users/pages/UserFormPage.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { cn } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
@@ -64,6 +65,7 @@ export function UserForm() {
     const [formData, setFormData] = useState<UserFormData>(initialData)
     const [subjectIds, setSubjectIds] = useState<(string | number)[]>([])
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [serverError, setServerError] = useState<string>('')
 
     // Profile picture states
     const [selectedPicture, setSelectedPicture] = useState<File | null>(null)
@@ -81,7 +83,10 @@ export function UserForm() {
 
     const isSubmitting = createMutation.isPending || isUploadingPicture
 
-    // Auto-scroll to first error when validation fails
+    // Ref for server error banner so we can scroll to it
+    const serverErrorRef = useRef<HTMLDivElement>(null)
+
+    // Auto-scroll to first field error (Zod validation)
     useEffect(() => {
         if (Object.keys(errors).length > 0) {
             const firstErrorField = Object.keys(errors)[0]
@@ -96,6 +101,16 @@ export function UserForm() {
             }
         }
     }, [errors])
+
+    // NEW: Auto-scroll to server error banner when it appears
+    useEffect(() => {
+        if (serverError && serverErrorRef.current) {
+            serverErrorRef.current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            })
+        }
+    }, [serverError])
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -127,6 +142,8 @@ export function UserForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        setServerError('')   // clear previous server error
+
         try {
             const validatedData = userSchema.parse(formData)
 
@@ -144,14 +161,17 @@ export function UserForm() {
                 try {
                     const uploadResult = await uploadProfilePicture(selectedPicture, 'profile')
                     payload.profile_picture = uploadResult.publicUrl
-                    console.log("uploadResult.publicUrl: ", uploadResult.publicUrl);
                 } catch (uploadError) {
                     console.error('Profile picture upload failed:', uploadError)
                 }
             }
 
             await createMutation.mutateAsync(payload)
-            // navigate('/dashboard/users')
+
+            // Success message
+            toast.success('User created successfully')
+
+            navigate('/dashboard/users')
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const newErrors: Record<string, string> = {}
@@ -162,6 +182,16 @@ export function UserForm() {
                 })
                 setErrors(newErrors)
             } else {
+                // Server error support
+                const err = error as any;
+                const serverMsg =
+                    err?.response?.data?.error ||
+                    err?.response?.data?.detail ||
+                    err?.response?.data?.non_field_errors?.[0] ||
+                    err?.message ||
+                    'An unexpected error occurred while creating the user.'
+
+                setServerError(serverMsg)
                 console.error('API Error:', error)
             }
         }
@@ -185,6 +215,16 @@ export function UserForm() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Server error banner */}
+                {serverError && (
+                    <div 
+                        ref={serverErrorRef}
+                        className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+                    >
+                        {serverError}
+                    </div>
+                )}
+
                 {/* Account Information */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -384,7 +424,7 @@ export function UserForm() {
                                             placeholder="Select subjects..."
                                         />
                                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                            {/* <Info className="h-3 w-3" /> You can add specific classes later in the user's profile. */}
+                                            <Info className="h-3 w-3" /> You can add specific classes later in the user's profile.
                                         </p>
                                     </div>
                                 )}
