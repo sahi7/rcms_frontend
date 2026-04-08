@@ -6,8 +6,8 @@ import Cookies from "js-cookie";
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
 const UPSTREAM_SERVER = (import.meta as any).env?.VITE_UPSTREAM_SERVER || 'http://127.0.0.1:3000/api';
 
-console.log('🔥 API_BASE_URL =', API_BASE_URL);
-console.log('🔥 UPSTREAM_SERVER (should be 3000) =', UPSTREAM_SERVER);
+// console.log('🔥 API_BASE_URL =', API_BASE_URL);
+// console.log('🔥 UPSTREAM_SERVER (should be 3000) =', UPSTREAM_SERVER);
 
 // Main API (Django backend - port 8000)
 const api = axios.create({

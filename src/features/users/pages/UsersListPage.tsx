@@ -66,7 +66,7 @@ export function UsersList() {
       header: 'Role',
       accessor: (user: User) => {
         // Use the reusable role logic (role ID → role_type)
-        const roleObj = rolesData?.find((r: any) => String(r.id) === String(user.role))
+        const roleObj = rolesData?.data.find((r: any) => String(r.id) === String(user.role))
         const displayRole = roleObj?.role_type || user.role || '—'
 
         return (

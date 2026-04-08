@@ -11,9 +11,9 @@ import { User } from '@/types/shared'
 export function useRoleType(roleId: number | string | null | undefined): string | null {
   const { data: rolesData } = useRoles()
 
-  if (!roleId || !rolesData?.length) return null
+  if (!roleId || !rolesData?.data.length) return null
 
-  const role = rolesData.find((r: any) => String(r.id) === String(roleId))
+  const role = rolesData.data.find((r: any) => String(r.id) === String(roleId))
   return role?.role_type || null
 }
 

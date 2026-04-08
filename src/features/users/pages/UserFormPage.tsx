@@ -1,7 +1,7 @@
 // src/features/users/pages/UserFormPage.tsx
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Upload, Info } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
@@ -37,6 +37,19 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema> & {
     profile_picture?: string
 }
+
+// Static fallback roles (used during creation when some roles have not been created in the DB yet)
+const staticRoles = [
+    { role_type: 'teacher', name: 'Teacher' },
+    // { role_type: 'admin', name: 'Administrator' },
+    // { role_type: 'principal', name: 'Principal' },
+    { role_type: 'hod', name: 'Head of Department' },
+    { role_type: 'dean', name: 'Dean' },
+    // { role_type: 'accountant', name: 'Accountant' },
+    // { role_type: 'librarian', name: 'Librarian' },
+    // { role_type: 'staff', name: 'Staff' },
+    // { role_type: 'vice_principal', name: 'Vice Principal' },
+]
 
 const initialData: UserFormData = {
     first_name: '',
@@ -74,13 +87,21 @@ export function UserForm() {
         rolesData,
         subjectsData,
     } = useUserForm(userId || undefined)
-    console.log("Subjects Taught: ", subjectsData);
-    const subjectOptions = (subjectsData?.data || []).map((s) => ({
+
+    const subjectOptions = (subjectsData?.data || []).map((s: any) => ({
         value: s.id,
         label: `${s.name} (${s.code})`,
     }))
 
-    const teacherRole = rolesData?.find((role: any) => role.role_type === 'teacher')
+    // Combine fetched roles + static fallback roles (so the dropdown always has options)
+    const allRoles = [
+        ...(rolesData?.data || []),
+        ...staticRoles.filter(staticRole =>
+            !(rolesData?.data || []).some((r: any) => r.role_type === staticRole.role_type)
+        ),
+    ]
+
+    const teacherRole = rolesData?.data.find((role: any) => role.role_type === 'teacher')
 
     // Ref for server error banner
     const serverErrorRef = useRef<HTMLDivElement>(null)
@@ -92,7 +113,7 @@ export function UserForm() {
                 first_name: existingUser.first_name || '',
                 last_name: existingUser.last_name || '',
                 email: existingUser.email || '',
-                role: existingUser.role || (teacherRole?.id || 'teacher'),
+                role: String(existingUser.role || 'teacher'),
                 phone_number: existingUser.phone_number || '',
                 department: existingUser.department?.id || null,
                 date_of_birth: existingUser.date_of_birth || '',
@@ -183,10 +204,35 @@ export function UserForm() {
             const initials =
                 `${validatedData.first_name[0] || ''}${validatedData.last_name[0] || ''}`.toUpperCase()
 
+            // ──────────────────────────────────────────────────────────────
+            // NEW LOGIC: 
+            // If the selected role exists in fetched rolesData → send ID
+            // Else if it is in our static list (and not fetched) → send the string
+            // ──────────────────────────────────────────────────────────────
+            let rolePayload: string | number = validatedData.role
+
+            const fetchedRole = (rolesData?.data || []).find((r: any) =>
+                String(r.id) === String(validatedData.role) ||
+                r.role_type === validatedData.role
+            )
+
+            if (fetchedRole) {
+                rolePayload = fetchedRole.id
+            } else {
+                // Check static list – if it matches, send the string (role_type)
+                const isStatic = staticRoles.some(s => s.role_type === validatedData.role)
+                if (isStatic) {
+                    rolePayload = validatedData.role // send string
+                }
+            }
+
             let payload: any = {
                 ...validatedData,
-                initials,                   // ← send ID, not string
-                taught_subjects: validatedData.role === (teacherRole?.id || 'teacher') ? subjectIds.map(Number) : [],
+                role: rolePayload,                  // resolved value
+                initials,
+                taught_subjects: (rolePayload === (teacherRole?.id || 'teacher') || rolePayload === 'teacher')
+                    ? subjectIds.map(Number)
+                    : [],
             }
 
             // Upload profile picture if selected
@@ -215,7 +261,7 @@ export function UserForm() {
                 toast.success('User created successfully')
             }
 
-            // navigate('/dashboard/users')
+            navigate('/dashboard/users')
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const newErrors: Record<string, string> = {}
@@ -229,10 +275,8 @@ export function UserForm() {
                 const err = error as any
                 const serverData = err?.response?.data
 
-                // NEW: Handle server field errors like {"phone_number": ["msg"], "role": ["msg"]}
                 if (serverData && typeof serverData === 'object' && !Array.isArray(serverData)) {
                     const fieldErrors: Record<string, string> = {}
-
                     Object.keys(serverData).forEach((field) => {
                         if (Array.isArray(serverData[field]) && serverData[field].length > 0) {
                             fieldErrors[field] = serverData[field][0]
@@ -245,7 +289,6 @@ export function UserForm() {
                     }
                 }
 
-                // Fallback to general server error
                 const serverMsg =
                     err?.response?.data?.error ||
                     err?.response?.data?.detail ||
@@ -418,35 +461,14 @@ export function UserForm() {
                                         onChange={handleChange}
                                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
                                     >
-                                        {rolesData && rolesData.length > 0 && (
-                                            <>
-                                                {/* Custom Roles Group */}
-                                                {rolesData.filter((r: any) => !r.is_system).length > 0 && (
-                                                    <optgroup label="Custom Roles">
-                                                        {rolesData
-                                                            .filter((r: any) => !r.is_system)
-                                                            .map((role: any) => (
-                                                                <option key={role.role_type} value={role.id}>
-                                                                    {role.name}
-                                                                </option>
-                                                            ))}
-                                                    </optgroup>
-                                                )}
-
-                                                {/* System Roles Group */}
-                                                {rolesData.filter((r: any) => r.is_system).length > 0 && (
-                                                    <optgroup label="System Roles">
-                                                        {rolesData
-                                                            .filter((r: any) => r.is_system)
-                                                            .map((role: any) => (
-                                                                <option key={role.role_type} value={role.id}>
-                                                                    {role.name}
-                                                                </option>
-                                                            ))}
-                                                    </optgroup>
-                                                )}
-                                            </>
-                                        )}
+                                        {allRoles.map((role: any) => (
+                                            <option
+                                                key={role.id ?? role.role_type}
+                                                value={role.id ?? role.role_type}
+                                            >
+                                                {role.name}
+                                            </option>
+                                        ))}
                                     </select>
                                     <button
                                         type="button"
@@ -534,7 +556,7 @@ export function UserForm() {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                             />
                         </div>
-                        <div>
+                        {/* <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Alternative Phone
                             </label>
@@ -545,7 +567,7 @@ export function UserForm() {
                                 onChange={handleChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                             />
-                        </div>
+                        </div> */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Date of Birth
