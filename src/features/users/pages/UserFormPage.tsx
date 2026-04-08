@@ -1,7 +1,7 @@
 // src/features/users/pages/UserFormPage.tsx
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Save, Loader2, Upload, Info } from 'lucide-react'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
@@ -18,9 +18,9 @@ const userSchema = z.object({
     role: z.string().min(1, 'Role is required'),
     phone_number: z.string().optional(),
     phone: z.string().optional(),
-    department_id: z.number().nullable(),
-    date_of_birth: z.string().optional(),
-    place_of_birth: z.string().optional(),
+    department: z.number().nullable(),
+    date_of_birth: z.string().min(1, 'Date of birth is required'),
+    place_of_birth: z.string().min(1, 'Place of birth is required'),
     nationality: z.string().optional(),
     preferred_language: z.string().optional(),
     emergency_contact: z.string().optional(),
@@ -44,22 +44,13 @@ const initialData: UserFormData = {
     last_name: '',
     email: '',
     role: 'teacher',
-    department_id: null,
+    department: null,
 }
-
-const predefinedRoles = [
-    'chancellor',
-    'principal',
-    'headteacher',
-    'vice_chancellor',
-    'dean',
-    'hod',
-    'teacher',
-    'student',
-]
 
 export function UserForm() {
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const userId = searchParams.get('id')
     const { getLabel } = useInstitutionConfig()
 
     const [formData, setFormData] = useState<UserFormData>(initialData)
@@ -75,16 +66,54 @@ export function UserForm() {
     const { upload: uploadProfilePicture, isUploading: isUploadingPicture } = useFileUpload()
 
     const {
+        existingUser,
+        isLoadingUser,
+        createMutation,
+        updateMutation,
+        isEditing,
         departmentsData,
         rolesData,
         subjectsData,
-        createMutation,
-    } = useUserForm()
+    } = useUserForm(userId || undefined)
 
-    const isSubmitting = createMutation.isPending || isUploadingPicture
+    const teacherRole = rolesData?.find((role: any) => role.role_type === 'teacher')
 
-    // Ref for server error banner so we can scroll to it
+    // Ref for server error banner
     const serverErrorRef = useRef<HTMLDivElement>(null)
+
+    // Populate form when editing
+    useEffect(() => {
+        if (existingUser) {
+            setFormData({
+                first_name: existingUser.first_name || '',
+                last_name: existingUser.last_name || '',
+                email: existingUser.email || '',
+                role: existingUser.role || (teacherRole?.id || 'teacher'),
+                phone_number: existingUser.phone_number || '',
+                department: existingUser.department?.id || null,
+                date_of_birth: existingUser.date_of_birth || '',
+                place_of_birth: existingUser.place_of_birth || '',
+                nationality: existingUser.nationality || '',
+                preferred_language: existingUser.preferred_language || '',
+                emergency_guardian_name: existingUser.emergency_guardian_name || '',
+                emergency_guardian_email: existingUser.emergency_guardian_email || '',
+                emergency_guardian_phone: existingUser.emergency_guardian_phone || '',
+                emergency_guardian_address: existingUser.emergency_guardian_address || '',
+                relationship_to_guardian: existingUser.relationship_to_guardian || '',
+                profile_picture: existingUser.profile_picture || undefined,
+            })
+
+            if (existingUser.subject_ids && Array.isArray(existingUser.subject_ids)) {
+                setSubjectIds(existingUser.subject_ids)
+            }
+
+            if (existingUser.profile_picture) {
+                setPicturePreview(existingUser.profile_picture)
+            }
+        }
+    }, [existingUser])
+
+    const isSubmitting = createMutation.isPending || updateMutation.isPending
 
     // Auto-scroll to first field error (Zod validation)
     useEffect(() => {
@@ -102,7 +131,7 @@ export function UserForm() {
         }
     }, [errors])
 
-    // NEW: Auto-scroll to server error banner when it appears
+    // Auto-scroll to server error banner
     useEffect(() => {
         if (serverError && serverErrorRef.current) {
             serverErrorRef.current.scrollIntoView({
@@ -118,7 +147,7 @@ export function UserForm() {
         const { name, value } = e.target
         setFormData((prev) => ({
             ...prev,
-            [name]: name === 'department_id' ? (value ? Number(value) : null) : value,
+            [name]: name === 'department' ? (value ? Number(value) : null) : value,
         }))
 
         if (errors[name]) {
@@ -142,7 +171,7 @@ export function UserForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setServerError('')   // clear previous server error
+        setServerError('')
 
         try {
             const validatedData = userSchema.parse(formData)
@@ -152,8 +181,8 @@ export function UserForm() {
 
             let payload: any = {
                 ...validatedData,
-                initials,
-                subject_ids: formData.role === 'teacher' ? subjectIds.map(Number) : [],
+                initials,                   // ← send ID, not string
+                subject_ids: validatedData.role === (teacherRole?.id || 'teacher') ? subjectIds.map(Number) : [],
             }
 
             // Upload profile picture if selected
@@ -164,14 +193,25 @@ export function UserForm() {
                 } catch (uploadError) {
                     console.error('Profile picture upload failed:', uploadError)
                 }
+            } else if (formData.profile_picture) {
+                payload.profile_picture = formData.profile_picture
             }
 
-            await createMutation.mutateAsync(payload)
+            if (isEditing) {
+                await updateMutation.mutateAsync({
+                    id: userId!,
+                    payload: {
+                        ...payload,
+                        update: 'True',
+                    },
+                })
+                toast.success('User updated successfully')
+            } else {
+                await createMutation.mutateAsync(payload)
+                toast.success('User created successfully')
+            }
 
-            // Success message
-            toast.success('User created successfully')
-
-            navigate('/dashboard/users')
+            // navigate('/dashboard/users')
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const newErrors: Record<string, string> = {}
@@ -182,19 +222,45 @@ export function UserForm() {
                 })
                 setErrors(newErrors)
             } else {
-                // Server error support
-                const err = error as any;
+                const err = error as any
+                const serverData = err?.response?.data
+
+                // NEW: Handle server field errors like {"phone_number": ["msg"], "role": ["msg"]}
+                if (serverData && typeof serverData === 'object' && !Array.isArray(serverData)) {
+                    const fieldErrors: Record<string, string> = {}
+
+                    Object.keys(serverData).forEach((field) => {
+                        if (Array.isArray(serverData[field]) && serverData[field].length > 0) {
+                            fieldErrors[field] = serverData[field][0]
+                        }
+                    })
+
+                    if (Object.keys(fieldErrors).length > 0) {
+                        setErrors(fieldErrors)
+                        return
+                    }
+                }
+
+                // Fallback to general server error
                 const serverMsg =
                     err?.response?.data?.error ||
                     err?.response?.data?.detail ||
                     err?.response?.data?.non_field_errors?.[0] ||
                     err?.message ||
-                    'An unexpected error occurred while creating the user.'
+                    'An unexpected error occurred while saving the user.'
 
                 setServerError(serverMsg)
                 console.error('API Error:', error)
             }
         }
+    }
+
+    if (isEditing && isLoadingUser) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+            </div>
+        )
     }
 
     return (
@@ -207,9 +273,13 @@ export function UserForm() {
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Add New User</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {isEditing ? 'Edit User' : 'Add New User'}
+                    </h1>
                     <p className="text-sm text-gray-500 mt-1">
-                        Create a new staff account and assign roles.
+                        {isEditing
+                            ? 'Update user information and records.'
+                            : 'Create a new staff account and assign roles.'}
                     </p>
                 </div>
             </div>
@@ -217,7 +287,7 @@ export function UserForm() {
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Server error banner */}
                 {serverError && (
-                    <div 
+                    <div
                         ref={serverErrorRef}
                         className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
                     >
@@ -344,23 +414,34 @@ export function UserForm() {
                                         onChange={handleChange}
                                         className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
                                     >
-                                        <optgroup label="System Roles">
-                                            {predefinedRoles.map((role) => (
-                                                <option key={role} value={role}>
-                                                    {role.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                                                </option>
-                                            ))}
-                                        </optgroup>
-                                        {rolesData?.data && rolesData.data.length > 0 && (
-                                            <optgroup label="Custom Roles">
-                                                {rolesData.data
-                                                    .filter((r: any) => !r.is_system)
-                                                    .map((role: any) => (
-                                                        <option key={role.role_type} value={role.role_type}>
-                                                            {role.name}
-                                                        </option>
-                                                    ))}
-                                            </optgroup>
+                                        {rolesData && rolesData.length > 0 && (
+                                            <>
+                                                {/* Custom Roles Group */}
+                                                {rolesData.filter((r: any) => !r.is_system).length > 0 && (
+                                                    <optgroup label="Custom Roles">
+                                                        {rolesData
+                                                            .filter((r: any) => !r.is_system)
+                                                            .map((role: any) => (
+                                                                <option key={role.role_type} value={role.id}>
+                                                                    {role.name}
+                                                                </option>
+                                                            ))}
+                                                    </optgroup>
+                                                )}
+
+                                                {/* System Roles Group */}
+                                                {rolesData.filter((r: any) => r.is_system).length > 0 && (
+                                                    <optgroup label="System Roles">
+                                                        {rolesData
+                                                            .filter((r: any) => r.is_system)
+                                                            .map((role: any) => (
+                                                                <option key={role.role_type} value={role.id}>
+                                                                    {role.name}
+                                                                </option>
+                                                            ))}
+                                                    </optgroup>
+                                                )}
+                                            </>
                                         )}
                                     </select>
                                     <button
@@ -378,7 +459,7 @@ export function UserForm() {
                 </div>
 
                 {/* Role Specific Information */}
-                {(formData.role === 'teacher' ||
+                {(formData.role === (teacherRole?.id || 'teacher') ||
                     formData.role === 'hod' ||
                     formData.role === 'dean') && (
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -399,17 +480,17 @@ export function UserForm() {
                                                 label: d.name,
                                             })) || []
                                         }
-                                        value={formData.department_id}
+                                        value={formData.department}
                                         onChange={(val) =>
                                             setFormData((prev) => ({
                                                 ...prev,
-                                                department_id: val ? Number(val) : null,
+                                                department: val ? Number(val) : null,
                                             }))
                                         }
                                         placeholder={`Select ${getLabel('departmentLabel')}...`}
                                     />
                                 </div>
-                                {formData.role === 'teacher' && (
+                                {formData.role === (teacherRole?.id || 'teacher') && (
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                             Subjects Taught
@@ -589,7 +670,7 @@ export function UserForm() {
                 <div className="flex items-center justify-end gap-3 pt-4">
                     <button
                         type="button"
-                        onClick={() => navigate('/users')}
+                        onClick={() => navigate('/dashboard/users')}
                         className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
                     >
                         Cancel
@@ -604,7 +685,7 @@ export function UserForm() {
                         ) : (
                             <Save className="h-4 w-4" />
                         )}
-                        Create User
+                        {isEditing ? 'Save Changes' : 'Create User'}
                     </button>
                 </div>
             </form>

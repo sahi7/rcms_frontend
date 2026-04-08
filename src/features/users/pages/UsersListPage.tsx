@@ -1,7 +1,7 @@
 // src/features/users/pages/UsersListPage.tsx
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Shield, Trash2, Eye } from 'lucide-react'
+import { Plus, Shield, Trash2, Eye, Edit } from 'lucide-react'
 import { DataTable } from '@/components/DataTable'
 import { PageSummaryCards } from '@/components/PageSummaryCards'
 import { useUsersList, useDeleteUser } from '@/hooks/shared/useUsers'
@@ -87,6 +87,15 @@ export function UsersList() {
           >
             <Eye className="h-4 w-4" />
           </button>
+          <Can permission="edit_user">
+            <button
+              onClick={() => navigate(`/dashboard/users/create?id=${user.id}`)}
+              className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
+              title="Edit"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          </Can>
           <Can permission="delete_user">
             <button
               onClick={() => handleDeleteClick(user)}

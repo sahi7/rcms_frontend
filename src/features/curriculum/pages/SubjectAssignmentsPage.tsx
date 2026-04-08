@@ -1,3 +1,4 @@
+// src/features/students/pages/SubjectAssignments.tsx
 import React, { useMemo, useState } from 'react'
 import {
   PlusIcon,
@@ -5,6 +6,7 @@ import {
   BookOpenIcon,
   BuildingIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { DataTable } from '@/components/DataTable'
 import { Modal } from '@/components/Modal'
 import { PageSummaryCards } from '@/components/PageSummaryCards'
@@ -23,11 +25,8 @@ import {
 import { useSubjects } from '../hooks/useSubjects'
 import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
-import { useUserSearch } from '@/hooks/shared/useUsers'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
-import { AcademicYear } from '@/types/academic';
-import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
-
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 
 export function SubjectAssignments() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -50,14 +49,15 @@ export function SubjectAssignments() {
   const { data: classroomsData } = useClassRooms({
     page_size: 200,
   })
-  const { data: academicYearsData } = useListQuery<AcademicYear>(
-    'academic-years',
-    '/academic-years/',
+  // Fetch teachers only
+  const { data: teachersData } = useListQuery<any>(
+    'teachers',
+    '/users/',
     {
-      page_size: 50,
+      page_size: 200,
+      role: 'teacher',
     },
   )
-  const userSearch = useUserSearch()
   const subjectMap = useMemo(() => {
     const map: Record<number, string> = {}
     subjectsData?.data.forEach((s) => {
@@ -91,9 +91,9 @@ export function SubjectAssignments() {
     value: c.id,
     label: c.name,
   }))
-  const academicYearOptions = (academicYearsData?.data || []).map((ay) => ({
-    value: ay.id,
-    label: ay.name,
+  const teacherOptions = (teachersData?.data || []).map((t: any) => ({
+    value: t.id,
+    label: `${t.first_name} ${t.last_name}`,
   }))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -107,7 +107,7 @@ export function SubjectAssignments() {
     department: null,
     class_rooms: [],
     teacher: 0,
-    academic_year: '',
+    // academic_year removed
   })
   const columns = [
     {
@@ -152,7 +152,7 @@ export function SubjectAssignments() {
         department: item.department,
         class_rooms: item.class_rooms,
         teacher: item.teacher,
-        academic_year: item.academic_year,
+        // academic_year removed
       })
     } else {
       setEditingItem(null)
@@ -161,7 +161,7 @@ export function SubjectAssignments() {
         department: null,
         class_rooms: [],
         teacher: 0,
-        academic_year: '',
+        // academic_year removed
       })
     }
     setIsModalOpen(true)
@@ -174,22 +174,27 @@ export function SubjectAssignments() {
           id: editingItem.id,
           payload: formData,
         })
+        toast.success('Subject assignment updated successfully')
       } else {
         await createMutation.mutateAsync(formData)
+        toast.success('Subject assignment created successfully')
       }
       setIsModalOpen(false)
     } catch (error) {
       console.error(`Failed to save ${getPlural('subject_naming')} assignment`, error)
+      toast.error('Failed to save subject assignment')
     }
   }
   const handleDelete = async () => {
     if (itemToDelete) {
       try {
         await deleteMutation.mutateAsync(itemToDelete.id)
+        toast.success('Subject assignment deleted successfully')
         setIsDeleteModalOpen(false)
         setItemToDelete(null)
       } catch (error) {
         console.error('Failed to delete', error)
+        toast.error('Failed to delete subject assignment')
       }
     }
   }
@@ -289,7 +294,7 @@ export function SubjectAssignments() {
           <SearchableSelect
             label="Teacher"
             required
-            options={userSearch.options}
+            options={teacherOptions}
             value={formData.teacher || null}
             onChange={(v) =>
               setFormData({
@@ -297,9 +302,7 @@ export function SubjectAssignments() {
                 teacher: (v as number) || 0,
               })
             }
-            onSearch={userSearch.setSearch}
-            isLoading={userSearch.isLoading}
-            placeholder="Search for teacher..."
+            placeholder="Select teacher..."
           />
           <SearchableSelect
             label="Department"
@@ -312,19 +315,6 @@ export function SubjectAssignments() {
               })
             }
             placeholder="Select department (optional)..."
-          />
-          <SearchableSelect
-            label="Academic Year"
-            required
-            options={academicYearOptions}
-            value={formData.academic_year || null}
-            onChange={(v) =>
-              setFormData({
-                ...formData,
-                academic_year: (v as string) || '',
-              })
-            }
-            placeholder="Select academic year..."
           />
           <MultiSelect
             label="Classrooms"

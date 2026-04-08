@@ -26,8 +26,9 @@ export interface User {
   last_name: string
   email: string
   username?: string
-  // NEW FIELDS - all optional with ?
-  taught_subjects?: number[],
+  
+  // Basic info
+  taught_subjects?: number[]
   phone_number?: string
   enrollment_status?: string
   place_of_birth?: string
@@ -35,6 +36,16 @@ export interface User {
   date_joined?: string
   date_of_birth?: string
   initials?: string
+  
+  // NEW fields from your code - all optional
+  nationality?: string
+  preferred_language?: string
+  emergency_guardian_name?: string
+  emergency_guardian_email?: string
+  emergency_guardian_phone?: string
+  emergency_guardian_address?: string
+  relationship_to_guardian?: string
+  subject_ids?: number[]  // For teachers' subjects
 }
 
 export interface ListQueryParams {
