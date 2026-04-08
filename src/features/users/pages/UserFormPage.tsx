@@ -144,13 +144,14 @@ export function UserForm() {
                 try {
                     const uploadResult = await uploadProfilePicture(selectedPicture, 'profile')
                     payload.profile_picture = uploadResult.publicUrl
+                    console.log("uploadResult.publicUrl: ", uploadResult.publicUrl);
                 } catch (uploadError) {
                     console.error('Profile picture upload failed:', uploadError)
                 }
             }
 
             await createMutation.mutateAsync(payload)
-            navigate('/users')
+            // navigate('/dashboard/users')
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const newErrors: Record<string, string> = {}
