@@ -1,8 +1,9 @@
 // src/features/students/pages/StudentFormPage.tsx
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
+import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { z } from 'zod'
+import { toast } from 'sonner'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { cn } from '@/lib/utils'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -53,6 +54,8 @@ export function StudentForm() {
 
   const [formData, setFormData] = useState<StudentFormData>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string>('')
+
   const [selectedPicture, setSelectedPicture] = useState<File | null>(null)
   const [picturePreview, setPicturePreview] = useState<string | null>(null)
 
@@ -68,6 +71,9 @@ export function StudentForm() {
     classroomsData,
     departmentsData,
   } = useStudentForm(studentId || undefined)
+
+  // Ref for server error banner (for scrolling)
+  const serverErrorRef = useRef<HTMLDivElement>(null)
 
   // Populate form when editing + show existing profile picture
   useEffect(() => {
@@ -100,6 +106,32 @@ export function StudentForm() {
   }, [existingStudent])
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending
+
+  // Scroll to first field error (Zod validation)
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      const firstErrorField = Object.keys(errors)[0]
+      const element = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement | null
+
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        })
+        element.focus()
+      }
+    }
+  }, [errors])
+
+  // Scroll to server error banner when it appears
+  useEffect(() => {
+    if (serverError && serverErrorRef.current) {
+      serverErrorRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      })
+    }
+  }, [serverError])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -136,6 +168,8 @@ export function StudentForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setServerError('') // clear previous server error
+
     try {
       const validatedData = studentSchema.parse(formData)
 
@@ -154,7 +188,6 @@ export function StudentForm() {
           payload.profile_picture = uploadResult.publicUrl
         } catch (uploadError) {
           console.error('Profile picture upload failed:', uploadError)
-          // Continue saving even if picture upload fails
         }
       } else if (formData.profile_picture) {
         // Keep existing picture when editing and no new file chosen
@@ -169,8 +202,10 @@ export function StudentForm() {
             update: 'True',
           },
         })
+        toast.success('Student updated successfully')
       } else {
         await createMutation.mutateAsync(payload)
+        toast.success('Student created successfully')
       }
 
       navigate('/dashboard/students')
@@ -184,6 +219,16 @@ export function StudentForm() {
         })
         setErrors(newErrors)
       } else {
+        // Server error support
+        const err = error as any;
+        const serverMsg =
+          err?.response?.data?.error ||
+          err?.response?.data?.detail ||
+          err?.response?.data?.non_field_errors?.[0] ||
+          err?.message ||
+          'An unexpected error occurred while creating the user.'
+
+        setServerError(serverMsg)
         console.error('API Error:', error)
       }
     }
@@ -219,6 +264,16 @@ export function StudentForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Server error banner */}
+        {serverError && (
+          <div
+            ref={serverErrorRef}
+            className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"
+          >
+            {serverError}
+          </div>
+        )}
+
         {/* Personal Information with clickable profile picture */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
