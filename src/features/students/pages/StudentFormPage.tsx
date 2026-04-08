@@ -1,15 +1,14 @@
 // src/features/students/pages/StudentFormPage.tsx
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
 import { z } from 'zod'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
-// import { Student } from '@/types/academic'
 import { cn } from '@/lib/utils'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentForm } from '../hooks/useStudentForm'
+import { useFileUpload } from '@/hooks/shared/useFileUpload'
 
-// Validation schema (unchanged from your original)
 const studentSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
@@ -34,7 +33,9 @@ const studentSchema = z.object({
   relationship_to_guardian: z.string().optional(),
 })
 
-type StudentFormData = z.infer<typeof studentSchema>
+type StudentFormData = z.infer<typeof studentSchema> & {
+  profile_picture?: string
+}
 
 const initialData: StudentFormData = {
   first_name: '',
@@ -44,7 +45,6 @@ const initialData: StudentFormData = {
   enrollment_status: 'active',
 }
 
-
 export function StudentForm() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -53,6 +53,11 @@ export function StudentForm() {
 
   const [formData, setFormData] = useState<StudentFormData>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [selectedPicture, setSelectedPicture] = useState<File | null>(null)
+  const [picturePreview, setPicturePreview] = useState<string | null>(null)
+
+  // Profile picture upload hook
+  const { upload: uploadProfilePicture, isUploading: isUploadingPicture } = useFileUpload()
 
   const {
     existingStudent,
@@ -64,7 +69,7 @@ export function StudentForm() {
     departmentsData,
   } = useStudentForm(studentId || undefined)
 
-  // Populate form when editing
+  // Populate form when editing + show existing profile picture
   useEffect(() => {
     if (existingStudent) {
       setFormData({
@@ -85,7 +90,12 @@ export function StudentForm() {
         emergency_guardian_phone: existingStudent.emergency_guardian_phone || '',
         emergency_guardian_address: existingStudent.emergency_guardian_address || '',
         relationship_to_guardian: existingStudent.relationship_to_guardian || '',
+        profile_picture: existingStudent.profile_picture || undefined,
       })
+
+      if (existingStudent.profile_picture) {
+        setPicturePreview(existingStudent.profile_picture)
+      }
     }
   }, [existingStudent])
 
@@ -105,13 +115,22 @@ export function StudentForm() {
           : value,
     }))
 
-    // Clear field error
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev }
         delete newErrors[name]
         return newErrors
       })
+    }
+  }
+
+  const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedPicture(file)
+      const reader = new FileReader()
+      reader.onload = (ev) => setPicturePreview(ev.target?.result as string)
+      reader.readAsDataURL(file)
     }
   }
 
@@ -123,9 +142,23 @@ export function StudentForm() {
       const initials =
         `${validatedData.first_name[0] || ''}${validatedData.last_name[0] || ''}`.toUpperCase()
 
-      const payload = {
+      let payload: any = {
         ...validatedData,
         initials,
+      }
+
+      // Upload new profile picture if selected
+      if (selectedPicture) {
+        try {
+          const uploadResult = await uploadProfilePicture(selectedPicture, 'profile')
+          payload.profile_picture = uploadResult.publicUrl
+        } catch (uploadError) {
+          console.error('Profile picture upload failed:', uploadError)
+          // Continue saving even if picture upload fails
+        }
+      } else if (formData.profile_picture) {
+        // Keep existing picture when editing and no new file chosen
+        payload.profile_picture = formData.profile_picture
       }
 
       if (isEditing) {
@@ -146,9 +179,9 @@ export function StudentForm() {
         const newErrors: Record<string, string> = {}
         error.issues.forEach((issue) => {
           if (issue.path[0]) {
-            newErrors[issue.path[0].toString()] = issue.message;
+            newErrors[issue.path[0].toString()] = issue.message
           }
-        });
+        })
         setErrors(newErrors)
       } else {
         console.error('API Error:', error)
@@ -186,107 +219,148 @@ export function StudentForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Personal Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Personal Information with clickable profile picture */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">
               Personal Information
             </h2>
           </div>
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name *
-              </label>
-              <input
-                type="text"
-                name="first_name"
-                value={formData.first_name}
-                onChange={handleChange}
-                className={cn(
-                  'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
-                  errors.first_name
-                    ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300'
+          <div className="p-6">
+            {/* Clickable Profile Picture */}
+            <div className="flex items-center gap-6 mb-8">
+              <label className="cursor-pointer flex-shrink-0 group relative">
+                {picturePreview ? (
+                  <img
+                    src={picturePreview}
+                    alt="Profile Preview"
+                    className="h-24 w-24 rounded-3xl object-cover border-2 border-gray-200 shadow-sm transition-all group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="h-24 w-24 rounded-3xl bg-orange-100 flex items-center justify-center text-5xl font-semibold text-orange-600 border-2 border-gray-200 shadow-sm transition-all group-hover:scale-105">
+                    {formData.first_name?.[0] || ''}
+                    {formData.last_name?.[0] || ''}
+                  </div>
                 )}
-              />
-              {errors.first_name && (
-                <p className="mt-1 text-xs text-rose-500">{errors.first_name}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                name="last_name"
-                value={formData.last_name}
-                onChange={handleChange}
-                className={cn(
-                  'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
-                  errors.last_name
-                    ? 'border-rose-300 focus:ring-rose-500'
-                    : 'border-gray-300'
+
+                {isUploadingPicture && (
+                  <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-white" />
+                  </div>
                 )}
-              />
-              {errors.last_name && (
-                <p className="mt-1 text-xs text-rose-500">{errors.last_name}</p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date of Birth
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePictureChange}
+                  className="hidden"
+                />
               </label>
-              <input
-                type="date"
-                name="date_of_birth"
-                value={formData.date_of_birth}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              />
+
+              <div>
+                <div className="text-sm font-medium text-gray-700">Profile Picture</div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Click the image to upload a new photo.<br />
+                  Recommended: square JPG or PNG (max 2MB)
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Place of Birth
-              </label>
-              <input
-                type="text"
-                name="place_of_birth"
-                value={formData.place_of_birth}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nationality
-              </label>
-              <input
-                type="text"
-                name="nationality"
-                value={formData.nationality}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Preferred Language
-              </label>
-              <input
-                type="text"
-                name="preferred_language"
-                value={formData.preferred_language}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name *
+                </label>
+                <input
+                  type="text"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  className={cn(
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
+                    errors.first_name
+                      ? 'border-rose-300 focus:ring-rose-500'
+                      : 'border-gray-300'
+                  )}
+                />
+                {errors.first_name && (
+                  <p className="mt-1 text-xs text-rose-500">{errors.first_name}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name *
+                </label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  className={cn(
+                    'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
+                    errors.last_name
+                      ? 'border-rose-300 focus:ring-rose-500'
+                      : 'border-gray-300'
+                  )}
+                />
+                {errors.last_name && (
+                  <p className="mt-1 text-xs text-rose-500">{errors.last_name}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date of Birth
+                </label>
+                <input
+                  type="date"
+                  name="date_of_birth"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Place of Birth
+                </label>
+                <input
+                  type="text"
+                  name="place_of_birth"
+                  value={formData.place_of_birth}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nationality
+                </label>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Language
+                </label>
+                <input
+                  type="text"
+                  name="preferred_language"
+                  value={formData.preferred_language}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Academic Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">
               Academic Information
@@ -368,7 +442,7 @@ export function StudentForm() {
         </div>
 
         {/* Contact & Emergency Information */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">
               Contact & Emergency
@@ -491,17 +565,17 @@ export function StudentForm() {
         <div className="flex items-center justify-end gap-3 pt-4">
           <button
             type="button"
-            onClick={() => navigate('/students')}
+            onClick={() => navigate('/dashboard/students')}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isUploadingPicture}
             className="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-70 shadow-sm"
           >
-            {isSubmitting ? (
+            {isSubmitting || isUploadingPicture ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Save className="h-4 w-4" />

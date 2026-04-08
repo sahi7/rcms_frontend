@@ -1,13 +1,14 @@
 // src/features/users/pages/UserFormPage.tsx
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Save, Loader2, Info } from 'lucide-react'
+import { ArrowLeft, Save, Loader2, Upload } from 'lucide-react'
 import { z } from 'zod'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { cn } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useUserForm } from '@/hooks/shared/useUsers'
+import { useFileUpload } from '@/hooks/shared/useFileUpload'
 
 const userSchema = z.object({
     first_name: z.string().min(1, 'First name is required'),
@@ -33,7 +34,9 @@ const userSchema = z.object({
     relationship_to_guardian: z.string().optional(),
 })
 
-type UserFormData = z.infer<typeof userSchema>
+type UserFormData = z.infer<typeof userSchema> & {
+    profile_picture?: string
+}
 
 const initialData: UserFormData = {
     first_name: '',
@@ -62,12 +65,37 @@ export function UserForm() {
     const [subjectIds, setSubjectIds] = useState<(string | number)[]>([])
     const [errors, setErrors] = useState<Record<string, string>>({})
 
+    // Profile picture states
+    const [selectedPicture, setSelectedPicture] = useState<File | null>(null)
+    const [picturePreview, setPicturePreview] = useState<string | null>(null)
+
+    // File upload hook
+    const { upload: uploadProfilePicture, isUploading: isUploadingPicture } = useFileUpload()
+
     const {
         departmentsData,
         rolesData,
         subjectsData,
         createMutation,
     } = useUserForm()
+
+    const isSubmitting = createMutation.isPending || isUploadingPicture
+
+    // Auto-scroll to first error when validation fails
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            const firstErrorField = Object.keys(errors)[0]
+            const element = document.querySelector(`[name="${firstErrorField}"]`) as HTMLElement | null
+
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                })
+                element.focus()
+            }
+        }
+    }, [errors])
 
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -87,6 +115,16 @@ export function UserForm() {
         }
     }
 
+    const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setSelectedPicture(file)
+            const reader = new FileReader()
+            reader.onload = (ev) => setPicturePreview(ev.target?.result as string)
+            reader.readAsDataURL(file)
+        }
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         try {
@@ -95,10 +133,20 @@ export function UserForm() {
             const initials =
                 `${validatedData.first_name[0] || ''}${validatedData.last_name[0] || ''}`.toUpperCase()
 
-            const payload = {
+            let payload: any = {
                 ...validatedData,
                 initials,
                 subject_ids: formData.role === 'teacher' ? subjectIds.map(Number) : [],
+            }
+
+            // Upload profile picture if selected
+            if (selectedPicture) {
+                try {
+                    const uploadResult = await uploadProfilePicture(selectedPicture, 'profile')
+                    payload.profile_picture = uploadResult.publicUrl
+                } catch (uploadError) {
+                    console.error('Profile picture upload failed:', uploadError)
+                }
             }
 
             await createMutation.mutateAsync(payload)
@@ -108,9 +156,9 @@ export function UserForm() {
                 const newErrors: Record<string, string> = {}
                 error.issues.forEach((issue) => {
                     if (issue.path[0]) {
-                        newErrors[issue.path[0].toString()] = issue.message;
+                        newErrors[issue.path[0].toString()] = issue.message
                     }
-                });
+                })
                 setErrors(newErrors)
             } else {
                 console.error('API Error:', error)
@@ -137,111 +185,152 @@ export function UserForm() {
 
             <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Account Information */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h2 className="text-lg font-semibold text-gray-800">
                             Account Information
                         </h2>
                     </div>
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                First Name *
-                            </label>
-                            <input
-                                type="text"
-                                name="first_name"
-                                value={formData.first_name}
-                                onChange={handleChange}
-                                className={cn(
-                                    'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
-                                    errors.first_name
-                                        ? 'border-rose-300 focus:ring-rose-500'
-                                        : 'border-gray-300'
+                    <div className="p-6">
+                        {/* Clickable Profile Picture */}
+                        <div className="flex items-center gap-6 mb-8">
+                            <label className="cursor-pointer flex-shrink-0 group relative">
+                                {picturePreview ? (
+                                    <img
+                                        src={picturePreview}
+                                        alt="Profile Preview"
+                                        className="h-24 w-24 rounded-3xl object-cover border-2 border-gray-200 shadow-sm transition-all group-hover:scale-105"
+                                    />
+                                ) : (
+                                    <div className="h-24 w-24 rounded-3xl bg-orange-100 flex items-center justify-center text-5xl font-semibold text-orange-600 border-2 border-gray-200 shadow-sm transition-all group-hover:scale-105">
+                                        {formData.first_name?.[0] || ''}
+                                        {formData.last_name?.[0] || ''}
+                                    </div>
                                 )}
-                            />
-                            {errors.first_name && (
-                                <p className="mt-1 text-xs text-rose-500">{errors.first_name}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Last Name *
-                            </label>
-                            <input
-                                type="text"
-                                name="last_name"
-                                value={formData.last_name}
-                                onChange={handleChange}
-                                className={cn(
-                                    'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
-                                    errors.last_name
-                                        ? 'border-rose-300 focus:ring-rose-500'
-                                        : 'border-gray-300'
+
+                                {isUploadingPicture && (
+                                    <div className="absolute inset-0 bg-black/40 rounded-3xl flex items-center justify-center">
+                                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                                    </div>
                                 )}
-                            />
-                            {errors.last_name && (
-                                <p className="mt-1 text-xs text-rose-500">{errors.last_name}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Email *
+
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePictureChange}
+                                    className="hidden"
+                                />
                             </label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                className={cn(
-                                    'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
-                                    errors.email
-                                        ? 'border-rose-300 focus:ring-rose-500'
-                                        : 'border-gray-300'
-                                )}
-                            />
-                            {errors.email && (
-                                <p className="mt-1 text-xs text-rose-500">{errors.email}</p>
-                            )}
+
+                            <div>
+                                <div className="text-sm font-medium text-gray-700">Profile Picture</div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Click the image to upload a new photo.<br />
+                                    Recommended: square JPG or PNG (max 2MB)
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Role *
-                            </label>
-                            <div className="flex gap-2">
-                                <select
-                                    name="role"
-                                    value={formData.role}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    First Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    value={formData.first_name}
                                     onChange={handleChange}
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                                >
-                                    <optgroup label="System Roles">
-                                        {predefinedRoles.map((role) => (
-                                            <option key={role} value={role}>
-                                                {role.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                                            </option>
-                                        ))}
-                                    </optgroup>
-                                    {rolesData?.data && rolesData.data.length > 0 && (
-                                        <optgroup label="Custom Roles">
-                                            {rolesData.data
-                                                .filter((r: any) => !r.is_system)
-                                                .map((role: any) => (
-                                                    <option key={role.role_type} value={role.role_type}>
-                                                        {role.name}
-                                                    </option>
-                                                ))}
-                                        </optgroup>
+                                    className={cn(
+                                        'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
+                                        errors.first_name
+                                            ? 'border-rose-300 focus:ring-rose-500'
+                                            : 'border-gray-300'
                                     )}
-                                </select>
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/users/roles')}
-                                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                                    title="Manage Custom Roles"
-                                >
-                                    Custom
-                                </button>
+                                />
+                                {errors.first_name && (
+                                    <p className="mt-1 text-xs text-rose-500">{errors.first_name}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Last Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    value={formData.last_name}
+                                    onChange={handleChange}
+                                    className={cn(
+                                        'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
+                                        errors.last_name
+                                            ? 'border-rose-300 focus:ring-rose-500'
+                                            : 'border-gray-300'
+                                    )}
+                                />
+                                {errors.last_name && (
+                                    <p className="mt-1 text-xs text-rose-500">{errors.last_name}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Email *
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    className={cn(
+                                        'w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all',
+                                        errors.email
+                                            ? 'border-rose-300 focus:ring-rose-500'
+                                            : 'border-gray-300'
+                                    )}
+                                />
+                                {errors.email && (
+                                    <p className="mt-1 text-xs text-rose-500">{errors.email}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Role *
+                                </label>
+                                <div className="flex gap-2">
+                                    <select
+                                        name="role"
+                                        value={formData.role}
+                                        onChange={handleChange}
+                                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
+                                    >
+                                        <optgroup label="System Roles">
+                                            {predefinedRoles.map((role) => (
+                                                <option key={role} value={role}>
+                                                    {role.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                        {rolesData?.data && rolesData.data.length > 0 && (
+                                            <optgroup label="Custom Roles">
+                                                {rolesData.data
+                                                    .filter((r: any) => !r.is_system)
+                                                    .map((role: any) => (
+                                                        <option key={role.role_type} value={role.role_type}>
+                                                            {role.name}
+                                                        </option>
+                                                    ))}
+                                            </optgroup>
+                                        )}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/users/roles')}
+                                        className="px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                        title="Manage Custom Roles"
+                                    >
+                                        Custom
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -251,7 +340,7 @@ export function UserForm() {
                 {(formData.role === 'teacher' ||
                     formData.role === 'hod' ||
                     formData.role === 'dean') && (
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                                 <h2 className="text-lg font-semibold text-gray-800">
                                     Academic Assignments
@@ -294,7 +383,7 @@ export function UserForm() {
                                             placeholder="Select subjects..."
                                         />
                                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                            <Info className="h-3 w-3" /> You can add specific classes later in the user's profile.
+                                            {/* <Info className="h-3 w-3" /> You can add specific classes later in the user's profile. */}
                                         </p>
                                     </div>
                                 )}
@@ -303,7 +392,7 @@ export function UserForm() {
                     )}
 
                 {/* Additional Information */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h2 className="text-lg font-semibold text-gray-800">
                             Additional Information (Optional)
@@ -386,7 +475,7 @@ export function UserForm() {
                 </div>
 
                 {/* Emergency Contact */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                         <h2 className="text-lg font-semibold text-gray-800">
                             Emergency Contact
@@ -466,10 +555,10 @@ export function UserForm() {
                     </button>
                     <button
                         type="submit"
-                        disabled={createMutation.isPending}
+                        disabled={isSubmitting}
                         className="inline-flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-70 shadow-sm"
                     >
-                        {createMutation.isPending ? (
+                        {isSubmitting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                             <Save className="h-4 w-4" />

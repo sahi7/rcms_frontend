@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import api from '@/lib/api'
+import uploadApi from '@/lib/api'
 
 interface UploadResult {
   publicUrl: string
@@ -15,6 +15,8 @@ export function useFileUpload() {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
+  const UPSTREAM_URL = (import.meta as any).env?.VITE_UPSTREAM_SERVER || 'http://127.0.0.1:3000/api';
+
   const upload = useCallback(
     async (file: File, category = 'internal'): Promise<UploadResult> => {
       setIsUploading(true)
@@ -23,8 +25,8 @@ export function useFileUpload() {
 
       try {
         // Step 1: Get presigned URL via POST
-        const presignRes = await api.post<PresignResponse>(
-          '/api/admissions/files/presign-upload',
+        const presignRes = await uploadApi.post<PresignResponse>(
+          `${UPSTREAM_URL}/admissions/files/presign-upload`,
           null,
           {
             params: { category, filename: file.name },

@@ -11,7 +11,6 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { cn } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
 
-
 export function UserDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -59,10 +58,32 @@ export function UserDetails() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">
-            {user.first_name?.[0]}
-            {user.last_name?.[0]}
+          {/* Profile Picture with graceful fallback */}
+          <div className="h-12 w-12 rounded-full overflow-hidden bg-blue-100 flex-shrink-0 border border-white shadow-sm">
+            {user.profile_picture ? (
+              <img
+                src={user.profile_picture}
+                alt={`${user.first_name} ${user.last_name}`}
+                className="h-full w-full object-cover"
+                // onError={(e) => {
+                //   // Fallback to initials if image fails to load
+                //   const target = e.currentTarget
+                //   target.style.display = 'none'
+                //   const fallback = target.parentElement?.querySelector('.initials-fallback')
+                //   if (fallback) fallback.style.display = 'flex'
+                // }}
+              />
+            ) : null}
+            {/* Initials fallback (always rendered but hidden when image loads successfully) */}
+            <div
+              className="initials-fallback h-full w-full hidden items-center justify-center font-bold text-lg text-blue-600"
+              style={{ display: user.profile_picture ? 'none' : 'flex' }}
+            >
+              {user.first_name?.[0]}
+              {user.last_name?.[0]}
+            </div>
           </div>
+
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               {user.first_name} {user.last_name}

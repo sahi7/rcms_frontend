@@ -2,63 +2,60 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const SERVER_URL = 'http://127.0.0.1:8000/api';
+// Use the same style you originally had to avoid TS error
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
+const UPSTREAM_SERVER = (import.meta as any).env?.VITE_UPSTREAM_SERVER || 'http://127.0.0.1:3000/api';
+
+console.log('🔥 API_BASE_URL =', API_BASE_URL);
+console.log('🔥 UPSTREAM_SERVER (should be 3000) =', UPSTREAM_SERVER);
+
+// Main API (Django backend - port 8000)
 const api = axios.create({
-  baseURL: SERVER_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
-  // headers: {
-  //   "Content-Type": "application/json",
-  // },
 });
 
-// Request interceptor — no explicit types needed (inferred safely)
-api.interceptors.request.use((config) => {
-  const token = Cookies.get("access_token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+// Upload API (should hit port 3000)
+export const uploadApi = axios.create({
+  baseURL: UPSTREAM_SERVER,          // ← THIS MUST BE THE UPSTREAM VARIABLE
+  withCredentials: true,
 });
 
-// Response interceptor — minimal refresh (no types needed)
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
-
-      try {
-        const res = await axios.post("/auth/refresh/", {}, {
-          withCredentials: true,
-          baseURL: SERVER_URL,
-        });
-        const newToken = (res.data as any).access;
-        Cookies.set("access_token", newToken);
-
-        // Retry original request
-        return api(error.config);
-      } catch {
-        Cookies.remove("access_token");
-        Cookies.remove("refresh_token");
-        // window.location.href = "/login";
-      }
+// Apply interceptors to both
+const applyInterceptors = (instance: any) => {
+  instance.interceptors.request.use((config: any) => {
+    const token = Cookies.get("access_token");
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return Promise.reject(error);
-  }
-);
+    return config;
+  });
 
-// Response interceptor — clean, no types
-// api.interceptors.response.use(
-//   (response) => response,
-//   (error) => {
-//     if (error.response?.status === 401) {
-//       Cookies.remove("access_token");
-//       Cookies.remove("refresh_token");
-//       // window.location.href = "/";
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+  instance.interceptors.response.use(
+    (response: any) => response,
+    async (error: any) => {
+      if (error.response?.status === 401 && !error.config._retry) {
+        error.config._retry = true;
+        try {
+          const res = await axios.post("/auth/refresh/", {}, {
+            withCredentials: true,
+            baseURL: API_BASE_URL,
+          });
+          const newToken = (res.data as any).access;
+          Cookies.set("access_token", newToken);
+          return instance(error.config);
+        } catch {
+          Cookies.remove("access_token");
+          Cookies.remove("refresh_token");
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+};
+
+applyInterceptors(api);
+applyInterceptors(uploadApi);
 
 export default api;

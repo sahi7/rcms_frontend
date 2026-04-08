@@ -18,6 +18,8 @@ import { MultiSelect } from '@/components/MultiSelect'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentElectives } from '../hooks/useStudentElectives'
 import { toast } from 'sonner'
+import { useClassRooms } from '../../structure/hooks/useClassRooms'
+import { useDepartments } from '../../structure/hooks/useDepartments'
 
 export function StudentDetails() {
   const { id } = useParams<{ id: string }>()
@@ -67,6 +69,23 @@ export function StudentDetails() {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
+
+          {/* Profile picture with fallback to initials */}
+          <div className="flex-shrink-0">
+            {student.profile_picture ? (
+              <img
+                src={student.profile_picture}
+                alt={`${student.first_name} ${student.last_name}`}
+                className="h-16 w-16 rounded-2xl object-cover border border-gray-200 shadow-sm"
+              />
+            ) : (
+              <div className="h-16 w-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center font-semibold text-3xl border border-gray-200 shadow-sm">
+                {student.initials ||
+                  `${student.first_name?.[0] || ''}${student.last_name?.[0] || ''}`}
+              </div>
+            )}
+          </div>
+
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
               {student.first_name} {student.last_name}
@@ -128,11 +147,24 @@ export function StudentDetails() {
 
 function OverviewTab({ student }: { student: Student }) {
   const { getLabel } = useInstitutionConfig()
+  const { data: classroomsData } = useClassRooms()
+  const { data: departmentsData } = useDepartments()
+
+  // Resolve class and department names instead of IDs
+  const className = student.current_class
+    ? classroomsData?.data?.find((c: any) => c.id === student.current_class)?.name ||
+      `Class ${student.current_class}`
+    : 'Not Assigned'
+
+  const departmentName = student.department
+    ? departmentsData?.data?.find((d: any) => d.id === student.department)?.name ||
+      `Department ${student.department}`
+    : 'Not Assigned'
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-2 space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">Personal Information</h2>
           </div>
@@ -168,7 +200,7 @@ function OverviewTab({ student }: { student: Student }) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">Emergency Contact</h2>
           </div>
@@ -198,22 +230,18 @@ function OverviewTab({ student }: { student: Student }) {
       </div>
 
       <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
           <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <h2 className="text-lg font-semibold text-gray-800">Academic Status</h2>
           </div>
           <div className="p-6 space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">{getLabel('classLabel')}</p>
-              <p className="mt-1 text-sm font-medium text-gray-900">
-                {student.current_class ? `Class ${student.current_class}` : 'Not Assigned'}
-              </p>
+              <p className="mt-1 text-sm font-medium text-gray-900">{className}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">{getLabel('departmentLabel')}</p>
-              <p className="mt-1 text-sm font-medium text-gray-900">
-                {student.department ? `Department ${student.department}` : 'Not Assigned'}
-              </p>
+              <p className="mt-1 text-sm font-medium text-gray-900">{departmentName}</p>
             </div>
             <div className="pt-4 border-t border-gray-100">
               <p className="text-sm font-medium text-gray-500">Enrollment Date</p>
@@ -241,8 +269,6 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     saveElectivesMutation,
   } = useStudentElectives(studentId, student.current_class, student.department)
 
-  // 2 + 3: Filter electives from curriculumSubjectsData (subject_role=2 + matches student's department or class)
-  // then map to real subject names/codes from allSubjectsData
   const availableElectives = curriculumSubjectsData?.data
     ?.filter((cs: any) => {
       const isElective = cs.subject_role === 2
@@ -270,7 +296,6 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     label: t.name,
   })) || []
 
-  // Pre-fill selected electives when data loads
   useEffect(() => {
     if (currentElectiveIds.length > 0) {
       setSelectedElectiveIds(currentElectiveIds)
@@ -295,8 +320,8 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
 
   return (
     <div className="space-y-6">
-      {/* Redesigned Manage Electives with Term selection restored */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Manage Electives - removed overflow-hidden so dropdowns are visible */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Manage Electives</h2>
           <p className="text-sm text-gray-500 mt-1">
@@ -320,7 +345,6 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Term selector restored */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select {getLabel('termLabel')} (Optional)
@@ -333,7 +357,6 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
               />
             </div>
 
-            {/* Multi-select for electives */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {getPlural('subjectLabel')} (Electives)
@@ -366,8 +389,8 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
         </div>
       </div>
 
-      {/* Current Electives Display */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Current Electives Display - removed overflow-hidden */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <h2 className="text-lg font-semibold text-gray-800">Current Electives</h2>
         </div>

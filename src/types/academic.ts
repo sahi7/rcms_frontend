@@ -67,6 +67,7 @@ export interface Student {
   email?: string
   current_class?: number
   department?: number
+  profile_picture?: string
   phone_number?: string
   initials?: string
   date_of_birth?: string
