@@ -25,65 +25,24 @@ import {
   useSubscription,
   useUpdateSubscription,
 } from '../hooks/useSubscription'
-import { PlanOption } from '@/types/settings'
-const PLANS: PlanOption[] = [
-  {
-    code: 'basic',
-    name: 'Basic',
-    price: '0',
-    features: ['Student Management', 'Basic Reports', 'Up to 100 Students'],
-  },
-  {
-    code: 'essential',
-    name: 'Essential',
-    price: '900',
-    features: [
-      'Student Management',
-      'Report Card Generation',
-      'Up to 500 Students',
-      'Email Notifications',
-    ],
-  },
-  {
-    code: 'premium',
-    name: 'Premium',
-    price: '2,500',
-    recommended: true,
-    features: [
-      'Everything in Essential',
-      'Advanced Analytics',
-      'Unlimited Students',
-      'Priority Support',
-      'Custom Branding',
-      'API Access',
-    ],
-  },
-  {
-    code: 'enterprise',
-    name: 'Enterprise',
-    price: '5,000',
-    features: [
-      'Everything in Premium',
-      'Multi-campus Support',
-      'Dedicated Account Manager',
-      'Custom Integrations',
-      'SLA Guarantee',
-      'On-premise Option',
-    ],
-  },
-]
+import { usePlansAndFeatures } from '@/hooks/shared/usePlansAndFeatures'
+
 const planIcons: Record<string, React.ReactNode> = {
   basic: <ZapIcon className="w-5 h-5" />,
   essential: <SparklesIcon className="w-5 h-5" />,
   premium: <CrownIcon className="w-5 h-5" />,
   enterprise: <CrownIcon className="w-5 h-5" />,
 }
+
 export function SubscriptionPage() {
   const { data, isLoading } = useSubscription()
   const updateMutation = useUpdateSubscription()
+  const { plans, isLoading: plansLoading, getFeatureByCode, getPlanName } = usePlansAndFeatures()
+
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null)
   const currentPlan = data?.subscription?.plan_code
   const isActive = data?.subscription?.is_active
+
   const handleChangePlan = async (planCode: string) => {
     if (planCode === currentPlan) return
     setSelectedPlan(planCode)
@@ -98,7 +57,8 @@ export function SubscriptionPage() {
       setSelectedPlan(null)
     }
   }
-  if (isLoading) {
+
+  if (isLoading || plansLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-32" />
@@ -110,6 +70,7 @@ export function SubscriptionPage() {
       </div>
     )
   }
+
   return (
     <div className="space-y-6">
       {/* Current Subscription */}
@@ -133,7 +94,7 @@ export function SubscriptionPage() {
                   </p>
                   <p className="text-sm text-slate-500">
                     {data?.subscription?.plan_price
-                      ? `${data.subscription.plan_price} XAF/month`
+                      ? `${data.subscription.plan_price} XAF/year`
                       : 'Free'}
                   </p>
                 </div>
@@ -201,7 +162,7 @@ export function SubscriptionPage() {
 
       <Separator />
 
-      {/* Plans */}
+      {/* Plans - Internal plans overview */}
       <div>
         <h3 className="text-lg font-semibold text-slate-800 mb-1">
           Available Plans
@@ -211,10 +172,17 @@ export function SubscriptionPage() {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {PLANS.map((plan, index) => {
+          {plans.map((plan, index) => {
             const isCurrent = plan.code === currentPlan
             const isChanging =
               selectedPlan === plan.code && updateMutation.isPending
+            const planName = getPlanName(plan.code)
+
+            // Map feature codes → real feature names for overview
+            const displayedFeatures = plan.features
+              .map((code) => getFeatureByCode(code)?.name)
+              .filter((name): name is string => Boolean(name))
+
             return (
               <motion.div
                 key={plan.code}
@@ -232,21 +200,16 @@ export function SubscriptionPage() {
                 }}
               >
                 <Card
-                  className={`relative h-full flex flex-col ${plan.recommended ? 'border-blue-300 shadow-md shadow-blue-100/50' : isCurrent ? 'border-emerald-300' : ''}`}
+                  className={`relative h-full flex flex-col ${
+                    isCurrent ? 'border-emerald-300' : ''
+                  }`}
                 >
-                  {plan.recommended && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-blue-600 text-white border-0 shadow-sm">
-                        Recommended
-                      </Badge>
-                    </div>
-                  )}
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center ${plan.recommended ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-600'}`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center bg-slate-100 text-slate-600`}
                       >
-                        {planIcons[plan.code]}
+                        {planIcons[plan.code] || <ZapIcon className="w-5 h-5" />}
                       </div>
                       {isCurrent && (
                         <Badge
@@ -257,21 +220,21 @@ export function SubscriptionPage() {
                         </Badge>
                       )}
                     </div>
-                    <CardTitle className="text-lg">{plan.name}</CardTitle>
+                    <CardTitle className="text-lg">{planName}</CardTitle>
                     <div className="mt-1">
                       <span className="text-2xl font-bold text-slate-800">
-                        {plan.price === '0' ? 'Free' : `${plan.price}`}
+                        {plan.default_price === '0' ? 'Free' : plan.default_price}
                       </span>
-                      {plan.price !== '0' && (
+                      {plan.default_price !== '0' && (
                         <span className="text-sm text-slate-500 ml-1">
-                          XAF/mo
+                          XAF/year
                         </span>
                       )}
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col">
                     <ul className="space-y-2.5 flex-1 mb-4">
-                      {plan.features.map((feature) => (
+                      {displayedFeatures.map((feature) => (
                         <li
                           key={feature}
                           className="flex items-start gap-2 text-sm text-slate-600"
@@ -282,13 +245,7 @@ export function SubscriptionPage() {
                       ))}
                     </ul>
                     <Button
-                      variant={
-                        isCurrent
-                          ? 'outline'
-                          : plan.recommended
-                            ? 'default'
-                            : 'outline'
-                      }
+                      variant={isCurrent ? 'outline' : 'default'}
                       className="w-full"
                       disabled={isCurrent || updateMutation.isPending}
                       onClick={() => handleChangePlan(plan.code)}

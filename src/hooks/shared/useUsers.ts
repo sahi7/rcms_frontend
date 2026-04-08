@@ -85,7 +85,7 @@ export function useUserForm(userId?: string) {
 
   const updateMutation = usePutMutation<any, any>(
     ENDPOINT,
-    [KEY, userId ? `user-${userId}` : '']
+    userId ? ['user', userId] : [KEY]
   )
 
   return {
