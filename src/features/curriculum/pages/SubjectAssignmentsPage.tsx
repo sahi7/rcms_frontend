@@ -27,6 +27,7 @@ import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
+import { useRoles } from '@/features/users/hooks/useRoles';
 
 export function SubjectAssignments() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -58,6 +59,24 @@ export function SubjectAssignments() {
       role: 'teacher',
     },
   )
+  const { data: rolesData } = useRoles()
+  
+  const teacherOptions = useMemo(() => {
+    const allUsers = teachersData?.data || []
+    const allRoles = rolesData?.data || []
+
+    return allUsers
+      .filter((user: any) => {
+        const userRoleId = user.role
+        const matchedRole = allRoles.find((r: any) => String(r.id) === String(userRoleId))
+        return matchedRole?.role_type === 'teacher'
+      })
+      .map((t: any) => ({
+        value: t.id,                    // value remains the user id
+        label: `${t.first_name} ${t.last_name}`,
+      }))
+  }, [teachersData, rolesData])
+
   const subjectMap = useMemo(() => {
     const map: Record<number, string> = {}
     subjectsData?.data.forEach((s) => {
@@ -91,10 +110,10 @@ export function SubjectAssignments() {
     value: c.id,
     label: c.name,
   }))
-  const teacherOptions = (teachersData?.data || []).map((t: any) => ({
-    value: t.id,
-    label: `${t.first_name} ${t.last_name}`,
-  }))
+  // const teacherOptions = (teachersData?.data || []).map((t: any) => ({
+  //   value: t.id,
+  //   label: `${t.first_name} ${t.last_name}`,
+  // }))
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<SubjectAssignment | null>(null)
