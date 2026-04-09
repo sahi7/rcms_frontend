@@ -22,7 +22,7 @@ export function UserDetails() {
     subjectsData,
   } = useUserDetails(id!)
   
-  const roleType = useRoleType(user?.role)
+  const { roleType } = useRoleType(user?.role)
 
   if (isLoadingUser) {
     return (

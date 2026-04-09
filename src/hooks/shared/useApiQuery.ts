@@ -82,7 +82,7 @@ export function usePutMutation<TPayload, TResponse = any>(
       api.put<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
     onSuccess: () => {
       invalidateKeys.forEach((key) =>
-        queryClient.invalidateQueries({ queryKey: [key] }),
+        queryClient.invalidateQueries({ queryKey: [key], exact: false }),
       )
     },
   })

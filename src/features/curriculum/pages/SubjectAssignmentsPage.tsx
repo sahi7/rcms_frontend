@@ -25,8 +25,8 @@ import {
 import { useSubjects } from '../hooks/useSubjects'
 import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
-import { useListQuery } from '@/hooks/shared/useApiQuery'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
+import { useTeachers, useRoleIdByType } from '@/hooks/shared/useUsers'
 import { useRoles } from '@/features/users/hooks/useRoles';
 
 export function SubjectAssignments() {
@@ -50,16 +50,19 @@ export function SubjectAssignments() {
   const { data: classroomsData } = useClassRooms({
     page_size: 200,
   })
+
+  const { data: rolesData } = useRoles()
+
   // Fetch teachers only
-  const { data: teachersData } = useListQuery<any>(
-    'teachers',
-    '/users/',
+  const teacherRoleId = useRoleIdByType('teacher')
+
+  const { data: teachersData } = useTeachers(
     {
       page_size: 200,
-      role: 'teacher',
+      role: teacherRoleId,
     },
   )
-  const { data: rolesData } = useRoles()
+
   
   const teacherOptions = useMemo(() => {
     const allUsers = teachersData?.data || []
@@ -72,7 +75,7 @@ export function SubjectAssignments() {
         return matchedRole?.role_type === 'teacher'
       })
       .map((t: any) => ({
-        value: t.id,                    // value remains the user id
+        value: t.id,
         label: `${t.first_name} ${t.last_name}`,
       }))
   }, [teachersData, rolesData])
@@ -98,6 +101,17 @@ export function SubjectAssignments() {
     })
     return map
   }, [classroomsData])
+
+  // Teacher name map for clean display in table
+  const teacherMap = useMemo(() => {
+    const map: Record<number, string> = {}
+    const allUsers = teachersData?.data || []
+    allUsers.forEach((t: any) => {
+      map[t.id] = `${t.first_name} ${t.last_name}`
+    })
+    return map
+  }, [teachersData])
+
   const subjectOptions = (subjectsData?.data || []).map((s) => ({
     value: s.id,
     label: `${s.name} (${s.code})`,
@@ -110,10 +124,7 @@ export function SubjectAssignments() {
     value: c.id,
     label: c.name,
   }))
-  // const teacherOptions = (teachersData?.data || []).map((t: any) => ({
-  //   value: t.id,
-  //   label: `${t.first_name} ${t.last_name}`,
-  // }))
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<SubjectAssignment | null>(null)
@@ -126,20 +137,35 @@ export function SubjectAssignments() {
     department: null,
     class_rooms: [],
     teacher: 0,
-    // academic_year removed
   })
   const columns = [
     {
       header: `${getPlural('subject_naming')}`,
-      accessor: (item: SubjectAssignment) => (
-        <span className="font-medium">
-          {subjectMap[item.subject] || `#${item.subject}`}
-        </span>
-      ),
+      accessor: (item: SubjectAssignment) => {
+        const name = subjectMap[item.subject] || `#${item.subject}`
+        return (
+          <span
+            className="font-medium truncate max-w-[220px] inline-block"
+            title={name}
+          >
+            {name}
+          </span>
+        )
+      },
     },
     {
       header: `${getPlural('instructor_title')}`,
-      accessor: (item: SubjectAssignment) => `Teacher #${item.teacher}`,
+      accessor: (item: SubjectAssignment) => {
+        const name = teacherMap[item.teacher] || `Teacher #${item.teacher}`
+        return (
+          <span
+            className="truncate max-w-[180px] inline-block"
+            title={name}
+          >
+            {name}
+          </span>
+        )
+      },
     },
     {
       header: 'Department',
@@ -158,10 +184,6 @@ export function SubjectAssignments() {
         </span>
       ),
     },
-    {
-      header: 'Academic Year',
-      accessor: 'academic_year' as keyof SubjectAssignment,
-    },
   ]
   const handleOpenModal = (item?: SubjectAssignment) => {
     if (item) {
@@ -171,7 +193,6 @@ export function SubjectAssignments() {
         department: item.department,
         class_rooms: item.class_rooms,
         teacher: item.teacher,
-        // academic_year removed
       })
     } else {
       setEditingItem(null)
@@ -180,7 +201,6 @@ export function SubjectAssignments() {
         department: null,
         class_rooms: [],
         teacher: 0,
-        // academic_year removed
       })
     }
     setIsModalOpen(true)

@@ -8,20 +8,53 @@ import { useRoles } from '@/features/users/hooks/useRoles'
 import { User } from '@/types/shared'
 
 // Reusable hook: takes ONLY the role ID and internally uses useRoles to check if it's a teacher
-export function useRoleType(roleId: number | string | null | undefined): string | null {
+// Right now this hook returns: { roleType, roleId }
+// So if a caller only needs roleType: const { roleType } = useRoleType(user?.role)
+// Usage: if (roleType === 'teacher') { *** }
+export function useRoleType(
+  roleId: number | string | null | undefined
+): { roleType: string | null; roleId: number | string | null } {
   const { data: rolesData } = useRoles()
 
-  if (!roleId || !rolesData?.data.length) return null
+  if (!roleId || !rolesData?.data?.length) {
+    return { roleType: null, roleId: roleId ?? null }
+  }
 
-  const role = rolesData.data.find((r: any) => String(r.id) === String(roleId))
-  return role?.role_type || null
+  const role = rolesData.data.find(
+    (r: any) => String(r.id) === String(roleId)
+  )
+
+  return {
+    roleType: role?.role_type || null,
+    roleId: role?.id ?? roleId ?? null,
+  }
 }
 
 // Convenience hook built on top of useRoleType
-export function useIsTeacher(roleId: number | string | null | undefined): boolean {
-  const roleType = useRoleType(roleId)
+// Caller: const isTeacher = useIsTeacher(user?.role)
+// Usage: {isTeacher && <TeacherPanel />}
+export function useIsTeacher(
+  roleId: number | string | null | undefined
+): boolean {
+  const { roleType } = useRoleType(roleId)
   return roleType === 'teacher'
 }
+
+// Return the RoleId of a given role_type
+export function useRoleIdByType(
+  roleType: string | null | undefined
+): number | null {
+  const { data: rolesData } = useRoles()
+
+  if (!roleType || !rolesData?.data?.length) return null
+
+  const role = rolesData.data.find(
+    (r: any) => r.role_type === roleType
+  )
+
+  return role?.id ?? null
+}
+
 
 export function useUsers(params: Record<string, any> = {}) {
   return useSearchQuery<User>('users', '/users/', params.search || '')
@@ -59,6 +92,10 @@ export function useUsersList(params: Record<string, any> = {}) {
   return useListQuery<User>(KEY, ENDPOINT, params)
 }
 
+export function useTeachers(params: Record<string, any> = {}) {
+  return useListQuery<User>(KEY, ENDPOINT, params)
+}
+
 export function useDeleteUser() {
   return useDeleteMutation(ENDPOINT, [KEY])
 }
@@ -85,7 +122,7 @@ export function useUserForm(userId?: string) {
 
   const updateMutation = usePutMutation<any, any>(
     ENDPOINT,
-    userId ? ['user', userId] : [KEY]
+    userId ? [['user', userId], KEY] : [KEY]
   )
 
   return {
