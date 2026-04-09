@@ -74,7 +74,7 @@ const baseNavStructure = [
     icon: ClipboardCheck,
     permission: 'view.studentmarks',
     children: [
-      { title: 'Overview', path: '/dashboard/marks/overview', permission: 'view.studentmarks' },
+      { title: 'Overview', path: '/dashboard/marks/upload-status', permission: 'view.studentmarks' },
       { title: 'Upload Marks', path: '/dashboard/marks/upload', permission: 'add.studentmarks' },
     ],
   },

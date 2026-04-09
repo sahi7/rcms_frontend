@@ -632,8 +632,8 @@ export function PreferencesSettings() {
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="SHORT">Short (26)</SelectItem>
-                  <SelectItem value="FULL">Full (2026)</SelectItem>
+                  <SelectItem value="Short">Short (26)</SelectItem>
+                  <SelectItem value="Long">Full (2026)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

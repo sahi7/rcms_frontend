@@ -32,6 +32,7 @@ export function MarkUploadPage() {
     skipped: number
   } | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [errorMs, setErrorMs] = useState<string[]>([])
   // Fetch scope
   const { data: scope, isLoading: scopeLoading } = useUploadScope()
   // Fetch reference data for name resolution
@@ -157,14 +158,34 @@ export function MarkUploadPage() {
       setErrorMsg(
         err?.response?.data?.error ||
           err?.message ||
-          'Upload failed. Please try again.',
+          'Upload failed.',
       )
+      const raw =
+        err?.response?.data?.details ||
+        err?.message ||
+        'Upload failed. Please try again.'
+
+      let errorsArray: string[] = []
+
+      if (typeof raw === 'string') {
+        // Split by "Row X:" pattern
+        errorsArray = raw
+          .split(/(?=Row \d+:)/g)
+          .map((e) => e.trim())
+          .filter(Boolean)
+      } else if (Array.isArray(raw)) {
+        errorsArray = raw
+      } else {
+        errorsArray = ['Upload failed. Please try again.']
+      }
+
+      setErrorMs(errorsArray)
     }
   }
   const handleGoToPreview = () => {
     if (successModal) {
       navigate(
-        `/marks/preview/${encodeURIComponent(successModal.groupKey)}?term_id=${termId}`,
+        `/dashboard/marks/preview/${encodeURIComponent(successModal.groupKey)}?term_id=${termId}`,
       )
     }
   }
@@ -353,10 +374,23 @@ export function MarkUploadPage() {
               </div>
             </div>
 
-            {errorMsg && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+            {errorMs && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-1">
+                 <div className="p-3 flex items-start gap-2">
                 <AlertTriangleIcon className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-700">{errorMsg}</p>
+              </div>
+                <div className="text-sm text-red-700">
+                  {errorMs.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-1 max-h-48 overflow-y-auto">
+                      {errorMs.map((err, i) => (
+                        <div key={i} className="text-sm text-red-700">
+                          {err}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

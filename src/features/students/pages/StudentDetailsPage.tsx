@@ -274,7 +274,7 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
       const isElective = cs.subject_role === 2
       const matchesDepartment = cs.department === student.department
       const matchesClass = cs.class_room === student.current_class
-      return isElective && (matchesDepartment || matchesClass)
+      return isElective && (matchesDepartment && matchesClass)
     })
     .map((cs: any) => {
       const subjectDetail = allSubjectsData?.data?.find((s: any) => s.id === cs.subject)
