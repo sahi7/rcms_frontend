@@ -1,5 +1,5 @@
 // src/features/students/pages/SubjectAssignments.tsx
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   PlusIcon,
   UserCheckIcon,
@@ -112,6 +112,16 @@ export function SubjectAssignments() {
     return map
   }, [teachersData])
 
+  // NEW: Map of teacher → list of taught subject IDs (for live validation)
+  const teacherTaughtSubjectsMap = useMemo(() => {
+    const map: Record<number, number[]> = {}
+    const allUsers = teachersData?.data || []
+    allUsers.forEach((t: any) => {
+      map[t.id] = Array.isArray(t.taught_subjects) ? t.taught_subjects.map(Number) : []
+    })
+    return map
+  }, [teachersData])
+
   const subjectOptions = (subjectsData?.data || []).map((s) => ({
     value: s.id,
     label: `${s.name} (${s.code})`,
@@ -138,6 +148,24 @@ export function SubjectAssignments() {
     class_rooms: [],
     teacher: 0,
   })
+
+  // NEW: Live mismatch error state
+  const [subjectTeacherMismatchError, setSubjectTeacherMismatchError] = useState<string>('')
+
+  // NEW: Live validation – runs as soon as teacher or subject changes
+  useEffect(() => {
+    if (formData.teacher && formData.subject) {
+      const taughtSubjects = teacherTaughtSubjectsMap[formData.teacher] || []
+      if (!taughtSubjects.includes(formData.subject)) {
+        setSubjectTeacherMismatchError('Selected subject is not assigned to this teacher.')
+      } else {
+        setSubjectTeacherMismatchError('')
+      }
+    } else {
+      setSubjectTeacherMismatchError('')
+    }
+  }, [formData.teacher, formData.subject, teacherTaughtSubjectsMap])
+
   const columns = [
     {
       header: `${getPlural('subject_naming')}`,
@@ -172,7 +200,7 @@ export function SubjectAssignments() {
       accessor: (item: SubjectAssignment) =>
         item.department
           ? departmentMap[item.department] || `#${item.department}`
-          : '—',
+          : '#General',
     },
     {
       header: `${getPlural('class_progression_name')}`,
@@ -219,9 +247,9 @@ export function SubjectAssignments() {
         toast.success('Subject assignment created successfully')
       }
       setIsModalOpen(false)
-    } catch (error) {
-      console.error(`Failed to save ${getPlural('subject_naming')} assignment`, error)
-      toast.error('Failed to save subject assignment')
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || `Failed to save ${getPlural('subject_naming')} assignment`
+      toast.error(errorMsg)
     }
   }
   const handleDelete = async () => {
@@ -368,6 +396,15 @@ export function SubjectAssignments() {
             }
             placeholder="Select classrooms..."
           />
+
+          {/* LIVE ERROR DISPLAY – appears immediately on mismatch */}
+          {subjectTeacherMismatchError && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
+              <span className="text-amber-500 text-base leading-none mt-px">⚠</span>
+              <span>{subjectTeacherMismatchError}</span>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button
               type="button"
