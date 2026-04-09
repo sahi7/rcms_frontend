@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useRef, Component } from 'react'
+// src/features/marks/pages/MarkUploadPage.tsx
+import React, { useMemo, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -10,16 +11,20 @@ import {
   Loader2Icon,
   XIcon,
 } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { Modal } from '@/components/Modal'
+import { Label } from '@/components/ui/label'          // ← Fixed: missing import
 import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import type { Term, Sequence } from '@/types/academic'
 import type { ClassRoom } from '@/types/structure'
 import type { Subject } from '@/types/curriculum'
+
 export function MarkUploadPage() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Form state
   const [assignmentId, setAssignmentId] = useState<number | string | null>(null)
   const [sequenceId, setSequenceId] = useState<number | string | null>(null)
@@ -33,40 +38,45 @@ export function MarkUploadPage() {
   } | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [errorMs, setErrorMs] = useState<string[]>([])
+
+  // Drag & drop state
+  const [isDragging, setIsDragging] = useState(false)
+
+  // Excel/CSV preview (first 8 rows)
+  const [previewRows, setPreviewRows] = useState<any[][]>([])
+
   // Fetch scope
   const { data: scope, isLoading: scopeLoading } = useUploadScope()
-  // Fetch reference data for name resolution
+
+  // Fetch reference data
   const { data: termsData } = useListQuery<Term>('terms', '/terms/', {
     page_size: 100,
   })
   const { data: sequencesData } = useListQuery<Sequence>(
     'sequences',
     '/sequence/',
-    {
-      page_size: 100,
-    },
+    { page_size: 100 },
   )
   const { data: classesData } = useListQuery<ClassRoom>(
     'classrooms',
     '/classrooms/',
-    {
-      page_size: 200,
-    },
+    { page_size: 200 },
   )
   const { data: subjectsData } = useListQuery<Subject>(
     'subjects',
     '/subjects/',
-    {
-      page_size: 200,
-    },
+    { page_size: 200 },
   )
+
   const uploadMutation = useUploadMarks()
+
   // Build lookup maps
   const termMap = useMemo(() => {
     const m = new Map<number, string>()
     termsData?.data?.forEach((t) => m.set(Number(t.id), t.name))
     return m
   }, [termsData])
+
   const seqMap = useMemo(() => {
     const m = new Map<number, string>()
     sequencesData?.data?.forEach((s) =>
@@ -74,11 +84,13 @@ export function MarkUploadPage() {
     )
     return m
   }, [sequencesData])
+
   const classMap = useMemo(() => {
     const m = new Map<number, string>()
     classesData?.data?.forEach((c) => m.set(Number(c.id), c.name))
     return m
   }, [classesData])
+
   const subjectMap = useMemo(() => {
     const m = new Map<number, string>()
     subjectsData?.data?.forEach((s) =>
@@ -86,7 +98,8 @@ export function MarkUploadPage() {
     )
     return m
   }, [subjectsData])
-  // Build options filtered by scope
+
+  // Build options
   const assignmentOptions = useMemo(() => {
     if (!scope) return []
     return scope.assignments.map((a) => ({
@@ -94,6 +107,7 @@ export function MarkUploadPage() {
       label: subjectMap.get(a.subject_id) || `Subject #${a.subject_id}`,
     }))
   }, [scope, subjectMap])
+
   const termOptions = useMemo(() => {
     if (!scope) return []
     const scopeIds = new Set(scope.terms.map((t) => t.id))
@@ -102,6 +116,7 @@ export function MarkUploadPage() {
       label: termMap.get(id) || `Term #${id}`,
     }))
   }, [scope, termMap])
+
   const classOptions = useMemo(() => {
     if (!scope) return []
     const scopeIds = new Set(scope.classes.map((c) => c.id))
@@ -110,6 +125,7 @@ export function MarkUploadPage() {
       label: classMap.get(id) || `Class #${id}`,
     }))
   }, [scope, classMap])
+
   const sequenceOptions = useMemo(() => {
     if (!scope) return []
     return scope.sequences.map((s) => ({
@@ -117,6 +133,26 @@ export function MarkUploadPage() {
       label: seqMap.get(s.id) || `Sequence #${s.id}`,
     }))
   }, [scope, seqMap])
+
+  // Parse file for preview (first 8 rows)
+  const parseFileForPreview = useCallback((f: File) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const sheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[sheetName]
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
+        setPreviewRows(json.slice(0, 8))
+      } catch (err) {
+        console.error('Preview parse error', err)
+        setPreviewRows([])
+      }
+    }
+    reader.readAsArrayBuffer(f)
+  }, [])
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (f) {
@@ -124,12 +160,43 @@ export function MarkUploadPage() {
       if (!['csv', 'xlsx', 'xls'].includes(ext || '')) {
         setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.')
         setFile(null)
+        setPreviewRows([])
         return
       }
       setErrorMsg('')
       setFile(f)
+      parseFileForPreview(f)
     }
   }
+
+  // Drag & drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile) {
+      const ext = droppedFile.name.split('.').pop()?.toLowerCase()
+      if (!['csv', 'xlsx', 'xls'].includes(ext || '')) {
+        setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.')
+        setFile(null)
+        setPreviewRows([])
+        return
+      }
+      setErrorMsg('')
+      setFile(droppedFile)
+      parseFileForPreview(droppedFile)
+    }
+  }
+
   const canSubmit =
     assignmentId &&
     sequenceId &&
@@ -137,6 +204,7 @@ export function MarkUploadPage() {
     termId &&
     file &&
     !uploadMutation.isPending
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canSubmit) return
@@ -148,6 +216,7 @@ export function MarkUploadPage() {
     formData.append('term_id', String(termId))
     formData.append('is_resit', String(isResit))
     formData.append('file', file!)
+
     try {
       const result = await uploadMutation.mutateAsync(formData)
       setSuccessModal({
@@ -168,7 +237,6 @@ export function MarkUploadPage() {
       let errorsArray: string[] = []
 
       if (typeof raw === 'string') {
-        // Split by "Row X:" pattern
         errorsArray = raw
           .split(/(?=Row \d+:)/g)
           .map((e) => e.trim())
@@ -182,6 +250,7 @@ export function MarkUploadPage() {
       setErrorMs(errorsArray)
     }
   }
+
   const handleGoToPreview = () => {
     if (successModal) {
       navigate(
@@ -189,6 +258,7 @@ export function MarkUploadPage() {
       )
     }
   }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
@@ -200,14 +270,8 @@ export function MarkUploadPage() {
 
       {/* Instructions card */}
       <motion.div
-        initial={{
-          opacity: 0,
-          y: 12,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-        }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
         className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3"
       >
         <InfoIcon className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
@@ -254,17 +318,9 @@ export function MarkUploadPage() {
         </div>
       ) : (
         <motion.form
-          initial={{
-            opacity: 0,
-            y: 12,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{
-            delay: 0.1,
-          }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
           onSubmit={handleSubmit}
           className="bg-white rounded-xl border border-slate-200 shadow-sm"
         >
@@ -306,7 +362,6 @@ export function MarkUploadPage() {
               placeholder="Select class..."
             />
 
-            {/* Is Resit */}
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -319,14 +374,23 @@ export function MarkUploadPage() {
               </span>
             </label>
 
-            {/* File upload */}
+            {/* File upload with drag & drop */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <Label className="block text-sm font-medium text-slate-700 mb-1">
                 File <span className="text-red-400">*</span>
-              </label>
+              </Label>
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${file ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 hover:border-orange-300 hover:bg-orange-50/30'}`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                  isDragging
+                    ? 'border-orange-400 bg-orange-50'
+                    : file
+                    ? 'border-emerald-300 bg-emerald-50'
+                    : 'border-slate-200 hover:border-orange-300 hover:bg-orange-50/30'
+                }`}
               >
                 <input
                   ref={fileInputRef}
@@ -335,6 +399,7 @@ export function MarkUploadPage() {
                   onChange={handleFileChange}
                   className="hidden"
                 />
+
                 {file ? (
                   <div className="flex items-center justify-center gap-3">
                     <FileSpreadsheetIcon className="w-8 h-8 text-emerald-500" />
@@ -351,8 +416,8 @@ export function MarkUploadPage() {
                       onClick={(e) => {
                         e.stopPropagation()
                         setFile(null)
-                        if (fileInputRef.current)
-                          fileInputRef.current.value = ''
+                        setPreviewRows([])
+                        if (fileInputRef.current) fileInputRef.current.value = ''
                       }}
                       className="p-1 hover:bg-slate-200 rounded"
                     >
@@ -363,7 +428,7 @@ export function MarkUploadPage() {
                   <>
                     <UploadCloudIcon className="w-10 h-10 text-slate-300 mx-auto mb-2" />
                     <p className="text-sm text-slate-500">
-                      Click to select a <strong>CSV</strong> or{' '}
+                      Click or drag &amp; drop a <strong>CSV</strong> or{' '}
                       <strong>Excel</strong> file
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
@@ -374,23 +439,60 @@ export function MarkUploadPage() {
               </div>
             </div>
 
-            {errorMs && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-1">
-                 <div className="p-3 flex items-start gap-2">
+            {/* Excel/CSV Preview */}
+            {file && previewRows.length > 0 && (
+              <div className="mt-4">
+                <Label className="text-xs text-slate-500 mb-2 block">
+                  Preview (first 8 rows)
+                </Label>
+                <div className="border border-slate-200 rounded-xl overflow-auto max-h-64 bg-white">
+                  <table className="w-full text-xs">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        {previewRows[0] &&
+                          previewRows[0].map((cell: any, i: number) => (
+                            <th
+                              key={i}
+                              className="px-3 py-2 text-left font-medium text-slate-600 border-b"
+                            >
+                              {String(cell || '')}
+                            </th>
+                          ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewRows.slice(1).map((row, rowIndex) => (
+                        <tr key={rowIndex} className="border-b last:border-0">
+                          {row.map((cell: any, i: number) => (
+                            <td
+                              key={i}
+                              className="px-3 py-2 text-slate-700 border-r last:border-r-0"
+                            >
+                              {String(cell || '')}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
                 <AlertTriangleIcon className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-700">{errorMsg}</p>
               </div>
-                <div className="text-sm text-red-700">
-                  {errorMs.length > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-1 max-h-48 overflow-y-auto">
-                      {errorMs.map((err, i) => (
-                        <div key={i} className="text-sm text-red-700">
-                          {err}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+            )}
+
+            {errorMs.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex flex-col gap-1 max-h-48 overflow-y-auto">
+                {errorMs.map((err, i) => (
+                  <div key={i} className="text-sm text-red-700">
+                    {err}
+                  </div>
+                ))}
               </div>
             )}
           </div>
