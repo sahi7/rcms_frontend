@@ -8,6 +8,7 @@ import {
   User,
   AlertCircle,
   Loader2,
+  BarChart3,
 } from 'lucide-react'
 import { useDetailQuery } from '@/hooks/shared/useApiQuery'
 import { Student } from '@/types/academic'
@@ -20,12 +21,13 @@ import { useStudentElectives } from '../hooks/useStudentElectives'
 import { toast } from 'sonner'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
 import { useDepartments } from '../../structure/hooks/useDepartments'
+import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 
 export function StudentDetails() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'electives'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'electives' | 'performance'>('overview')
 
   const { data: student, isLoading: isLoadingStudent } = useDetailQuery<Student>(
     'student',
@@ -133,13 +135,27 @@ export function StudentDetails() {
             <BookOpen className="h-4 w-4" />
             Electives
           </button>
+          <button
+            onClick={() => setActiveTab('performance')}
+            className={cn(
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors',
+              activeTab === 'performance'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            )}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Performance
+          </button>
         </nav>
       </div>
 
       {activeTab === 'overview' ? (
         <OverviewTab student={student} />
-      ) : (
+      ) : activeTab === 'electives' ? (
         <StudentElectivesTab studentId={id!} student={student} />
+      ) : (
+        <StudentReportPage studentId={id!} />
       )}
     </div>
   )
@@ -426,3 +442,28 @@ function StudentElectivesTab({ studentId, student }: { studentId: string; studen
     </div>
   )
 }
+
+/*
+ * NOTES ON HOW TO USE studentId IN StudentReportPage COMPONENT
+ * (single student only - no multi-select support)
+ *
+ * In StudentReportPage.tsx you should consume the passed studentId like this:
+ *
+ * const { studentId } = props;   // or useParams if you prefer, but prop is preferred here
+ *
+ * Then use a controlled single-ID input (exactly as shown below) if you ever need
+ * to let the user change the ID inside the report page:
+ *
+ * <div className="relative">
+ *   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+ *   <input
+ *     type="text"
+ *     value={studentId}
+ *     onChange={(e) => setStudentId(e.target.value)}
+ *     placeholder="Enter student ID or registration number..."
+ *     className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+ *   />
+ * </div>
+ *
+ * This design ensures the component works with exactly ONE studentId at a time.
+ */

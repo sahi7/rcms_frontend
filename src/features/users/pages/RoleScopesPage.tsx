@@ -20,6 +20,7 @@ import {
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import type { Faculty, Department, ClassRoom } from '@/types/structure'
 import type { User } from '@/types/shared'
+import { useDepartments } from '../../structure/hooks/useDepartments'
 type ScopeType = 'faculty' | 'department' | 'classroom'
 const scopeTypeConfig: Record<
   ScopeType,
@@ -69,13 +70,7 @@ export function RoleScopesPage() {
       page_size: 100,
     },
   )
-  const { data: deptsData } = useListQuery<Department>(
-    'departments',
-    '/departments/',
-    {
-      page_size: 200,
-    },
-  )
+  const { data: deptsData } = useDepartments()
   const { data: classesData } = useListQuery<ClassRoom>(
     'classrooms',
     '/classrooms/',

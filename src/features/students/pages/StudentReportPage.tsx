@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
   SearchIcon,
@@ -14,7 +14,9 @@ import {
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentReport } from '@/features/marks/hooks/useMarks'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
+import { useParams } from 'react-router-dom';
 import type { Term, Sequence } from '@/types/academic'
+import { useTerms } from '@/features/academic/hooks/terms'
 import type {
   StudentReportTermResponse,
   StudentReportSequenceResponse,
@@ -51,14 +53,30 @@ function GradeChip({ grade, passed }: { grade: string; passed?: boolean }) {
     </span>
   )
 }
-export function StudentReportPage() {
-  const [studentId, setStudentId] = useState('')
+
+type Props = {
+  studentId?: string
+}
+
+export function StudentReportPage({ studentId: propStudentId }: Props) {
+  // This should work on for props and standalone page
+  const { studentId: paramStudentId } = useParams<{ studentId: string }>()
+  const resolvedStudentId = propStudentId || paramStudentId || ''
+  const [inputStudentId, setInputStudentId] = useState(resolvedStudentId)
+
+  const isLocked = !!propStudentId
+
+  // Important: sync when prop/URL changes
+  useEffect(() => {
+    setInputStudentId(resolvedStudentId)
+  }, [resolvedStudentId])
+
+
+
   const [mode, setMode] = useState<'term' | 'sequence'>('term')
   const [termId, setTermId] = useState<string | null>(null)
   const [sequenceId, setSequenceId] = useState<string | null>(null)
-  const { data: termsData } = useListQuery<Term>('terms', '/terms/', {
-    page_size: 100,
-  })
+  const { data: termsData } = useTerms()
   const { data: seqData } = useListQuery<Sequence>('sequences', '/sequence/', {
     page_size: 100,
   })
@@ -73,12 +91,12 @@ export function StudentReportPage() {
       }
     return {}
   }, [mode, termId, sequenceId])
-  const canFetch = !!studentId && (mode === 'term' ? !!termId : !!sequenceId)
+  const canFetch = !!inputStudentId && (mode === 'term' ? !!termId : !!sequenceId)
   const {
     data: report,
     isLoading,
     error,
-  } = useStudentReport(studentId, queryParams, canFetch)
+  } = useStudentReport(inputStudentId, queryParams, canFetch)
   const termOptions = useMemo(
     () =>
       termsData?.data?.map((t) => ({
@@ -118,22 +136,25 @@ export function StudentReportPage() {
         }}
         className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4"
       >
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Student ID <span className="text-red-400">*</span>
-            </label>
-            <div className="relative">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value)}
-                placeholder="Enter student ID or registration number..."
-                className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-              />
+        <div className="flex flex-col sm:flex-row gap-4 justify-between">
+          {!isLocked && (
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Student ID <span className="text-red-400">*</span>
+              </label>
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  disabled={isLocked}
+                  value={inputStudentId}
+                  onChange={(e) => setInputStudentId(e.target.value)}
+                  placeholder="Enter student ID or registration number..."
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+                />
+              </div>
             </div>
-          </div>
+          )}
           <div className="w-40">
             <label className="block text-sm font-medium text-slate-700 mb-1">
               View by
@@ -153,28 +174,29 @@ export function StudentReportPage() {
               </button>
             </div>
           </div>
+          <div className=" flex  gap-4">
+            {mode === 'term' ? (
+              <SearchableSelect
+                label="Term"
+                required
+                options={termOptions}
+                value={termId}
+                onChange={(v) => setTermId(v ? String(v) : null)}
+                placeholder="Select term..."
+              />
+            ) : (
+              <SearchableSelect
+                label="Sequence"
+                required
+                options={seqOptions}
+                value={sequenceId}
+                onChange={(v) => setSequenceId(v ? String(v) : null)}
+                placeholder="Select sequence..."
+              />
+            )}
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {mode === 'term' ? (
-            <SearchableSelect
-              label="Term"
-              required
-              options={termOptions}
-              value={termId}
-              onChange={(v) => setTermId(v ? String(v) : null)}
-              placeholder="Select term..."
-            />
-          ) : (
-            <SearchableSelect
-              label="Sequence"
-              required
-              options={seqOptions}
-              value={sequenceId}
-              onChange={(v) => setSequenceId(v ? String(v) : null)}
-              placeholder="Select sequence..."
-            />
-          )}
-        </div>
+
       </motion.div>
 
       {/* Loading */}

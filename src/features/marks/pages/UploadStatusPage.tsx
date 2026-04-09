@@ -11,8 +11,9 @@ import { StatusBadge } from '@/components/StatusBadge'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useUploadStatus } from '@/features/marks/hooks/useMarks'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
-import type { Term, Sequence } from '@/types/academic'
-import type { Department } from '@/types/structure'
+import type { Sequence } from '@/types/academic'
+import { useTerms } from '@/features/academic/hooks/terms'
+import { useDepartments } from '../../structure/hooks/useDepartments'
 export function UploadStatusPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<{
@@ -24,9 +25,7 @@ export function UploadStatusPage() {
     sequence?: string
   }>({})
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { data: termsData } = useListQuery<Term>('terms', '/terms/', {
-    page_size: 100,
-  })
+  const { data: termsData } = useTerms()
   const { data: sequencesData } = useListQuery<Sequence>(
     'sequences',
     '/sequence/',
@@ -34,13 +33,7 @@ export function UploadStatusPage() {
       page_size: 100,
     },
   )
-  const { data: deptsData } = useListQuery<Department>(
-    'departments',
-    '/departments/',
-    {
-      page_size: 200,
-    },
-  )
+  const { data: deptsData } = useDepartments()
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useUploadStatus({
       ...filters,

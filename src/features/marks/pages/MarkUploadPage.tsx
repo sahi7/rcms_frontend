@@ -14,12 +14,13 @@ import {
 import * as XLSX from 'xlsx'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { Modal } from '@/components/Modal'
-import { Label } from '@/components/ui/label'          // ← Fixed: missing import
+import { Label } from '@/components/ui/label'
 import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import type { Term, Sequence } from '@/types/academic'
 import type { ClassRoom } from '@/types/structure'
 import type { Subject } from '@/types/curriculum'
+import { useTerms } from '@/features/academic/hooks/terms'
 
 export function MarkUploadPage() {
   const navigate = useNavigate()
@@ -49,9 +50,7 @@ export function MarkUploadPage() {
   const { data: scope, isLoading: scopeLoading } = useUploadScope()
 
   // Fetch reference data
-  const { data: termsData } = useListQuery<Term>('terms', '/terms/', {
-    page_size: 100,
-  })
+  const { data: termsData } = useTerms()
   const { data: sequencesData } = useListQuery<Sequence>(
     'sequences',
     '/sequence/',
@@ -99,14 +98,55 @@ export function MarkUploadPage() {
     return m
   }, [subjectsData])
 
-  // Build options
+  // Deduplicated assignments (no duplicate subjects)
+  // We use assignment.id as value, but group by subject_id to avoid duplicates
   const assignmentOptions = useMemo(() => {
-    if (!scope) return []
-    return scope.assignments.map((a) => ({
-      value: a.id,
-      label: subjectMap.get(a.subject_id) || `Subject #${a.subject_id}`,
-    }))
+    if (!scope?.assignments) return []
+
+    const seen = new Map<number, any>()
+
+    scope.assignments.forEach((a: any) => {
+      if (!seen.has(a.subject_id)) {
+        seen.set(a.subject_id, {
+          value: a.id,
+          label: subjectMap.get(a.subject_id) || `Subject #${a.subject_id}`,
+          subject_id: a.subject_id,  // Store the subject_id too
+        })
+      }
+    })
+
+    return Array.from(seen.values())
   }, [scope, subjectMap])
+
+  // Get ALL classrooms for the selected subject
+  const classOptions = useMemo(() => {
+    if (!scope?.assignments || !assignmentId) return []
+
+    // Find the selected option to get its subject_id
+    const selectedOption = assignmentOptions.find(
+      (opt) => opt.value === Number(assignmentId)
+    )
+
+    if (!selectedOption) return []
+
+    // Find ALL assignments with this subject_id
+    const assignmentsForSubject = scope.assignments.filter(
+      (a: any) => a.subject_id === selectedOption.subject_id
+    )
+
+    // Get unique classroom IDs from all these assignments
+    const uniqueClassIds = [...new Set(
+      assignmentsForSubject
+        .map((a: any) => a.class_rooms__id)
+        .filter((id: number) => id != null)
+    )]
+
+    // Return all classes as options
+    return uniqueClassIds.map((classId: number) => ({
+      value: classId,
+      label: classMap.get(classId) || `Class #${classId}`,
+    }))
+  }, [scope, assignmentId, assignmentOptions, classMap])
 
   const termOptions = useMemo(() => {
     if (!scope) return []
@@ -116,15 +156,6 @@ export function MarkUploadPage() {
       label: termMap.get(id) || `Term #${id}`,
     }))
   }, [scope, termMap])
-
-  const classOptions = useMemo(() => {
-    if (!scope) return []
-    const scopeIds = new Set(scope.classes.map((c) => c.id))
-    return Array.from(scopeIds).map((id) => ({
-      value: id,
-      label: classMap.get(id) || `Class #${id}`,
-    }))
-  }, [scope, classMap])
 
   const sequenceOptions = useMemo(() => {
     if (!scope) return []
@@ -226,8 +257,8 @@ export function MarkUploadPage() {
     } catch (err: any) {
       setErrorMsg(
         err?.response?.data?.error ||
-          err?.message ||
-          'Upload failed.',
+        err?.message ||
+        'Upload failed.',
       )
       const raw =
         err?.response?.data?.details ||
@@ -353,6 +384,7 @@ export function MarkUploadPage() {
               />
             </div>
 
+            {/* Class dropdown now filtered to only the class of the selected assignment */}
             <SearchableSelect
               label="Class"
               required
@@ -384,13 +416,12 @@ export function MarkUploadPage() {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                  isDragging
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${isDragging
                     ? 'border-orange-400 bg-orange-50'
                     : file
-                    ? 'border-emerald-300 bg-emerald-50'
-                    : 'border-slate-200 hover:border-orange-300 hover:bg-orange-50/30'
-                }`}
+                      ? 'border-emerald-300 bg-emerald-50'
+                      : 'border-slate-200 hover:border-orange-300 hover:bg-orange-50/30'
+                  }`}
               >
                 <input
                   ref={fileInputRef}

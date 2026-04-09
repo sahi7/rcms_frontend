@@ -24,8 +24,7 @@ import {
 import { useSubjects } from '../hooks/useSubjects'
 import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
-import { useListQuery } from '@/hooks/shared/useApiQuery'
-import { Term } from '@/types/academic'
+import { useTerms } from '@/features/academic/hooks/terms'
 import { toast } from 'sonner'
 
 // Local payload type that exactly matches the server (plural subjects + nullable term_number)
@@ -61,11 +60,7 @@ export function CurriculumSubjects() {
   const { data: departmentsData } = useDepartments({ page_size: 200 })
   const { data: classroomsData } = useClassRooms({ page_size: 200 })
 
-  const { data: termsData } = useListQuery<Term>(
-    'terms',
-    '/terms/',
-    { page_size: 50 }
-  )
+  const { data: termsData } = useTerms()
 
   const subjectMap = useMemo(() => {
     const map: Record<number, string> = {}
