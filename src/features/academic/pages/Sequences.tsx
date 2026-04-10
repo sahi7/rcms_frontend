@@ -9,7 +9,7 @@ import { DataTable } from '@/components/DataTable';
 import { Modal } from '@/components/Modal';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Sequence, PaginatedResponse, Term } from '@/types/academic';
-import { sequenceApi } from '../hooks/sequence';
+import { sequenceApi, useCreateSequence, useDeleteSequence, useUpdateSequence } from '../hooks/sequence';
 import { termsApi } from '../hooks/terms';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
@@ -80,6 +80,10 @@ export function Sequences() {
     const watchedIsResit = watch('is_resit');
     const watchedIsResultsPublished = watch('is_results_published');
 
+    const updateMutation = useUpdateSequence()
+    const createMutation = useCreateSequence()
+    const deleteMutation = useDeleteSequence()
+
     // Fetch terms for dropdowns
     const fetchTerms = useCallback(async () => {
         try {
@@ -139,10 +143,15 @@ export function Sequences() {
             };
 
             if (editingItem?.id) {
-                await sequenceApi.update(editingItem.id, payload);
+                await updateMutation.mutateAsync({
+                    id: editingItem.id,
+                    payload,
+                })
                 toast.success('Sequence updated successfully');
             } else {
-                await sequenceApi.create(payload);
+                await createMutation.mutateAsync ({
+                    payload
+                })
                 toast.success('Sequence created successfully');
             }
             setIsModalOpen(false);
@@ -402,14 +411,12 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_mandatory', !watchedIsMandatory)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                                    watchedIsMandatory ? 'bg-orange-500' : 'bg-slate-200'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsMandatory ? 'bg-orange-500' : 'bg-slate-200'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                                        watchedIsMandatory ? 'translate-x-5' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsMandatory ? 'translate-x-5' : 'translate-x-1'
+                                        }`}
                                 />
                             </button>
                         </div>
@@ -424,14 +431,12 @@ export function Sequences() {
                                 <button
                                     type="button"
                                     onClick={() => setValue('is_current', !watchedIsCurrent)}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                                        watchedIsCurrent ? 'bg-orange-500' : 'bg-slate-200'
-                                    }`}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsCurrent ? 'bg-orange-500' : 'bg-slate-200'
+                                        }`}
                                 >
                                     <span
-                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                                            watchedIsCurrent ? 'translate-x-5' : 'translate-x-1'
-                                        }`}
+                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsCurrent ? 'translate-x-5' : 'translate-x-1'
+                                            }`}
                                     />
                                 </button>
                             </div>
@@ -446,14 +451,12 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_resit', !watchedIsResit)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                                    watchedIsResit ? 'bg-orange-500' : 'bg-slate-200'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResit ? 'bg-orange-500' : 'bg-slate-200'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                                        watchedIsResit ? 'translate-x-5' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResit ? 'translate-x-5' : 'translate-x-1'
+                                        }`}
                                 />
                             </button>
                         </div>
@@ -467,14 +470,12 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_results_published', !watchedIsResultsPublished)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                                    watchedIsResultsPublished ? 'bg-orange-500' : 'bg-slate-200'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResultsPublished ? 'bg-orange-500' : 'bg-slate-200'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                                        watchedIsResultsPublished ? 'translate-x-5' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResultsPublished ? 'translate-x-5' : 'translate-x-1'
+                                        }`}
                                 />
                             </button>
                         </div>

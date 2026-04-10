@@ -3,8 +3,8 @@ import api from '@/lib/api';
 import {
   useListQuery,
   useCreateMutation,
-  useUpdateMutation,
   useDeleteMutation,
+  useUpdateMutation
 } from '@/hooks/shared/useApiQuery'
 import { Sequence, PaginatedResponse } from '@/types/academic';
 
@@ -41,6 +41,19 @@ export const sequenceApi = {
 
 const KEY = 'sequence'
 const ENDPOINT = '/sequence/'
+
+export function useCreateSequence() {
+  return useCreateMutation<Sequence, Sequence>(ENDPOINT, [KEY])
+}
+
+export function useUpdateSequence() {
+  return useUpdateMutation<Sequence, Sequence>(ENDPOINT, [KEY])
+}
+
+export function useDeleteSequence() {
+  return useDeleteMutation(ENDPOINT, [KEY])
+}
+
 
 export function useSequence(params: Record<string, any> = {}) {
   return useListQuery<Sequence>(KEY, ENDPOINT, params)
