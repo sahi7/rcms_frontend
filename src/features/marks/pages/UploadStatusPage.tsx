@@ -336,7 +336,7 @@ export function UploadStatusPage() {
                                 <CalendarIcon className="w-3 h-3" />
                                 CREATED
                               </div>
-                              <div className="font-medium text-slate-800">{formatDate(item.created_at)}</div>
+                              <div className="font-medium text-slate-800">{formatDate(item.created_at, true)}</div>
                             </div>
 
                             {/* Updated at */}
@@ -345,7 +345,7 @@ export function UploadStatusPage() {
                                 <CalendarIcon className="w-3 h-3" />
                                 LAST UPDATED
                               </div>
-                              <div className="font-medium text-slate-800">{formatDate(item.updated_at)}</div>
+                              <div className="font-medium text-slate-800">{formatDate(item.updated_at, true)}</div>
                             </div>
 
                             {/* Created by */}
