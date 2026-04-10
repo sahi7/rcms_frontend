@@ -1,5 +1,11 @@
 // src/features/academic/hooks/sequenceApi.ts
 import api from '@/lib/api';
+import {
+  useListQuery,
+  useCreateMutation,
+  useUpdateMutation,
+  useDeleteMutation,
+} from '@/hooks/shared/useApiQuery'
 import { Sequence, PaginatedResponse } from '@/types/academic';
 
 export const sequenceApi = {
@@ -30,3 +36,12 @@ export const sequenceApi = {
     return response.data;
   },
 };
+
+
+
+const KEY = 'sequence'
+const ENDPOINT = '/sequence/'
+
+export function useSequence(params: Record<string, any> = {}) {
+  return useListQuery<Sequence>(KEY, ENDPOINT, params)
+}

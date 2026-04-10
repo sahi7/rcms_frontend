@@ -121,6 +121,7 @@ export interface StudentReportTermResponse {
   }
   overall: {
     gpa: number
+    average: number
     grade: string
     attempted_credits: number
     earned_credits: number
@@ -152,6 +153,7 @@ export interface StudentReportSequenceResponse {
   overall: {
     gpa: number
     grade: string
+    average: number
   }
   sequence: {
     id: string

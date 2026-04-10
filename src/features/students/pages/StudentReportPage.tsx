@@ -13,16 +13,17 @@ import {
 } from 'lucide-react'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { useStudentReport } from '@/features/marks/hooks/useMarks'
-import { useListQuery } from '@/hooks/shared/useApiQuery'
 import { useParams } from 'react-router-dom';
-import type { Term, Sequence } from '@/types/academic'
 import { useTerms } from '@/features/academic/hooks/terms'
+import { useSequence } from '@/features/academic/hooks/sequence'
 import type {
   StudentReportTermResponse,
   StudentReportSequenceResponse,
   SubjectReport,
   SequenceSubjectReport,
 } from '@/types/marks'
+
+
 function isTermResponse(r: any): r is StudentReportTermResponse {
   return (
     r &&
@@ -77,9 +78,16 @@ export function StudentReportPage({ studentId: propStudentId }: Props) {
   const [termId, setTermId] = useState<string | null>(null)
   const [sequenceId, setSequenceId] = useState<string | null>(null)
   const { data: termsData } = useTerms()
-  const { data: seqData } = useListQuery<Sequence>('sequences', '/sequence/', {
-    page_size: 100,
-  })
+  const { data: seqData } = useSequence()
+
+  const sequenceMap = React.useMemo(() => {
+    const map = new Map<number, string>()
+    seqData?.data.forEach(seq => {
+      map.set(seq.id as unknown as number, seq.code);
+    })
+    return map
+  }, [seqData])
+
   const queryParams = useMemo(() => {
     if (mode === 'term' && termId)
       return {
@@ -241,7 +249,8 @@ export function StudentReportPage({ studentId: propStudentId }: Props) {
                   GPA
                 </p>
                 <p className="text-xl font-bold text-slate-800">
-                  {report.overall.gpa.toFixed(2)}
+                  {report.overall.average.toFixed(2)}
+                  {/* {report.overall.grade} */}
                 </p>
               </div>
             </div>
@@ -298,12 +307,14 @@ export function StudentReportPage({ studentId: propStudentId }: Props) {
                 title="Core Subjects"
                 subjects={report.subjects.core}
                 icon={BookOpenIcon}
+                sequenceMap={sequenceMap}
               />
               {report.subjects.elective.length > 0 && (
                 <SubjectTable
                   title="Elective Subjects"
                   subjects={report.subjects.elective}
                   icon={GraduationCapIcon}
+                  sequenceMap={sequenceMap}
                 />
               )}
             </>
@@ -321,10 +332,12 @@ function SubjectTable({
   title,
   subjects,
   icon: Icon,
+  sequenceMap,
 }: {
   title: string
   subjects: SubjectReport[]
   icon: React.ElementType
+  sequenceMap: Map<number, string>
 }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -345,14 +358,18 @@ function SubjectTable({
               <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider">
                 Credits
               </th>
-              {subjects[0]?.sequences_marks?.map((_, i) => (
-                <th
-                  key={i}
-                  className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider"
-                >
-                  Seq {i + 1}
-                </th>
-              ))}
+              {subjects[0]?.sequences_marks?.map((m, i) => {
+                const seqName = sequenceMap.get(m.seq_id) || `Seq ${i + 1}`
+
+                return (
+                  <th
+                    key={i}
+                    className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider"
+                  >
+                    {seqName}
+                  </th>
+                )
+              })}
               <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider">
                 Final
               </th>
