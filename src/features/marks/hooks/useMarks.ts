@@ -39,7 +39,7 @@ export function useMarkPreview(params: {
   search?: string
   enabled?: boolean
 }) {
-  const { group_key, term_id, limit = 50, search, enabled = true } = params
+  const { group_key, term_id, limit = 200, search, enabled = true } = params
   return useInfiniteQuery<MarkPreviewResponse>({
     queryKey: ['marks', 'preview', group_key, term_id, search],
     queryFn: ({ pageParam }) =>

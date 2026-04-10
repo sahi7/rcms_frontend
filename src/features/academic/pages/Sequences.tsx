@@ -9,7 +9,7 @@ import { DataTable } from '@/components/DataTable';
 import { Modal } from '@/components/Modal';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Sequence, PaginatedResponse, Term } from '@/types/academic';
-import { sequenceApi, useCreateSequence, useDeleteSequence, useUpdateSequence } from '../hooks/sequence';
+import { sequenceApi, useCreateSequence, useUpdateSequence } from '../hooks/sequence';
 import { termsApi } from '../hooks/terms';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
@@ -82,7 +82,6 @@ export function Sequences() {
 
     const updateMutation = useUpdateSequence()
     const createMutation = useCreateSequence()
-    const deleteMutation = useDeleteSequence()
 
     // Fetch terms for dropdowns
     const fetchTerms = useCallback(async () => {

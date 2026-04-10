@@ -15,7 +15,7 @@ export interface GeneratedReport {
   download_url: string
   num_students: number
   term_id: number
-  class_id: number
+  class_room_id: number
   department_id: number | null
   created_by_id: number
 }

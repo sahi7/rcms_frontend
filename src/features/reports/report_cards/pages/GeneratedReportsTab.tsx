@@ -56,7 +56,7 @@ export function GeneratedReportsTab() {
     const queryParams = useMemo(() => {
         const p: Record<string, any> = {}
         if (filterTermId) p.term_id = filterTermId
-        if (filterClassId) p.class_id = filterClassId
+        if (filterClassId) p.class_room_id = filterClassId
         if (filterDeptId) p.department_id = filterDeptId
         return p
     }, [filterTermId, filterClassId, filterDeptId])
@@ -225,7 +225,7 @@ export function GeneratedReportsTab() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="text-sm font-semibold text-slate-800">
-                                                    {resolveName(classRooms, report.class_id, 'name')}
+                                                    {resolveName(classRooms, report.class_room_id, 'name')}
                                                 </span>
                                                 {report.department_id && (
                                                     <Badge variant="secondary" className="text-xs">
@@ -247,7 +247,7 @@ export function GeneratedReportsTab() {
                                                 </span>
                                                 <span className="flex items-center gap-1">
                                                     <CalendarIcon className="w-3 h-3" />
-                                                    {formatDate(report.created_at)}
+                                                    {formatDate(report.created_at, true)}
                                                 </span>
                                                 <span>
                                                     By {resolveUserName(report.created_by_id)}

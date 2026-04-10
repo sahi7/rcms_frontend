@@ -20,10 +20,12 @@ import {
 import { useMarkPreview, useUpdateMarks } from '@/features/marks/hooks/useMarks'
 import { Modal } from '@/components/Modal'
 import type { MarkChange, MarkPreviewSequenceMark } from '@/types/marks'
+
 interface CellEdit {
   score?: number | null
   comment?: string
 }
+
 export function MarkPreviewPage() {
   const { groupKey } = useParams<{
     groupKey: string
@@ -35,11 +37,13 @@ export function MarkPreviewPage() {
   const [edits, setEdits] = useState<Map<string | number, CellEdit>>(new Map())
   const [saveModal, setSaveModal] = useState<'success' | 'error' | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
   }, [search])
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMarkPreview({
       group_key: groupKey || '',
@@ -47,35 +51,51 @@ export function MarkPreviewPage() {
       search: debouncedSearch,
       enabled: !!groupKey && !!termId,
     })
+
   const updateMutation = useUpdateMarks()
+
   // Flatten pages
   const allRows = useMemo(() => {
     if (!data?.pages) return []
     return data.pages.flatMap((p) => p.data)
   }, [data])
+
   const sequences = useMemo(() => {
     if (!data?.pages?.[0]) return []
     return data.pages[0].sequences
   }, [data])
-  // Infinite scroll
+
+  // Improved infinite scroll with better threshold and safeguards
+  const handleInfiniteScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el || !hasNextPage || isFetchingNextPage) return
+
+    const scrollBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    console.log('Scroll check →', {
+      scrollBottom,
+      hasNextPage,
+      isFetchingNextPage,
+      isNearBottom: scrollBottom < 300,
+    })
+
+    if (scrollBottom < 300) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const handleScroll = () => {
-      if (
-        el.scrollHeight - el.scrollTop - el.clientHeight < 200 &&
-        hasNextPage &&
-        !isFetchingNextPage
-      ) {
-        fetchNextPage()
-      }
-    }
-    el.addEventListener('scroll', handleScroll)
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+    el.addEventListener('scroll', handleInfiniteScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleInfiniteScroll)
+  }, [handleInfiniteScroll])
+
   // Edit helpers
   const getEditKey = (markId: string | number) => markId
+
   const hasEdits = edits.size > 0
+
   const updateEdit = useCallback(
     (markId: string | number, field: 'score' | 'comment', value: any) => {
       setEdits((prev) => {
@@ -90,6 +110,7 @@ export function MarkPreviewPage() {
     },
     [],
   )
+
   const getCellValue = (
     mark: MarkPreviewSequenceMark,
     field: 'score' | 'comment',
@@ -98,7 +119,9 @@ export function MarkPreviewPage() {
     if (edit && field in edit) return edit[field]
     return mark[field]
   }
+
   const discardEdits = () => setEdits(new Map())
+
   const handleSave = async () => {
     if (!hasEdits) return
     const changes: MarkChange[] = []
@@ -110,6 +133,7 @@ export function MarkPreviewPage() {
       if ('comment' in edit) change.comment = edit.comment ?? ''
       changes.push(change)
     })
+
     try {
       await updateMutation.mutateAsync({
         changes,
@@ -120,6 +144,7 @@ export function MarkPreviewPage() {
       setSaveModal('error')
     }
   }
+
   if (!groupKey || !termId) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-slate-500">
@@ -131,6 +156,7 @@ export function MarkPreviewPage() {
       </div>
     )
   }
+
   return (
     <div className="space-y-4 h-full flex flex-col">
       <div className="flex items-center justify-between">
@@ -210,11 +236,13 @@ export function MarkPreviewPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider border-r border-slate-700">
                   Subject
                 </th>
+
+                {/* Sequences with per-sequence Grade column */}
                 {sequences.map((seq) => (
                   <th
                     key={seq.id}
                     className="text-center text-xs font-semibold uppercase tracking-wider border-r border-slate-700"
-                    colSpan={2}
+                    colSpan={3}
                   >
                     <div className="px-4 py-3">{seq.code}</div>
                     <div className="flex border-t border-slate-700">
@@ -224,12 +252,14 @@ export function MarkPreviewPage() {
                       <span className="flex-1 px-2 py-1.5 text-[10px] font-medium text-slate-300 border-l border-slate-700">
                         Comment
                       </span>
+                      <span className="flex-1 px-2 py-1.5 text-[10px] font-medium text-slate-300 border-l border-slate-700">
+                        Grade
+                      </span>
                     </div>
                   </th>
                 ))}
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider">
-                  Grade
-                </th>
+
+                {/* No separate Grade column anymore */}
               </tr>
             </thead>
             <tbody>
@@ -244,6 +274,7 @@ export function MarkPreviewPage() {
                   <td className="px-4 py-2.5 text-slate-600 border-r border-slate-100">
                     {row.subject_code}
                   </td>
+
                   {sequences.map((seq) => {
                     const mark = row.sequences.find(
                       (m) => m.sequence_id === seq.id,
@@ -257,9 +288,13 @@ export function MarkPreviewPage() {
                           <td className="px-2 py-1 border-r border-slate-100 text-center text-slate-300">
                             —
                           </td>
+                          <td className="px-2 py-1 border-r border-slate-100 text-center text-slate-300">
+                            —
+                          </td>
                         </Fragment>
                       )
                     }
+
                     const scoreVal = getCellValue(mark, 'score')
                     const commentVal = getCellValue(mark, 'comment')
                     const isScoreEdited =
@@ -268,8 +303,10 @@ export function MarkPreviewPage() {
                     const isCommentEdited =
                       edits.has(getEditKey(mark.mark_id)) &&
                       'comment' in (edits.get(getEditKey(mark.mark_id)) || {})
+
                     return (
                       <Fragment key={seq.id}>
+                        {/* Score */}
                         <td
                           className={`px-1 py-1 border-r border-slate-100 ${isScoreEdited ? 'bg-amber-50' : ''}`}
                         >
@@ -287,6 +324,8 @@ export function MarkPreviewPage() {
                             className="w-full px-2 py-1 text-center text-xs border-0 bg-transparent focus:outline-none focus:ring-1 focus:ring-orange-400 rounded"
                           />
                         </td>
+
+                        {/* Comment */}
                         <td
                           className={`px-1 py-1 border-r border-slate-100 ${isCommentEdited ? 'bg-amber-50' : ''}`}
                         >
@@ -304,24 +343,27 @@ export function MarkPreviewPage() {
                             placeholder="—"
                           />
                         </td>
+
+                        {/* Grade - now shown next to each sequence */}
+                        <td className="px-2 py-1 border-r border-slate-100 text-center">
+                          {mark.grade ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">
+                              {mark.grade}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
                       </Fragment>
                     )
                   })}
-                  <td className="px-4 py-2.5 text-center">
-                    {row.sequences[0]?.grade ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">
-                        {row.sequences[0].grade}
-                      </span>
-                    ) : (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
                 </tr>
               ))}
+
               {isFetchingNextPage && (
                 <tr>
                   <td
-                    colSpan={2 + sequences.length * 2 + 1}
+                    colSpan={2 + sequences.length * 3}
                     className="py-4 text-center"
                   >
                     <Loader2Icon className="w-5 h-5 animate-spin text-orange-500 mx-auto" />

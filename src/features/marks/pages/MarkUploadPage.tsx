@@ -16,12 +16,10 @@ import { SearchableSelect } from '@/components/SearchableSelect'
 import { Modal } from '@/components/Modal'
 import { Label } from '@/components/ui/label'
 import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks'
-import { useListQuery } from '@/hooks/shared/useApiQuery'
-import type { Term, Sequence } from '@/types/academic'
 import { useSubjects } from '@/features/curriculum/hooks/useSubjects'
-import type { Subject } from '@/types/curriculum'
 import { useTerms } from '@/features/academic/hooks/terms'
 import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
+import { useSequence } from '@/features/academic/hooks/sequence'
 
 export function MarkUploadPage() {
   const navigate = useNavigate()
@@ -52,11 +50,7 @@ export function MarkUploadPage() {
 
   // Fetch reference data
   const { data: termsData } = useTerms()
-  const { data: sequencesData } = useListQuery<Sequence>(
-    'sequences',
-    '/sequence/',
-    { page_size: 100 },
-  )
+  const { data: sequencesData } = useSequence()
   const { data: classesData } = useClassRooms()
 
   const { data: subjectsData } = useSubjects(

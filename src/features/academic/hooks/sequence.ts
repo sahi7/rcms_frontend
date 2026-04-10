@@ -31,10 +31,6 @@ export const sequenceApi = {
     await api.delete(`/sequence/${id}/`);
   },
 
-  setAsCurrent: async (id: string) => {
-    const response = await api.post(`/sequences/${id}/set-current/`);
-    return response.data;
-  },
 };
 
 
