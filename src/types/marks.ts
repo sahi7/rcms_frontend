@@ -74,10 +74,14 @@ export interface MarkUpdatePayload {
 // Upload Status
 export interface UploadStatusItem {
   id: number
-  subject__name: string
-  teacher__last_name: string
-  class_room__name: string
+  subject_id: number
+  teacher_id: number
+  class_room_id: number
+  department_id: number
   is_resit: boolean
+  created_at: string
+  updated_at: string
+  created_by_id: number
 }
 
 export interface UploadStatusResponse {

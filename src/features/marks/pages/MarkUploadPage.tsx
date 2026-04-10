@@ -18,9 +18,10 @@ import { Label } from '@/components/ui/label'
 import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks'
 import { useListQuery } from '@/hooks/shared/useApiQuery'
 import type { Term, Sequence } from '@/types/academic'
-import type { ClassRoom } from '@/types/structure'
+import { useSubjects } from '@/features/curriculum/hooks/useSubjects'
 import type { Subject } from '@/types/curriculum'
 import { useTerms } from '@/features/academic/hooks/terms'
+import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
 
 export function MarkUploadPage() {
   const navigate = useNavigate()
@@ -56,14 +57,9 @@ export function MarkUploadPage() {
     '/sequence/',
     { page_size: 100 },
   )
-  const { data: classesData } = useListQuery<ClassRoom>(
-    'classrooms',
-    '/classrooms/',
-    { page_size: 200 },
-  )
-  const { data: subjectsData } = useListQuery<Subject>(
-    'subjects',
-    '/subjects/',
+  const { data: classesData } = useClassRooms()
+
+  const { data: subjectsData } = useSubjects(
     { page_size: 200 },
   )
 
