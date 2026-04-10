@@ -75,6 +75,8 @@ export interface MarkUpdatePayload {
 export interface UploadStatusItem {
   id: number
   subject_id: number
+  assignment_id: number
+  sequence_id: number
   teacher_id: number
   class_room_id: number
   department_id: number

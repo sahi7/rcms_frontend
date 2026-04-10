@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion'
 import {
   Loader2Icon,
-  SearchIcon,
   FilterIcon,
   ClipboardCheckIcon,
   XIcon,
@@ -373,7 +372,7 @@ export function UploadStatusPage() {
                               <button
                                 onClick={() => {
                                   navigate(
-                                    `/dashboard/marks/preview/${item.subject_id}__${item.id}__${item.class_room_id}?term_id=${currentTermId}`
+                                    `/dashboard/marks/preview/${item.assignment_id}__${item.sequence_id}__${item.class_room_id}?term_id=${currentTermId}`
                                   );
                                 }}
                                 className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 text-sm font-medium transition-colors bg-transparent border-none cursor-pointer p-0"
