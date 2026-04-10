@@ -83,7 +83,7 @@ const baseNavStructure = [
     icon: FileBarChart,
     permission: 'view.generate_reports',
     children: [
-      { title: 'Generate Reports', path: '/dashboard/reports/generate', permission: 'view.generate_reports' },
+      { title: 'Generate Reports', path: '/dashboard/reports/cards/generate', permission: 'view.generate_reports' },
     ],
   },
   {

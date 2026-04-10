@@ -38,6 +38,7 @@ import { UploadStatusPage } from '@/features/marks/pages/UploadStatusPage'
 import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 
 import { SettingsPage } from './features/settings/pages/SettingsPage'
+import { ReportCardPage } from './features/reports/report_cards/ReportCardPage'
 
 
 export default function App() {
@@ -109,6 +110,8 @@ export default function App() {
         <Route path="marks/upload-status" element={<UploadStatusPage />} />
 
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="reports/cards/generate" element={<ReportCardPage />} />
+
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}
       </Route>
