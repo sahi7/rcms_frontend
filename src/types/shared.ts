@@ -34,6 +34,7 @@ export interface User {
   place_of_birth?: string
   profile_picture?: string
   date_joined?: string
+  value?: number
   date_of_birth?: string
   initials?: string
   

@@ -560,8 +560,7 @@ export function PreferencesSettings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ca_exam">CA + Exam</SelectItem>
-                  <SelectItem value="exam_only">Exam Only</SelectItem>
-                  <SelectItem value="continuous">Continuous</SelectItem>
+                  <SelectItem value="test_exam">Test + Exam</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -576,10 +575,8 @@ export function PreferencesSettings() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="levels">Levels</SelectItem>
-                  <SelectItem value="years">Years</SelectItem>
-                  <SelectItem value="grades">Grades</SelectItem>
                   <SelectItem value="forms">Forms</SelectItem>
-                  <SelectItem value="classes">Classes</SelectItem>
+                  <SelectItem value="classrooms">Classes</SelectItem>
                 </SelectContent>
               </Select>
             </div>

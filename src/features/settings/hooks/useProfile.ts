@@ -29,6 +29,11 @@ export type ProfilePayload = Partial<
     | 'profile_picture'
     | 'date_of_birth'
     | 'initials'
+    | 'emergency_guardian_name'
+    | 'emergency_guardian_email'  
+    | 'emergency_guardian_phone'      
+    | 'emergency_guardian_address'  
+    | 'relationship_to_guardian'         
   >
 >
 
