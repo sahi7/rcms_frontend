@@ -14,6 +14,10 @@ import { termsApi } from '../hooks/terms';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 
+/**
+ * Creates a Zod validation schema for Sequence forms.
+ * The term error message is dynamically generated based on institution configuration.
+ */
 function createSequenceSchema(termErrorMessage: string) {
     return z.object({
         name: z.string().min(3, 'Name must be at least 3 characters'),
@@ -28,15 +32,17 @@ function createSequenceSchema(termErrorMessage: string) {
 }
 
 export function Sequences() {
+    // Institution configuration for dynamic labeling (e.g., Term → Trimester, Semester, etc.)
     const { getLabel, getPlural } = useInstitutionConfig();
+
     const termErrorMessage = `${getLabel('academic_period')} is required`;
     const sequenceSchema = createSequenceSchema(termErrorMessage);
     type FormData = z.infer<typeof sequenceSchema>;
 
+    // State management
     const [response, setResponse] = useState<PaginatedResponse<Sequence> | null>(null);
     const [terms, setTerms] = useState<Term[]>([]);
     const [loading, setLoading] = useState(true);
-
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTermId, setSelectedTermId] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -47,6 +53,10 @@ export function Sequences() {
     const [editingItem, setEditingItem] = useState<Sequence | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Sequence | null>(null);
 
+    /**
+     * Computes the ID of the current academic period by finding the term
+     * associated with the sequence marked as `is_current`.
+     */
     const currentTermId = useMemo(() => {
         const currentSeq = response?.data?.find((s: Sequence) => s.is_current);
         if (!currentSeq || !terms.length) return null;
@@ -54,6 +64,7 @@ export function Sequences() {
         return matchingTerm ? String(matchingTerm.id) : null;
     }, [response, terms]);
 
+    // React Hook Form setup with Zod validation
     const {
         register,
         handleSubmit,
@@ -80,10 +91,12 @@ export function Sequences() {
     const watchedIsResit = watch('is_resit');
     const watchedIsResultsPublished = watch('is_results_published');
 
-    const updateMutation = useUpdateSequence()
-    const createMutation = useCreateSequence()
+    const updateMutation = useUpdateSequence();
+    const createMutation = useCreateSequence();
 
-    // Fetch terms for dropdowns
+    /**
+     * Fetches all academic periods (terms) to populate dropdowns.
+     */
     const fetchTerms = useCallback(async () => {
         try {
             const data = await termsApi.getAll('', 1, 100);
@@ -93,7 +106,9 @@ export function Sequences() {
         }
     }, []);
 
-    // Server-side fetch with term filter
+    /**
+     * Fetches sequences with server-side filtering by search term, page, and academic period.
+     */
     const fetchSequences = useCallback(async () => {
         try {
             setLoading(true);
@@ -107,6 +122,7 @@ export function Sequences() {
         }
     }, [searchTerm, currentPage, pageSize, selectedTermId]);
 
+    // Initial data loading
     useEffect(() => {
         fetchTerms();
     }, [fetchTerms]);
@@ -115,6 +131,10 @@ export function Sequences() {
         fetchSequences();
     }, [fetchSequences]);
 
+    /**
+     * Opens the add/edit modal.
+     * When editing, pre-fills the form with the selected sequence data.
+     */
     const handleOpenModal = (item?: Sequence) => {
         if (item) {
             setEditingItem(item);
@@ -134,6 +154,10 @@ export function Sequences() {
         setIsModalOpen(true);
     };
 
+    /**
+     * Handles form submission for creating or updating a sequence.
+     * Includes proper error handling from the backend.
+     */
     const onSubmit = async (formData: FormData) => {
         try {
             const payload = {
@@ -145,14 +169,13 @@ export function Sequences() {
                 await updateMutation.mutateAsync({
                     id: editingItem.id,
                     payload,
-                })
+                });
                 toast.success('Sequence updated successfully');
             } else {
-                await createMutation.mutateAsync ({
-                    payload
-                })
+                await createMutation.mutateAsync({ payload });
                 toast.success('Sequence created successfully');
             }
+
             setIsModalOpen(false);
             fetchSequences();
         } catch (error: any) {
@@ -172,6 +195,9 @@ export function Sequences() {
         }
     };
 
+    /**
+     * Deletes the selected sequence after user confirmation.
+     */
     const handleDelete = async () => {
         if (!itemToDelete?.id) return;
         try {
@@ -186,6 +212,7 @@ export function Sequences() {
         }
     };
 
+    // Fallback table response when data is not yet loaded
     const tableResponse: PaginatedResponse<Sequence> = response ?? {
         data: [],
         pagination: {
@@ -204,7 +231,7 @@ export function Sequences() {
         { header: 'Name', accessor: 'name' as keyof Sequence },
         { header: 'Code', accessor: 'code' as keyof Sequence },
         {
-            header: getPlural('academic_period'),
+            header: getLabel('academic_period'),
             accessor: (item: Sequence) => {
                 const termObj = terms.find((t) => String(t.id) === String(item.term));
                 return termObj ? termObj.name : item.term;
@@ -233,18 +260,16 @@ export function Sequences() {
             header: 'Actions',
             accessor: (item: Sequence) => (
                 <div className="flex items-center gap-2">
+                    {/* Set as Current - permission protected */}
                     {!item.is_current && (
                         <Can permission="set_current.sequence">
                             <div>
-                                {/* <button
-                                    onClick={() => handleSetAsCurrent(item.id)}
-                                    className="text-xs px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg hover:bg-emerald-200 transition-colors"
-                                >
-                                    Set as Current
-                                </button> */}
+                                {/* Set as Current button can be re-enabled here when backend supports it */}
                             </div>
                         </Can>
                     )}
+
+                    {/* Edit Sequence */}
                     <Can permission="change.sequence">
                         <button
                             onClick={() => handleOpenModal(item)}
@@ -253,6 +278,8 @@ export function Sequences() {
                             Edit
                         </button>
                     </Can>
+
+                    {/* Delete Sequence */}
                     <Can permission="delete.sequence">
                         <button
                             onClick={() => {
@@ -271,14 +298,17 @@ export function Sequences() {
 
     return (
         <div className="h-full flex flex-col gap-6">
-            {/* Responsive Header */}
+            {/* Page Header with Title and Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-[#1a1a2e]">Sequences</h1>
-                    <p className="text-slate-500 mt-1 text-sm">Manage evaluation sequences within {getPlural('academic_period')}.</p>
+                    <p className="text-slate-500 mt-1 text-sm">
+                        Manage evaluation sequences within {getPlural('academic_period')}.
+                    </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    {/* Academic Period Filter */}
                     <div className="relative flex-1 sm:w-72">
                         <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <select
@@ -295,13 +325,15 @@ export function Sequences() {
                                 const isCurrentTerm = currentTermId === termIdStr;
                                 return (
                                     <option key={t.id} value={t.id}>
-                                        {t.name}{isCurrentTerm ? ' (Current)' : ''}
+                                        {t.name}
+                                        {isCurrentTerm ? ' (Current)' : ''}
                                     </option>
                                 );
                             })}
                         </select>
                     </div>
 
+                    {/* Add New Sequence - permission protected */}
                     <Can permission="add.sequence">
                         <button
                             onClick={() => handleOpenModal()}
@@ -314,6 +346,7 @@ export function Sequences() {
                 </div>
             </div>
 
+            {/* Main Data Table */}
             <div className="flex-1 min-h-0">
                 <DataTable
                     data={tableResponse}
@@ -334,7 +367,7 @@ export function Sequences() {
                 />
             </div>
 
-            {/* Add/Edit Modal */}
+            {/* Add / Edit Sequence Modal */}
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -360,7 +393,7 @@ export function Sequences() {
                                 {getLabel('academic_period')}
                                 <span
                                     className="cursor-help"
-                                    title="Term is auto-set to the current one. You can only create/update sequences for the current term."
+                                    title={`This ${getLabel('academic_period')} is auto-set to the current one for new sequences. You can only create/update sequences for the current ${getLabel('academic_period')}.`}
                                 >
                                     <Info className="w-3.5 h-3.5 text-amber-500" />
                                 </span>
@@ -374,13 +407,15 @@ export function Sequences() {
                                     const termIdStr = String(t.id);
                                     const isCurrentTerm = currentTermId === termIdStr;
                                     const disabledForCreate = !editingItem && currentTermId !== null && !isCurrentTerm;
+
                                     return (
                                         <option
                                             key={t.id}
                                             value={t.id}
                                             disabled={disabledForCreate}
                                         >
-                                            {t.name}{isCurrentTerm ? ' (Current)' : ''}
+                                            {t.name}
+                                            {isCurrentTerm ? ' (Current)' : ''}
                                         </option>
                                     );
                                 })}
@@ -399,9 +434,9 @@ export function Sequences() {
                         </div>
                     </div>
 
-                    {/* ANIMATED TOGGLES (exactly like Terms page) */}
+                    {/* Toggle Switches for Sequence Attributes */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                        {/* Mandatory */}
+                        {/* Mandatory Toggle */}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                             <div>
                                 <div className="font-medium text-slate-700">Mandatory</div>
@@ -410,17 +445,15 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_mandatory', !watchedIsMandatory)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsMandatory ? 'bg-orange-500' : 'bg-slate-200'
-                                    }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsMandatory ? 'bg-orange-500' : 'bg-slate-200'}`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsMandatory ? 'translate-x-5' : 'translate-x-1'
-                                        }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsMandatory ? 'translate-x-5' : 'translate-x-1'}`}
                                 />
                             </button>
                         </div>
 
-                        {/* Current (permission protected) */}
+                        {/* Current Toggle - permission protected */}
                         <Can permission="set_current.sequence">
                             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                                 <div>
@@ -430,18 +463,16 @@ export function Sequences() {
                                 <button
                                     type="button"
                                     onClick={() => setValue('is_current', !watchedIsCurrent)}
-                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsCurrent ? 'bg-orange-500' : 'bg-slate-200'
-                                        }`}
+                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsCurrent ? 'bg-orange-500' : 'bg-slate-200'}`}
                                 >
                                     <span
-                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsCurrent ? 'translate-x-5' : 'translate-x-1'
-                                            }`}
+                                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsCurrent ? 'translate-x-5' : 'translate-x-1'}`}
                                     />
                                 </button>
                             </div>
                         </Can>
 
-                        {/* Resit Sequence */}
+                        {/* Resit Sequence Toggle */}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                             <div>
                                 <div className="font-medium text-slate-700">Resit Sequence</div>
@@ -450,17 +481,15 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_resit', !watchedIsResit)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResit ? 'bg-orange-500' : 'bg-slate-200'
-                                    }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResit ? 'bg-orange-500' : 'bg-slate-200'}`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResit ? 'translate-x-5' : 'translate-x-1'
-                                        }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResit ? 'translate-x-5' : 'translate-x-1'}`}
                                 />
                             </button>
                         </div>
 
-                        {/* Results Published */}
+                        {/* Results Published Toggle */}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                             <div>
                                 <div className="font-medium text-slate-700">Results Published</div>
@@ -469,20 +498,31 @@ export function Sequences() {
                             <button
                                 type="button"
                                 onClick={() => setValue('is_results_published', !watchedIsResultsPublished)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResultsPublished ? 'bg-orange-500' : 'bg-slate-200'
-                                    }`}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${watchedIsResultsPublished ? 'bg-orange-500' : 'bg-slate-200'}`}
                             >
                                 <span
-                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResultsPublished ? 'translate-x-5' : 'translate-x-1'
-                                        }`}
+                                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${watchedIsResultsPublished ? 'translate-x-5' : 'translate-x-1'}`}
                                 />
                             </button>
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                        <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
-                        <Can permission='change.sequence'><button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20">Save Changes</button></Can>
+                        <button
+                            type="button"
+                            onClick={() => setIsModalOpen(false)}
+                            className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <Can permission="change.sequence">
+                            <button
+                                type="submit"
+                                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20"
+                            >
+                                Save Changes
+                            </button>
+                        </Can>
                     </div>
                 </form>
             </Modal>
@@ -496,11 +536,22 @@ export function Sequences() {
                 <div className="space-y-4">
                     <p className="text-slate-600">
                         Are you sure you want to delete the sequence{' '}
-                        <span className="font-semibold text-slate-800">{itemToDelete?.name}</span>? This action cannot be undone.
+                        <span className="font-semibold text-slate-800">{itemToDelete?.name}</span>? 
+                        This action cannot be undone.
                     </p>
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
-                        <button onClick={() => setIsDeleteModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
-                        <button onClick={handleDelete} className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20">Delete</button>
+                        <button
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20"
+                        >
+                            Delete
+                        </button>
                     </div>
                 </div>
             </Modal>

@@ -48,7 +48,7 @@ export interface StudyLevel {
 }
 
 export interface Sequence {
-  id: string
+  id?: string
   name: string
   code: string
   is_mandatory: boolean

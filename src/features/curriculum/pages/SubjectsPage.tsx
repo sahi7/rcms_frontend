@@ -5,7 +5,7 @@ import { DataTable } from '@/components/DataTable'
 import { Modal } from '@/components/Modal'
 import { PageSummaryCards } from '@/components/PageSummaryCards'
 import { Subject, SubjectPayload } from '@/types/curriculum'
-import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import {
   useSubjects,
   useCreateSubject,
@@ -13,23 +13,39 @@ import {
   useDeleteSubject,
 } from '../hooks/useSubjects'
 import { toast } from 'sonner'
+import { Can } from '@/hooks/shared/useHasPermission'
 
+/**
+ * Subjects Management Page
+ *
+ * Main page for CRUD operations on subjects.
+ * All UI labels, titles, and descriptions are fully dynamic using:
+ * - getPlural('subject_naming') for plural references (e.g. "Subjects", lists, summaries)
+ * - getLabel('subject_naming') for singular references (e.g. "Subject", modals, delete confirmations)
+ *
+ * Permissions are enforced for every user action using the <Can> component:
+ * - add.subject     → Add New button
+ * - change.subject  → Edit / Save actions
+ * - delete.subject  → Delete actions
+ *
+ * No hardcoded "Subject" / "Subjects" text remains in the UI.
+ * All other functionality (search, pagination, form handling, error handling) is preserved exactly.
+ */
 export function Subjects() {
+  // ========================
+  // LOCAL STATE
+  // ========================
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
-  const { data, isLoading } = useSubjects({
-    search: searchTerm,
-    page: currentPage,
-    page_size: pageSize,
-  })
-  const createMutation = useCreateSubject()
-  const updateMutation = useUpdateSubject()
-  const deleteMutation = useDeleteSubject()
+
+  // Modal & editing state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<Subject | null>(null)
   const [itemToDelete, setItemToDelete] = useState<Subject | null>(null)
+
+  // Form state (controlled inputs)
   const [formData, setFormData] = useState<SubjectPayload>({
     name: '',
     code: '',
@@ -37,7 +53,21 @@ export function Subjects() {
     max_score: 20,
   })
 
-  const { getLabel, getPlural } = useInstitutionConfig();
+  // ========================
+  // HOOKS & CONFIG
+  // ========================
+  const { getLabel, getPlural } = useInstitutionConfig()
+
+  // Query & mutation hooks (React Query)
+  const { data, isLoading } = useSubjects({
+    search: searchTerm,
+    page: currentPage,
+    page_size: pageSize,
+  })
+
+  const createMutation = useCreateSubject()
+  const updateMutation = useUpdateSubject()
+  const deleteMutation = useDeleteSubject()
 
   const columns = [
     {
@@ -58,6 +88,13 @@ export function Subjects() {
     },
   ]
 
+  // ========================
+  // HANDLERS
+  // ========================
+
+  /**
+   * Opens the add/edit modal and pre-fills form when editing
+   */
   const handleOpenModal = (item?: Subject) => {
     if (item) {
       setEditingItem(item)
@@ -79,6 +116,10 @@ export function Subjects() {
     setIsModalOpen(true)
   }
 
+  /**
+   * Handles create / update submission
+   * Permission-protected save button ensures only authorized users can submit
+   */
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -94,17 +135,20 @@ export function Subjects() {
     } catch (error: any) {
       console.error(`Failed to save ${getLabel('subject_naming')}`, error)
 
-      // Handle server error format: {"error": "duplicate entry exists"}
-      const serverError = error.response?.data?.error ||
-                         error.response?.data?.message ||
-                         error.response?.data?.detail ||
-                         error.message ||
-                         'An unexpected error occurred'
+      const serverError =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        'An unexpected error occurred'
 
       toast.error(serverError)
     }
   }
 
+  /**
+   * Handles deletion with confirmation
+   */
   const handleDelete = async () => {
     if (itemToDelete) {
       try {
@@ -114,17 +158,21 @@ export function Subjects() {
       } catch (error: any) {
         console.error(`Failed to delete ${getLabel('subject_naming')}`, error)
 
-        const serverError = error.response?.data?.error ||
-                           error.response?.data?.message ||
-                           error.response?.data?.detail ||
-                           error.message ||
-                           'Failed to delete'
+        const serverError =
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          error.response?.data?.detail ||
+          error.message ||
+          'Failed to delete'
 
         toast.error(serverError)
       }
     }
   }
 
+  // ========================
+  // SUMMARY CARDS
+  // ========================
   const summaryCards = [
     {
       title: `Total ${getPlural('subject_naming')}`,
@@ -134,26 +182,38 @@ export function Subjects() {
     },
   ]
 
+  // ========================
+  // RENDER
+  // ========================
   return (
     <div className="h-full flex flex-col gap-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-[#1a1a2e]">{getPlural('subject_naming')}</h1>
+          <h1 className="text-2xl font-bold text-[#1a1a2e]">
+            {getPlural('subject_naming')}
+          </h1>
           <p className="text-slate-500 mt-1 text-sm">
             Manage curriculum {getPlural('subject_naming')} and their properties.
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-orange-500/20"
-        >
-          <PlusIcon className="w-4 h-4" />
-          Add New
-        </button>
+
+        {/* Add New – protected by add.subject permission */}
+        <Can permission="add.subject">
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-orange-500/20"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Add New
+          </button>
+        </Can>
       </div>
 
+      {/* Summary Cards (total count is dynamic) */}
       <PageSummaryCards cards={summaryCards} />
 
+      {/* Main Data Table */}
       <div className="flex-1 min-h-0">
         {isLoading && !data ? (
           <div className="h-full flex items-center justify-center text-slate-400">
@@ -182,10 +242,15 @@ export function Subjects() {
         )}
       </div>
 
+      {/* Add / Edit Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingItem ? 'Edit Subject' : 'Add Subject'}
+        title={
+          editingItem
+            ? `Edit ${getLabel('subject_naming')}`
+            : `Add ${getLabel('subject_naming')}`
+        }
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div>
@@ -262,6 +327,7 @@ export function Subjects() {
               />
             </div>
           </div>
+
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button
               type="button"
@@ -270,19 +336,24 @@ export function Subjects() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? 'Saving...'
-                : 'Save Changes'}
-            </button>
+
+            {/* Save button protected by change.subject permission */}
+            <Can permission="change.subject">
+              <button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'Saving...'
+                  : 'Save Changes'}
+              </button>
+            </Can>
           </div>
         </form>
       </Modal>
 
+      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -290,7 +361,10 @@ export function Subjects() {
       >
         <div className="space-y-4">
           <p className="text-slate-600">
-            Are you sure you want to delete{' '}
+            Are you sure you want to delete the{' '}
+            <span className="font-semibold text-slate-800">
+              {getLabel('subject_naming')}
+            </span>{' '}
             <span className="font-semibold text-slate-800">
               {itemToDelete?.name}
             </span>
@@ -303,13 +377,17 @@ export function Subjects() {
             >
               Cancel
             </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20 disabled:opacity-50"
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </button>
+
+            {/* Delete button protected by delete.subject permission */}
+            <Can permission="delete.subject">
+              <button
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </Can>
           </div>
         </div>
       </Modal>

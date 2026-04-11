@@ -27,43 +27,80 @@ import { useDepartments } from '../../structure/hooks/useDepartments'
 import { useClassRooms } from '../../structure/hooks/useClassRooms'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { useTeachers, useRoleIdByType } from '@/hooks/shared/useUsers'
-import { useRoles } from '@/features/users/hooks/useRoles';
+import { useRoles } from '@/features/users/hooks/useRoles'
+import { Can } from '@/hooks/shared/useHasPermission'
 
+/**
+ * Subject Assignments Management Page
+ *
+ * Allows administrators to assign specific subjects to teachers and link them
+ * to one or more classrooms (and optionally a department).
+ *
+ * Features:
+ * - Live validation ensuring a teacher can only be assigned subjects they actually teach
+ * - Dynamic column rendering with name mappings for clean display
+ * - Summary cards showing total assignments, unique teachers, and departments covered
+ * - Full CRUD support with permission checks
+ */
 export function SubjectAssignments() {
+  // ========================
+  // LOCAL STATE
+  // ========================
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const pageSize = 20
+
+  // Modal & editing state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<SubjectAssignment | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<SubjectAssignment | null>(null)
+
+  // Form state for create / edit
+  const [formData, setFormData] = useState<SubjectAssignmentPayload>({
+    subject: 0,
+    department: null,
+    class_rooms: [],
+    teacher: 0,
+  })
+
+  // Live validation error for teacher-subject mismatch
+  const [subjectTeacherMismatchError, setSubjectTeacherMismatchError] = useState<string>('')
+
+  // ========================
+  // CONFIG & DATA FETCHING
+  // ========================
+  const { getLabel, getPlural } = useInstitutionConfig()
+
+  // Main data for the table
   const { data, isLoading } = useSubjectAssignments({
     search: searchTerm,
     page: currentPage,
     page_size: pageSize,
   })
+
+  // Mutations
   const createMutation = useCreateSubjectAssignment()
   const updateMutation = useUpdateSubjectAssignment()
   const deleteMutation = useDeleteSubjectAssignment()
-  const { data: subjectsData } = useSubjects({
-    page_size: 200,
-  })
-  const { data: departmentsData } = useDepartments({
-    page_size: 200,
-  })
-  const { data: classroomsData } = useClassRooms({
-    page_size: 200,
-  })
 
+  // Supporting data for dropdowns
+  const { data: subjectsData } = useSubjects({ page_size: 200 })
+  const { data: departmentsData } = useDepartments({ page_size: 200 })
+  const { data: classroomsData } = useClassRooms({ page_size: 200 })
+
+  // Teacher-specific data
   const { data: rolesData } = useRoles()
-
-  // Fetch teachers only
   const teacherRoleId = useRoleIdByType('teacher')
+  const { data: teachersData } = useTeachers({
+    page_size: 200,
+    role: teacherRoleId,
+  })
 
-  const { data: teachersData } = useTeachers(
-    {
-      page_size: 200,
-      role: teacherRoleId,
-    },
-  )
+  // ========================
+  // DERIVED OPTIONS & MAPS
+  // ========================
 
-  
   const teacherOptions = useMemo(() => {
     const allUsers = teachersData?.data || []
     const allRoles = rolesData?.data || []
@@ -87,6 +124,7 @@ export function SubjectAssignments() {
     })
     return map
   }, [subjectsData])
+
   const departmentMap = useMemo(() => {
     const map: Record<number, string> = {}
     departmentsData?.data.forEach((d) => {
@@ -94,6 +132,7 @@ export function SubjectAssignments() {
     })
     return map
   }, [departmentsData])
+
   const classroomMap = useMemo(() => {
     const map: Record<number, string> = {}
     classroomsData?.data.forEach((c) => {
@@ -102,7 +141,6 @@ export function SubjectAssignments() {
     return map
   }, [classroomsData])
 
-  // Teacher name map for clean display in table
   const teacherMap = useMemo(() => {
     const map: Record<number, string> = {}
     const allUsers = teachersData?.data || []
@@ -112,7 +150,6 @@ export function SubjectAssignments() {
     return map
   }, [teachersData])
 
-  // NEW: Map of teacher → list of taught subject IDs (for live validation)
   const teacherTaughtSubjectsMap = useMemo(() => {
     const map: Record<number, number[]> = {}
     const allUsers = teachersData?.data || []
@@ -126,38 +163,26 @@ export function SubjectAssignments() {
     value: s.id,
     label: `${s.name} (${s.code})`,
   }))
+
   const departmentOptions = (departmentsData?.data || []).map((d) => ({
     value: d.id,
     label: d.name,
   }))
+
   const classroomOptions = (classroomsData?.data || []).map((c) => ({
     value: c.id,
     label: c.name,
   }))
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [editingItem, setEditingItem] = useState<SubjectAssignment | null>(null)
-  const [itemToDelete, setItemToDelete] = useState<SubjectAssignment | null>(
-    null,
-  )
-  const { getLabel, getPlural } = useInstitutionConfig();
-  const [formData, setFormData] = useState<SubjectAssignmentPayload>({
-    subject: 0,
-    department: null,
-    class_rooms: [],
-    teacher: 0,
-  })
+  // ========================
+  // LIVE VALIDATION
+  // ========================
 
-  // NEW: Live mismatch error state
-  const [subjectTeacherMismatchError, setSubjectTeacherMismatchError] = useState<string>('')
-
-  // NEW: Live validation – runs as soon as teacher or subject changes
   useEffect(() => {
     if (formData.teacher && formData.subject) {
       const taughtSubjects = teacherTaughtSubjectsMap[formData.teacher] || []
       if (!taughtSubjects.includes(formData.subject)) {
-        setSubjectTeacherMismatchError('Selected subject is not assigned to this teacher.')
+        setSubjectTeacherMismatchError(`Selected ${getLabel('subject_naming')} is not assigned to this teacher.`)
       } else {
         setSubjectTeacherMismatchError('')
       }
@@ -166,6 +191,9 @@ export function SubjectAssignments() {
     }
   }, [formData.teacher, formData.subject, teacherTaughtSubjectsMap])
 
+  // ========================
+  // TABLE COLUMNS
+  // ========================
   const columns = [
     {
       header: `${getPlural('subject_naming')}`,
@@ -213,6 +241,11 @@ export function SubjectAssignments() {
       ),
     },
   ]
+
+  // ========================
+  // HANDLERS
+  // ========================
+
   const handleOpenModal = (item?: SubjectAssignment) => {
     if (item) {
       setEditingItem(item)
@@ -233,6 +266,7 @@ export function SubjectAssignments() {
     }
     setIsModalOpen(true)
   }
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -241,10 +275,10 @@ export function SubjectAssignments() {
           id: editingItem.id,
           payload: formData,
         })
-        toast.success('Subject assignment updated successfully')
+        toast.success(`${getLabel('subject_naming')} assignment updated successfully`)
       } else {
         await createMutation.mutateAsync(formData)
-        toast.success('Subject assignment created successfully')
+        toast.success(`${getLabel('subject_naming')} assignment created successfully`)
       }
       setIsModalOpen(false)
     } catch (error: any) {
@@ -252,19 +286,24 @@ export function SubjectAssignments() {
       toast.error(errorMsg)
     }
   }
+
   const handleDelete = async () => {
     if (itemToDelete) {
       try {
         await deleteMutation.mutateAsync(itemToDelete.id)
-        toast.success('Subject assignment deleted successfully')
+        toast.success(`${getLabel('subject_naming')} assignment deleted successfully`)
         setIsDeleteModalOpen(false)
         setItemToDelete(null)
       } catch (error) {
         console.error('Failed to delete', error)
-        toast.error('Failed to delete subject assignment')
+        toast.error(`Failed to delete ${getLabel('subject_naming')} assignment`)
       }
     }
   }
+
+  // ========================
+  // SUMMARY CARDS
+  // ========================
   const summaryCards = [
     {
       title: 'Total Assignments',
@@ -286,24 +325,31 @@ export function SubjectAssignments() {
       color: 'purple' as const,
     },
   ]
+
+  // ========================
+  // RENDER
+  // ========================
   return (
     <div className="h-full flex flex-col gap-6">
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-[#1a1a2e]">
-            {getLabel('subject_naming')} Assignments
+            {getPlural('subject_naming')} Assignments
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
             Assign {getPlural('subject_naming')} to {getPlural('instructor_title')} across {getPlural('class_progression_name')}.
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-orange-500/20"
-        >
-          <PlusIcon className="w-4 h-4" />
-          Add New
-        </button>
+
+        <Can permission="add.subjectassignment">
+          <button
+            onClick={() => handleOpenModal()}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm shadow-orange-500/20"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Add New
+          </button>
+        </Can>
       </div>
 
       <PageSummaryCards cards={summaryCards} />
@@ -340,13 +386,15 @@ export function SubjectAssignments() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={
-          editingItem ? 'Edit Subject Assignment' : 'New Subject Assignment'
+          editingItem
+            ? `Edit ${getLabel('subject_naming')} Assignment`
+            : `New ${getLabel('subject_naming')} Assignment`
         }
         maxWidth="max-w-lg"
       >
         <form onSubmit={handleSave} className="space-y-4">
           <SearchableSelect
-            label="Subject"
+            label={getLabel('subject_naming')}
             required
             options={subjectOptions}
             value={formData.subject || null}
@@ -356,10 +404,11 @@ export function SubjectAssignments() {
                 subject: (v as number) || 0,
               })
             }
-            placeholder="Select subject..."
+            placeholder={`Select ${getLabel('subject_naming').toLowerCase()}...`}
           />
+
           <SearchableSelect
-            label="Teacher"
+            label={getPlural('instructor_title')}
             required
             options={teacherOptions}
             value={formData.teacher || null}
@@ -369,8 +418,9 @@ export function SubjectAssignments() {
                 teacher: (v as number) || 0,
               })
             }
-            placeholder="Select teacher..."
+            placeholder={`Select ${getLabel('instructor_title').toLowerCase()}...`}
           />
+
           <SearchableSelect
             label="Department"
             options={departmentOptions}
@@ -383,8 +433,9 @@ export function SubjectAssignments() {
             }
             placeholder="Select department (optional)..."
           />
+
           <MultiSelect
-            label="Classrooms"
+            label={getPlural('class_progression_name')}
             required
             options={classroomOptions}
             value={formData.class_rooms}
@@ -394,10 +445,9 @@ export function SubjectAssignments() {
                 class_rooms: v as number[],
               })
             }
-            placeholder="Select classrooms..."
+            placeholder={`Select ${getPlural('class_progression_name').toLowerCase()}...`}
           />
 
-          {/* LIVE ERROR DISPLAY – appears immediately on mismatch */}
           {subjectTeacherMismatchError && (
             <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl text-sm flex items-start gap-2">
               <span className="text-amber-500 text-base leading-none mt-px">⚠</span>
@@ -413,15 +463,18 @@ export function SubjectAssignments() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
-            >
-              {createMutation.isPending || updateMutation.isPending
-                ? 'Saving...'
-                : 'Save'}
-            </button>
+
+            <Can permission="change.subjectassignment">
+              <button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20 disabled:opacity-50"
+              >
+                {createMutation.isPending || updateMutation.isPending
+                  ? 'Saving...'
+                  : 'Save'}
+              </button>
+            </Can>
           </div>
         </form>
       </Modal>
@@ -433,7 +486,7 @@ export function SubjectAssignments() {
       >
         <div className="space-y-4">
           <p className="text-slate-600">
-            Are you sure you want to remove this subject assignment? This action
+            Are you sure you want to remove this {getLabel('subject_naming')} assignment? This action
             cannot be undone.
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
@@ -443,13 +496,16 @@ export function SubjectAssignments() {
             >
               Cancel
             </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20 disabled:opacity-50"
-            >
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-            </button>
+
+            <Can permission="delete.subjectassignment">
+              <button
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm shadow-red-500/20 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </Can>
           </div>
         </div>
       </Modal>

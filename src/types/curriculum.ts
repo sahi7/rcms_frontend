@@ -40,7 +40,7 @@ export interface SubjectAssignmentBase {
   subject: number
   teacher: number
   department: number | null
-  academic_year: string
+  academic_year?: string
   class_rooms: number[]
 }
 

@@ -28,7 +28,10 @@ export function DashboardLayout() {
     if (lower === 'terms') return getPlural('academic_period');
     if (lower === 'study-levels') return getPlural('class_progression_name');
     if (lower === 'sequences') return getPlural('academic_period'); // or a dedicated key if you have one
-    if (lower === 'subjects') return getLabel('subject_naming') || 'Subjects';
+    if (lower === 'subjects') return getPlural('subject_naming') || 'Subjects';
+    if (lower === 'curriculum-subjects') return getPlural('curriculum-subject_naming') || 'Curriculum Subjects';
+    if (lower === 'subject-assignments') return getPlural('subject_naming-assignments') || 'Subject Assignments';
+    if (lower === 'subject') return getLabel('subject_naming') || 'Subject';
     if (lower === 'faculties') return getLabel('faculty') || 'Faculties';
     if (lower === 'departments') return getLabel('department') || 'Departments';
     if (lower === 'classrooms') return getLabel('class_progression_name') || 'Classrooms';
