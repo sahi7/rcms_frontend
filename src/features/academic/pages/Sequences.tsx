@@ -399,7 +399,7 @@ export function Sequences() {
                         </div>
                     </div>
 
-                    {/* === ANIMATED TOGGLES (exactly like Terms page) === */}
+                    {/* ANIMATED TOGGLES (exactly like Terms page) */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
                         {/* Mandatory */}
                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -482,7 +482,7 @@ export function Sequences() {
 
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
                         <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">Cancel</button>
-                        <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20">Save Changes</button>
+                        <Can permission='change.sequence'><button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm shadow-orange-500/20">Save Changes</button></Can>
                     </div>
                 </form>
             </Modal>

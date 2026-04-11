@@ -16,13 +16,14 @@ export interface InstitutionConfig {
 interface ConfigStore {
     config: InstitutionConfig | null;
     setConfig: (config: InstitutionConfig) => void;
+    clearConfig: () => void;
 
     // Helpers used everywhere in the app
     getLabel: (key: keyof InstitutionConfig) => string;
     getPlural: (key: keyof InstitutionConfig) => string;
 }
 
-const toSentenceCase = (str: string): string => {
+export const toSentenceCase = (str: string): string => {
     if (!str) return str;
     // Trim and handle multi-word strings
     return str
@@ -46,6 +47,8 @@ export const useInstitutionConfigStore = create<ConfigStore>()(
             config: null,
 
             setConfig: (config) => set({ config }),
+
+            clearConfig: () => set({ config: null }),
 
             getLabel: (key) => {
                 const c = get().config;

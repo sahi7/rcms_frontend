@@ -1,8 +1,8 @@
-// src/hooks/shared/usePermission.ts
+// src/hooks/shared/useHasPermission.ts
 import { useAuthStore } from '@/app/store/authStore';
 
 // Top-level roles that have FULL access to everything
-const FULL_ACCESS_ROLES = ['chancellor', 'principal' ];
+const FULL_ACCESS_ROLES = ['chancelor', 'pricipal' ];
 
 // Helper to normalize permission string (handles both "add.user" and "add_user")
 const normalizePermission = (perm: string): string => {
@@ -10,10 +10,10 @@ const normalizePermission = (perm: string): string => {
 };
 
 export function useHasPermission(requiredPermission: string): boolean {
-  const { role, permissions } = useAuthStore();
+  const { user, permissions } = useAuthStore();
 
   // 1. Top-level roles have access to EVERYTHING
-  if (role && FULL_ACCESS_ROLES.includes(role.toLowerCase())) {
+  if (user?.role && FULL_ACCESS_ROLES.includes(user?.role.toLowerCase())) {
     return true;
   }
 

@@ -6,7 +6,7 @@ import { useAuthStore } from '@/app/store/authStore'
 const THIRTY_MINUTES = 30 * 60 * 1000
 
 export function useProfile() {
-  const userId = useAuthStore((s) => s.userId)
+  const userId = useAuthStore((s) => s?.user?.id)
 
   return useQuery<User>({
     queryKey: ['profile', userId],
@@ -23,6 +23,7 @@ export type ProfilePayload = Partial<
     | 'first_name'
     | 'last_name'
     | 'email'
+    | 'role'
     | 'phone_number'
     | 'place_of_birth'
     | 'profile_picture'
@@ -33,11 +34,11 @@ export type ProfilePayload = Partial<
 
 export function useUpdateProfile() {
   const queryClient = useQueryClient()
-  const userId = useAuthStore((s) => s.userId)
+  const userId = useAuthStore((s) => s?.user?.id)
 
   return useMutation<User, Error, ProfilePayload>({
     mutationFn: (payload) =>
-      api.patch<User>(`/users/${userId}/`, payload).then((res) => res.data),
+      api.put<User>(`/users/${userId}/`, payload).then((res) => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
     },

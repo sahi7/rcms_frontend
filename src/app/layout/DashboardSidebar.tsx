@@ -22,9 +22,11 @@ import { TooltipProvider } from '../../components/ui/Tooltip';
 import { ScrollArea } from '../../components/ui/ScrollArea';
 import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 
+import { toSentenceCase } from '@/app/store/institutionConfigStore';
 import { useAuthStore } from '@/app/store/authStore';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+import { useIsSubjectConfig } from '@/features/settings/hooks/useInstitution'
 
 const baseNavStructure = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'view.dashboard' },
@@ -45,7 +47,7 @@ const baseNavStructure = [
     permission: 'view.curriculumsubject',
     children: [
       { titleKey: 'subject_naming', path: '/dashboard/subjects', permission: 'view.subject' },
-      { titleKey: 'Curriculum subject_naming', path: '/dashboard/curriculum-subjects', permission: 'view.curriculum_subject' },
+      { titleKey: 'Curriculum subject_naming', path: '/dashboard/curriculum-subjects', permission: 'view.curriculumsubject' },
       { titleKey: 'class_progression_name Assignments', path: '/dashboard/class-assignments', permission: 'view.classassignment' },
       { titleKey: 'subject_naming Assignments', path: '/dashboard/subject-assignments', permission: 'view.subjectassignment' },
     ],
@@ -81,9 +83,9 @@ const baseNavStructure = [
   {
     title: 'Reports',
     icon: FileBarChart,
-    permission: 'view.generate_reports',
+    permission: 'view.generatedreportlist',
     children: [
-      { title: 'Generate Reports', path: '/dashboard/reports/cards/generate', permission: 'view.generate_reports' },
+      { title: 'Generate Reports', path: '/dashboard/reports/cards/generate', permission: 'view.generatedreportlist' },
     ],
   },
   {
@@ -98,10 +100,10 @@ const baseNavStructure = [
   {
     title: 'Settings',
     icon: Settings,
-    permission: 'view.settings',
+    permission: 'view.schoolsettings',
     children: [
-      { title: 'School Settings', path: '/dashboard/settings', permission: 'view.settings' },
-      { title: 'Plans & Features', path: '/dashboard/plans', permission: 'view.plan' },
+      { title: 'School Settings', path: '/dashboard/settings', permission: 'view.schoolsettings' },
+      { title: 'Plans & Features', path: '/dashboard/plans', permission: 'view.plans' },
     ],
   },
 ];
@@ -120,9 +122,16 @@ export function DashboardSidebar({
   setIsHovered,
 }: DashboardSidebarProps) {
   const location = useLocation();
+  const { user } = useAuthStore();
   const { getPlural } = useInstitutionConfig();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const isSubjectConfig = useIsSubjectConfig()
   const isExpanded = isPinned || isHovered;
+
+  const getInitials = (firstName?: string, lastName?: string) => {
+    if (!firstName && !lastName) return 'JD';
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
+  };
 
   // Auto-open groups that contain active children
   useEffect(() => {
@@ -150,6 +159,15 @@ export function DashboardSidebar({
       return getPlural(item.titleKey as any);
     }
     return item.title;
+  };
+
+  // Filter children based on isSubjectConfig (hides class-related assignment when in teacher_course mode and vice versa)
+  const getFilteredChildren = (children: any[] = []) => {
+    return children.filter((child) => {
+      if (child.titleKey === 'class_progression_name Assignments' && isSubjectConfig) return false;
+      if (child.titleKey === 'subject_naming Assignments' && !isSubjectConfig) return false;
+      return true;
+    });
   };
 
   return (
@@ -241,7 +259,7 @@ export function DashboardSidebar({
                         exit={{ height: 0, opacity: 0 }}
                         className="ml-6 pl-3 border-l border-white/10 py-1 mt-1 space-y-1"
                       >
-                        {group.children.map((child) => (
+                        {getFilteredChildren(group.children).map((child) => (
                           <Can key={child.path} permission={child.permission}>
                             <Link
                               to={child.path}
@@ -270,8 +288,10 @@ export function DashboardSidebar({
         <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-3 overflow-hidden">
             <Avatar className="h-10 w-10 border border-white/10 shrink-0">
-              <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
-              <AvatarFallback className="bg-orange-600 text-white">JD</AvatarFallback>
+              <AvatarImage src={user?.profile_picture} />
+              <AvatarFallback className="bg-orange-600 text-white">
+                {getInitials(user?.first_name, user?.last_name)}
+              </AvatarFallback>
             </Avatar>
 
             <AnimatePresence>
@@ -282,8 +302,12 @@ export function DashboardSidebar({
                   exit={{ opacity: 0 }}
                   className="flex flex-col whitespace-nowrap"
                 >
-                  <span className="text-sm font-medium text-white">John Doe</span>
-                  <span className="text-xs text-gray-400">Administrator</span>
+                  <span className="text-sm font-medium text-white">
+                    {user?.first_name} {user?.last_name}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {toSentenceCase(user?.role ?? 'Administrator')}
+                  </span>
                 </motion.div>
               )}
             </AnimatePresence>

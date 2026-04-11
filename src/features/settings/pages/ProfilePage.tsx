@@ -21,6 +21,9 @@ import {
   ProfilePayload,
 } from '../hooks/useProfile'
 import { useFileUpload } from '@/hooks/shared/useFileUpload'
+import { useRoleType } from '@/hooks/shared/useUsers'
+import { toSentenceCase } from '@/app/store/institutionConfigStore';
+
 export function ProfilePage() {
   const { data: user, isLoading } = useProfile()
   const updateMutation = useUpdateProfile()
@@ -28,6 +31,9 @@ export function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [form, setForm] = useState<ProfilePayload>({})
   const [hasChanges, setHasChanges] = useState(false)
+
+  const { roleType } = useRoleType(user?.role) // Resolve role_type from role(id)
+  // const { userMe: user } = useAuthStore();
   useEffect(() => {
     if (user) {
       setForm({
@@ -66,13 +72,21 @@ export function ProfilePage() {
   }
   const handleSave = async () => {
     try {
-      await updateMutation.mutateAsync(form)
-      toast.success('Profile updated')
-      setHasChanges(false)
-    } catch {
-      toast.error('Failed to update profile')
+      await updateMutation.mutateAsync(form);
+      setHasChanges(false);
+      toast.success('Profile updated');
+    } catch (error: any) {
+      // Extract all error messages from the response
+      const errors = error.response?.data;
+      if (errors) {
+        // Flatten all error messages into a single string
+        const messages = Object.values(errors).flat().join('\n');
+        toast.error(messages);
+      } else {
+        toast.error('Failed to update profile');
+      }
     }
-  }
+  };
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -132,7 +146,7 @@ export function ProfilePage() {
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <ShieldIcon className="w-3 h-3" />
-                  {user?.role || 'User'}
+                  {roleType ? toSentenceCase(roleType ?? 'User').replace('_', ' ') : 'User'}
                 </Badge>
                 {user?.enrollment_status && (
                   <Badge variant="outline">{user.enrollment_status}</Badge>
@@ -230,63 +244,6 @@ export function ProfilePage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Read-only Info */}
-      {(user?.role ||
-        user?.username ||
-        user?.enrollment_status ||
-        user?.date_joined) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>
-              These fields are managed by the system
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {user?.username && (
-                <div className="space-y-1.5">
-                  <Label>Username</Label>
-                  <Input
-                    value={user.username}
-                    disabled
-                    className="bg-slate-50"
-                  />
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label>Role</Label>
-                <Input
-                  value={user?.role || ''}
-                  disabled
-                  className="bg-slate-50"
-                />
-              </div>
-              {user?.enrollment_status && (
-                <div className="space-y-1.5">
-                  <Label>Enrollment Status</Label>
-                  <Input
-                    value={user.enrollment_status}
-                    disabled
-                    className="bg-slate-50"
-                  />
-                </div>
-              )}
-              {user?.date_joined && (
-                <div className="space-y-1.5">
-                  <Label>Date Joined</Label>
-                  <Input
-                    value={new Date(user.date_joined).toLocaleDateString()}
-                    disabled
-                    className="bg-slate-50"
-                  />
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Save */}
       <div className="flex justify-end">

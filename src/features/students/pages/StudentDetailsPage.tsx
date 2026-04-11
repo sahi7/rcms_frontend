@@ -66,7 +66,7 @@ export function StudentDetails() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/dashboard/students')}
+            onClick={() => navigate(-1)}
             className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />

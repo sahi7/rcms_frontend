@@ -21,15 +21,19 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
-  useInstitutionData,
+  // isUni,
+  useInstitution,
   useUpdateInstitution,
 } from '../hooks/useInstitution'
 import { InstitutionPayload } from '@/types/settings'
+
+
 export function InstitutionSettings() {
-  const { data, isLoading } = useInstitutionData()
+  const { data, isLoading } = useInstitution()
   const updateMutation = useUpdateInstitution()
   const [form, setForm] = useState<InstitutionPayload>({})
   const [hasChanges, setHasChanges] = useState(false)
+
   useEffect(() => {
     if (data) {
       setForm({

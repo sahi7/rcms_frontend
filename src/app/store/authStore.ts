@@ -15,7 +15,9 @@ interface User {
   full_name: string;
   phone_number: string;
   role: string;
+  value: number
   permissions: string[];
+  profile_picture: string
 
 }
 
@@ -29,7 +31,9 @@ export const useAuthStore = create<{
   isAuthenticated: boolean;
   isLoading: boolean;
   permissions: string[];
-  role: string | null;
+  // role: string | null;
+  // value: number | null;
+  // profile_picture: string | null
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
@@ -38,7 +42,9 @@ export const useAuthStore = create<{
   isAuthenticated: false,
   isLoading: true, // Start as true — App.tsx will set it to false
   permissions: [],
-  role: null,
+  // role: null,
+  // value: null,
+  // profile_picture: null,
 
   login: async (username: string, password: string) => {
     try {
@@ -56,7 +62,8 @@ export const useAuthStore = create<{
       set({
         user: meRes.data,
         isAuthenticated: true,
-        role: meRes.data.role,
+        // role: meRes.data.role,
+        // value: meRes.data.value,
         permissions: meRes.data.permissions || [],
         isLoading: false,
       });
@@ -72,14 +79,16 @@ export const useAuthStore = create<{
   logout: () => {
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
-    set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
+    // set({ user: null, role: null, value: null, permissions: [], isAuthenticated: false, isLoading: false });
+    set({ user: null, permissions: [], isAuthenticated: false, isLoading: false });
     clearStorage();
   },
 
   fetchMe: async () => {
     const token = Cookies.get("access_token");
     if (!token) {
-      set({ user: null, role: null, permissions: [], isAuthenticated: false, isLoading: false });
+      // set({ user: null, role: null, value: null, permissions: [], isAuthenticated: false, isLoading: false });
+      set({ user: null, permissions: [], isAuthenticated: false, isLoading: false });
       return;
     }
 
@@ -89,7 +98,8 @@ export const useAuthStore = create<{
       set({
         user: res.data,
         isAuthenticated: true,
-        role: res.data.role,
+        // role: res.data.role,
+        // value: res.data.value,
         permissions: res.data.permissions || [],
         isLoading: false,
       });
@@ -97,7 +107,8 @@ export const useAuthStore = create<{
       console.warn("Invalid token – logging out");
       Cookies.remove("access_token");
       Cookies.remove("refresh_token");
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      // set({ user: null, role: null, value: null, permissions: [], isAuthenticated: false, isLoading: false });
+      set({ user: null, permissions: [], isAuthenticated: false, isLoading: false });
     }
   },
 }));

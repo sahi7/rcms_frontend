@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import {
   Loader2Icon,
   PlusIcon,
   XIcon,
-  GripVerticalIcon,
   EyeIcon,
 } from 'lucide-react'
-import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,6 +28,7 @@ import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePreferences, useUpdatePreferences } from '../hooks/usePreferences'
+import { useIsUni } from '../hooks/useInstitution'
 import {
   PreferencesPayload,
   GradeRange,
@@ -36,6 +36,8 @@ import {
   IdFormatTemplates,
   ResitPreferences,
 } from '@/types/settings'
+
+
 // ─── ID Format Builder ───────────────────────────────────────────────
 const ID_TOKENS = [
   {
@@ -45,10 +47,6 @@ const ID_TOKENS = [
   {
     key: '{prefix}',
     label: 'Prefix',
-  },
-  {
-    key: '{inst_code}',
-    label: 'Inst Code',
   },
   {
     key: '{year}',
@@ -68,13 +66,23 @@ interface IdFormatBuilderProps {
   value: string
   onChange: (val: string) => void
 }
-function IdFormatBuilder({ label, value, onChange }: IdFormatBuilderProps) {
-  const parts = value ? value.split(/(-)/g).filter(Boolean) : []
-  const [items, setItems] = useState<string[]>(parts)
+
+function IdFormatBuilder({
+  label,
+  value,
+  onChange,
+  yearIdentifier = 'Long', // defaults to Long for backward compatibility
+}: IdFormatBuilderProps & { yearIdentifier?: 'Short' | 'Long' }) {
+  // ✅ Keep the improved parsing from last fix (consecutive tokens stay separate)
+  const parseValue = (val: string) =>
+    val ? (val.match(/({[^}]+}|-)/g) || []) : []
+
+  const [items, setItems] = useState<string[]>(parseValue(value))
+
   useEffect(() => {
-    const newParts = value ? value.split(/(-)/g).filter(Boolean) : []
-    setItems(newParts)
+    setItems(parseValue(value))
   }, [value])
+
   const syncToParent = useCallback(
     (newItems: string[]) => {
       setItems(newItems)
@@ -82,31 +90,35 @@ function IdFormatBuilder({ label, value, onChange }: IdFormatBuilderProps) {
     },
     [onChange],
   )
+
   const addToken = (token: string) => {
-    const newItems = [...items]
-    if (newItems.length > 0 && newItems[newItems.length - 1] !== '-') {
-      newItems.push('-')
-    }
-    newItems.push(token)
+    const newItems = [...items, token]
     syncToParent(newItems)
   }
+
   const addSeparator = () => {
     if (items.length > 0 && items[items.length - 1] !== '-') {
       syncToParent([...items, '-'])
     }
   }
+
   const removeItem = (index: number) => {
     const newItems = [...items]
     newItems.splice(index, 1)
-    // Clean up double separators
+
+    // Clean up double separators, leading/trailing separators
     const cleaned = newItems.filter((item, i) => {
       if (item === '-' && i === 0) return false
       if (item === '-' && i === newItems.length - 1) return false
       if (item === '-' && newItems[i - 1] === '-') return false
       return true
     })
+
     syncToParent(cleaned)
   }
+
+  // ✅ REACTIVE & ANIMATED year preview
+  // Changes instantly when form.year_identifier updates
   const previewText = items
     .map((item) => {
       if (item === '-') return '-'
@@ -117,10 +129,8 @@ function IdFormatBuilder({ label, value, onChange }: IdFormatBuilderProps) {
             return 'UN'
           case '{prefix}':
             return 'ST'
-          case '{inst_code}':
-            return 'GCB'
           case '{year}':
-            return '2026'
+            return yearIdentifier === 'Short' ? '26' : '2026'
           case '{seq}':
             return '0001'
           case '{dept}':
@@ -132,7 +142,9 @@ function IdFormatBuilder({ label, value, onChange }: IdFormatBuilderProps) {
       return item
     })
     .join('')
+
   const usedTokens = items.filter((i) => i !== '-')
+
   return (
     <div className="space-y-3">
       <Label>{label}</Label>
@@ -202,16 +214,26 @@ function IdFormatBuilder({ label, value, onChange }: IdFormatBuilderProps) {
         </button>
       </div>
 
-      {/* Preview */}
+      {/* Preview – now reactive + animated */}
       <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-100 rounded-lg">
         <EyeIcon className="w-4 h-4 text-emerald-600 shrink-0" />
-        <span className="text-sm text-emerald-700 font-mono">
-          {previewText || '—'}
-        </span>
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={previewText} // forces smooth exit/enter animation when year format changes
+            initial={{ opacity: 0, y: -4, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.95 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className="text-sm text-emerald-700 font-mono"
+          >
+            {previewText || '—'}
+          </motion.span>
+        </AnimatePresence>
       </div>
     </div>
   )
 }
+
 // ─── Grade Range Editor ──────────────────────────────────────────────
 interface GradeRangeEditorProps {
   value: GradeRange
@@ -385,12 +407,16 @@ function GpaRangeEditor({ value, onChange }: GpaRangeEditorProps) {
     </div>
   )
 }
+
+
 // ─── Main Component ──────────────────────────────────────────────────
 export function PreferencesSettings() {
   const { data, isLoading } = usePreferences()
-  const updateMutation = useUpdatePreferences()
   const [form, setForm] = useState<PreferencesPayload>({})
   const [hasChanges, setHasChanges] = useState(false)
+  const updateMutation = useUpdatePreferences()
+  const isUni = useIsUni()
+
   useEffect(() => {
     if (data) {
       setForm({
@@ -569,8 +595,7 @@ export function PreferencesSettings() {
                 <SelectContent>
                   <SelectItem value="gpa_4">GPA 4.0</SelectItem>
                   <SelectItem value="gpa_5">GPA 5.0</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                  <SelectItem value="letter">Letter Grade</SelectItem>
+                  <SelectItem value="grades_af">Grades A - F</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -591,23 +616,25 @@ export function PreferencesSettings() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Resit Process</Label>
-              <Select
-                value={form.resit_process || ''}
-                onValueChange={(v) => updateField('resit_process', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select process" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="resit_as_semester">
-                    Resit as Semester
-                  </SelectItem>
-                  <SelectItem value="resit_separate">Resit Separate</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {isUni && (
+              <div className="space-y-1.5">
+                <Label>Resit Process</Label>
+                <Select
+                  value={form.resit_process || ''}
+                  onValueChange={(v) => updateField('resit_process', v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select process" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="resit_as_semester">
+                      Resit as Semester
+                    </SelectItem>
+                    <SelectItem value="resit_separate">Resit Separate</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -695,12 +722,14 @@ export function PreferencesSettings() {
               label="Student ID Format"
               value={form.id_format_templates?.student || ''}
               onChange={(v) => updateIdTemplate('student', v)}
+              yearIdentifier={form.year_identifier as "Short" | "Long" | undefined}
             />
             <Separator />
             <IdFormatBuilder
               label="Teacher ID Format"
               value={form.id_format_templates?.teacher || ''}
               onChange={(v) => updateIdTemplate('teacher', v)}
+              yearIdentifier={form.year_identifier as "Short" | "Long" | undefined}
             />
           </div>
         </CardContent>
@@ -723,117 +752,121 @@ export function PreferencesSettings() {
       </Card>
 
       {/* GPA Ranges */}
-      <Card>
-        <CardHeader>
-          <CardTitle>GPA Values</CardTitle>
-          <CardDescription>
-            Map letter grades to GPA point values
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <GpaRangeEditor
-            value={form.gpa_ranges || {}}
-            onChange={(v) => updateField('gpa_ranges', v)}
-          />
-        </CardContent>
-      </Card>
+      {isUni && (
+        <Card>
+          <CardHeader>
+            <CardTitle>GPA Values</CardTitle>
+            <CardDescription>
+              Map letter grades to GPA point values
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <GpaRangeEditor
+              value={form.gpa_ranges || {}}
+              onChange={(v) => updateField('gpa_ranges', v)}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Resit Preferences */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Resit Preferences</CardTitle>
-          <CardDescription>
-            Configure how resit examinations are handled
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Resit Max Score</Label>
-              <Input
-                type="number"
-                placeholder="e.g. 20"
-                value={form.resit_preferences?.resit_max_score ?? ''}
-                onChange={(e) =>
-                  updateResitPref(
-                    'resit_max_score',
-                    parseFloat(e.target.value) || 0,
-                  )
-                }
-              />
+      {isUni && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Resit Preferences</CardTitle>
+            <CardDescription>
+              Configure how resit examinations are handled
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Resit Max Score</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 20"
+                  value={form.resit_preferences?.resit_max_score ?? ''}
+                  onChange={(e) =>
+                    updateResitPref(
+                      'resit_max_score',
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Cutoff Resit Score</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 7"
+                  value={form.resit_preferences?.cutoff_resit_score ?? ''}
+                  onChange={(e) =>
+                    updateResitPref(
+                      'cutoff_resit_score',
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Price Per Unit</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g. 0"
+                  value={form.resit_preferences?.price_per_unit ?? ''}
+                  onChange={(e) =>
+                    updateResitPref(
+                      'price_per_unit',
+                      parseFloat(e.target.value) || 0,
+                    )
+                  }
+                />
+              </div>
+              <div />
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <Label className="cursor-pointer">Resit is Payable</Label>
+                <Switch
+                  checked={form.resit_preferences?.is_resit_payable ?? false}
+                  onCheckedChange={(v) => updateResitPref('is_resit_payable', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <Label className="cursor-pointer">Balance Resit Score</Label>
+                <Switch
+                  checked={form.resit_preferences?.balance_resit_score ?? false}
+                  onCheckedChange={(v) =>
+                    updateResitPref('balance_resit_score', v)
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <Label className="cursor-pointer">Cutoff by Core Subject</Label>
+                <Switch
+                  checked={
+                    form.resit_preferences?.cutoff_by_core_subject ?? false
+                  }
+                  onCheckedChange={(v) =>
+                    updateResitPref('cutoff_by_core_subject', v)
+                  }
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <Label className="cursor-pointer">
+                  Allow Resit Without Payment
+                </Label>
+                <Switch
+                  checked={
+                    form.resit_preferences?.allow_resit_without_payment ?? false
+                  }
+                  onCheckedChange={(v) =>
+                    updateResitPref('allow_resit_without_payment', v)
+                  }
+                />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label>Cutoff Resit Score</Label>
-              <Input
-                type="number"
-                placeholder="e.g. 7"
-                value={form.resit_preferences?.cutoff_resit_score ?? ''}
-                onChange={(e) =>
-                  updateResitPref(
-                    'cutoff_resit_score',
-                    parseFloat(e.target.value) || 0,
-                  )
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Price Per Unit</Label>
-              <Input
-                type="number"
-                placeholder="e.g. 0"
-                value={form.resit_preferences?.price_per_unit ?? ''}
-                onChange={(e) =>
-                  updateResitPref(
-                    'price_per_unit',
-                    parseFloat(e.target.value) || 0,
-                  )
-                }
-              />
-            </div>
-            <div />
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <Label className="cursor-pointer">Resit is Payable</Label>
-              <Switch
-                checked={form.resit_preferences?.is_resit_payable ?? false}
-                onCheckedChange={(v) => updateResitPref('is_resit_payable', v)}
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <Label className="cursor-pointer">Balance Resit Score</Label>
-              <Switch
-                checked={form.resit_preferences?.balance_resit_score ?? false}
-                onCheckedChange={(v) =>
-                  updateResitPref('balance_resit_score', v)
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <Label className="cursor-pointer">Cutoff by Core Subject</Label>
-              <Switch
-                checked={
-                  form.resit_preferences?.cutoff_by_core_subject ?? false
-                }
-                onCheckedChange={(v) =>
-                  updateResitPref('cutoff_by_core_subject', v)
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <Label className="cursor-pointer">
-                Allow Resit Without Payment
-              </Label>
-              <Switch
-                checked={
-                  form.resit_preferences?.allow_resit_without_payment ?? false
-                }
-                onCheckedChange={(v) =>
-                  updateResitPref('allow_resit_without_payment', v)
-                }
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Save */}
       <div className="flex justify-end">

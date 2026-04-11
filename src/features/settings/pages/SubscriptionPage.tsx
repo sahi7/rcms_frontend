@@ -171,7 +171,7 @@ export function SubscriptionPage() {
           Choose the plan that best fits your institution
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex gap-4">
           {plans.map((plan, index) => {
             const isCurrent = plan.code === currentPlan
             const isChanging =
