@@ -1,4 +1,5 @@
 // src/app/layout/DashboardSidebar.tsx
+// Now includes role-based logic to render the appropriate sidebar
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,7 +27,9 @@ import { toSentenceCase } from '@/app/store/institutionConfigStore';
 import { useAuthStore } from '@/app/store/authStore';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
-import { useIsSubjectConfig } from '@/features/settings/hooks/useInstitution'
+import { useIsSubjectConfig } from '@/features/settings/hooks/useInstitution';
+
+import { FlatDashboardSidebar } from './FlatDashboardSidebar';
 
 const baseNavStructure = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'view.dashboard' },
@@ -121,11 +124,31 @@ export function DashboardSidebar({
   isHovered,
   setIsHovered,
 }: DashboardSidebarProps) {
-  const location = useLocation();
   const { user } = useAuthStore();
+  const role = user?.role?.toLowerCase?.() || '';
+
+  // ─────────────────────────────────────────────────────────────
+  // Role-based rendering for separate dashboards
+  // Teacher & Student → flat hierarchy (FlatDashboardSidebar)
+  // All other roles → original nested hierarchy
+  // ─────────────────────────────────────────────────────────────
+  console.log("role: ", role)
+  if (role === 'teacher' || role === 'student') {
+    return (
+      <FlatDashboardSidebar
+        isPinned={isPinned}
+        setIsPinned={setIsPinned}
+        isHovered={isHovered}
+        setIsHovered={setIsHovered}
+      />
+    );
+  }
+
+  // Original nested sidebar (admin / principal / etc.)
+  const location = useLocation();
   const { getPlural } = useInstitutionConfig();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const isSubjectConfig = useIsSubjectConfig()
+  const isSubjectConfig = useIsSubjectConfig();
   const isExpanded = isPinned || isHovered;
 
   const getInitials = (firstName?: string, lastName?: string) => {

@@ -177,12 +177,12 @@ function ResendWelcomeEmailSection({ userId }: { userId: string }) {
                   >
                     <Loader2 className="h-5 w-5" />
                   </motion.div>
-                  <span>Resending welcome email...</span>
+                  <span>Resending email...</span>
                 </>
               ) : (
                 <>
                   <Mail className="h-5 w-5" />
-                  <span>Send Welcome Email Now</span>
+                  <span>Send Welcome/Password Email Now</span>
                 </>
               )}
             </button>

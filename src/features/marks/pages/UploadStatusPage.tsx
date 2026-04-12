@@ -23,6 +23,7 @@ import { useClassRooms } from '../../structure/hooks/useClassRooms';
 import { useTeachers } from '@/hooks/shared/useUsers';
 import { formatDate } from '@/lib/utils';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+import { useAuthStore } from '@/app/store/authStore';  
 
 /**
  * Page that displays the status of mark uploads across subjects, teachers, classes, etc.
@@ -30,6 +31,10 @@ import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
  */
 export function UploadStatusPage() {
   const navigate = useNavigate();
+
+  // Get current user and check role
+  const { user } = useAuthStore();
+  const isTeacher = user?.role?.toLowerCase() === 'teacher';
 
   // Institution configuration for dynamic labeling
   const { getLabel, getPlural } = useInstitutionConfig();
@@ -42,7 +47,10 @@ export function UploadStatusPage() {
     subject?: string;
     class?: string;
     sequence?: string;
-  }>({});
+  }>({
+    // Default teacher filter for teachers (sent to backend)
+    ...(isTeacher && user?.id ? { teacher: String(user.id) } : {}),
+  });
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -53,7 +61,10 @@ export function UploadStatusPage() {
   const { data: deptsData } = useDepartments();
   const { data: subjectsData } = useSubjects();
   const { data: classroomsData } = useClassRooms();
-  const { data: teachersData } = useTeachers({ page_size: 300 });
+  // Do NOT run useTeachers when user is teacher
+  const { data: teachersData } = isTeacher 
+    ? { data: undefined } 
+    : useTeachers({ page_size: 300 });
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useUploadStatus({
     ...filters,
@@ -73,29 +84,36 @@ export function UploadStatusPage() {
   const enrichedResults = useMemo(() => {
     return allResults.map((item) => {
       const subject = subjectsData?.data?.find((s: any) => s.id === item.subject_id);
-      const teacher = teachersData?.data?.find((t: any) => t.id === item.teacher_id);
       const classroom = classroomsData?.data?.find((c: any) => c.id === item.class_room_id);
       const department = deptsData?.data?.find((d: any) => d.id === item.department_id);
-      const createdBy = teachersData?.data?.find((t: any) => t.id === item.created_by_id);
+
+      // ONLY CHANGE: teacher and createdBy lookups are removed for teacher mode
+      const teacher = !isTeacher ? teachersData?.data?.find((t: any) => t.id === item.teacher_id) : null;
+      const createdBy = !isTeacher ? teachersData?.data?.find((t: any) => t.id === item.created_by_id) : null;
 
       return {
         ...item,
         subjectName: subject
           ? `${subject.name} (${subject.code})`
           : `${getLabel('subject_naming')} #${item.subject_id}`,
-        teacherName: teacher
-          ? `${teacher.first_name} ${teacher.last_name}`
-          : `${getLabel('instructor_title')} #${item.teacher_id}`,
+        // teacherName is now direct from current user when in teacher mode
+        teacherName: isTeacher
+          ? `${user?.first_name || ''} ${user?.last_name || ''}`.trim() || 'Teacher'
+          : teacher
+            ? `${teacher.first_name} ${teacher.last_name}`
+            : `${getLabel('instructor_title')} #${item.teacher_id}`,
         className: classroom
           ? classroom.name
           : `${getLabel('class_progression_name')} #${item.class_room_id}`,
         departmentName: department ? department.name : null,
-        createdByName: createdBy
-          ? `${createdBy.first_name} ${createdBy.last_name}`
-          : `User #${item.created_by_id}`,
+        createdByName: item.created_by_id === user?.id
+          ? 'You'
+          : createdBy
+            ? `${createdBy.first_name} ${createdBy.last_name}`
+            : `User #${item.created_by_id}`,
       };
     });
-  }, [allResults, subjectsData, teachersData, classroomsData, deptsData, getLabel]);
+  }, [allResults, subjectsData, classroomsData, deptsData, getLabel, isTeacher, user, teachersData]);
 
   /**
    * Handles infinite scroll: loads more data when user scrolls near the bottom.
