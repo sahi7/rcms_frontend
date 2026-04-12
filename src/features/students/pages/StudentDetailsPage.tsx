@@ -252,7 +252,7 @@ function OverviewTab({ student }: { student: Student }) {
           </div>
           <div className="p-6 space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-500">{getLabel('classLabel')}</p>
+              <p className="text-sm font-medium text-gray-500">{getLabel('class_progression_name')}</p>
               <p className="mt-1 text-sm font-medium text-gray-900">{className}</p>
             </div>
             <div>

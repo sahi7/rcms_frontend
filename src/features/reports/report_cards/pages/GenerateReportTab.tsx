@@ -1,5 +1,6 @@
-import React, { useCallback, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+// src/features/marks/pages/GenerateReportTab.tsx
+import { useCallback, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileTextIcon,
   DownloadIcon,
@@ -9,94 +10,118 @@ import {
   SchoolIcon,
   BuildingIcon,
   CalendarIcon,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from '@/components/ui/card'
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useTerms } from '@/features/academic/hooks/terms'
-import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
-import { useDepartments } from '@/features/structure/hooks/useDepartments'
-import { useGenerateReport } from '../hooks/useReports'
-import { Can } from '@/hooks/shared/useHasPermission'
-import { ClassRoom } from '@/types/structure'
-import { GenerateReportResponse } from '@/types/reports'
+} from '@/components/ui/select';
+import { useTerms } from '@/features/academic/hooks/terms';
+import { useClassRooms } from '@/features/structure/hooks/useClassRooms';
+import { useDepartments } from '@/features/structure/hooks/useDepartments';
+import { useGenerateReport } from '../hooks/useReports';
+import { Can } from '@/hooks/shared/useHasPermission';
+import { ClassRoom } from '@/types/structure';
+import { GenerateReportResponse } from '@/types/reports';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 
-
+/**
+ * Tab component for generating student report cards.
+ * Allows selection of term, class, and optional department, then triggers report generation.
+ */
 export function GenerateReportTab() {
-  const [selectedTermId, setSelectedTermId] = useState<string>('')
-  const [selectedClassId, setSelectedClassId] = useState<string>('')
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('')
-  const [lastResult, setLastResult] = useState<GenerateReportResponse | null>(
-    null,
-  )
-  const [error, setError] = useState<string | null>(null)
-  const { data: termsData, isLoading: termsLoading } = useTerms()
-  const { data: classRoomsData, isLoading: classRoomsLoading } = useClassRooms()
-  const { data: departmentsData, isLoading: departmentsLoading } =
-    useDepartments()
-  const generateMutation = useGenerateReport(selectedTermId)
-  const terms = termsData?.data ?? []
-  const classRooms = classRoomsData?.data ?? []
-  const departments = departmentsData?.data ?? []
+  const [selectedTermId, setSelectedTermId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  const [lastResult, setLastResult] = useState<GenerateReportResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Institution configuration for dynamic labeling
+  const { getLabel, getPlural } = useInstitutionConfig();
+
+  const { data: termsData, isLoading: termsLoading } = useTerms();
+  const { data: classRoomsData, isLoading: classRoomsLoading } = useClassRooms();
+  const { data: departmentsData, isLoading: departmentsLoading } = useDepartments();
+
+  const generateMutation = useGenerateReport(selectedTermId);
+
+  const terms = termsData?.data ?? [];
+  const classRooms = classRoomsData?.data ?? [];
+  const departments = departmentsData?.data ?? [];
+
   const selectedClass: ClassRoom | undefined = classRooms.find(
-    (c) => String(c.id) === selectedClassId,
-  )
-  const needsDepartment = selectedClass?.has_departments ?? false
+    (c) => String(c.id) === selectedClassId
+  );
+
+  const needsDepartment = selectedClass?.has_departments ?? false;
+
   const filteredDepartments = departments.filter((d) =>
-    selectedClass ? d.class_rooms.includes(selectedClass.id) : false,
-  )
+    selectedClass ? d.class_rooms.includes(selectedClass.id) : false
+  );
+
   const canGenerate =
     selectedTermId &&
     selectedClassId &&
-    (!needsDepartment || selectedDepartmentId)
+    (!needsDepartment || selectedDepartmentId);
+
+  /**
+   * Handles class selection and resets dependent fields.
+   */
   const handleClassChange = useCallback((value: string) => {
-    setSelectedClassId(value)
-    setSelectedDepartmentId('')
-    setLastResult(null)
-    setError(null)
-  }, [])
+    setSelectedClassId(value);
+    setSelectedDepartmentId('');
+    setLastResult(null);
+    setError(null);
+  }, []);
+
+  /**
+   * Prepares payload and triggers report generation.
+   */
   const handleGenerate = useCallback(() => {
-    if (!canGenerate) return
-    setError(null)
-    setLastResult(null)
+    if (!canGenerate) return;
+    setError(null);
+    setLastResult(null);
+
     const payload: {
-      class_id: number
-      department_id?: number
+      class_id: number;
+      department_id?: number;
     } = {
       class_id: Number(selectedClassId),
-    }
+    };
+
     if (needsDepartment && selectedDepartmentId) {
-      payload.department_id = Number(selectedDepartmentId)
+      payload.department_id = Number(selectedDepartmentId);
     }
+
     generateMutation.mutate(payload, {
       onSuccess: (data) => setLastResult(data),
       onError: (err: any) => {
         const msg =
           err?.response?.data?.error ||
           err?.message ||
-          'Failed to generate reports'
-        setError(msg)
+          `Failed to generate ${getPlural('class_progression_name').toLowerCase()} reports`;
+        setError(msg);
       },
-    })
+    });
   }, [
     canGenerate,
     selectedClassId,
     needsDepartment,
     selectedDepartmentId,
     generateMutation,
-  ])
+    getPlural,
+  ]);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -106,29 +131,32 @@ export function GenerateReportTab() {
             Generate Report Cards
           </CardTitle>
           <CardDescription>
-            Select a term, class, and optionally a department to generate
+            Select a {getLabel('academic_period').toLowerCase()}, {getLabel('class_progression_name').toLowerCase()}, and optionally a department to generate
             student report cards as a downloadable ZIP file.
           </CardDescription>
         </CardHeader>
+
         <CardContent className="space-y-5">
           {/* Term Selection */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
-              Term <span className="text-red-400">*</span>
+              {getLabel('academic_period')} <span className="text-red-400">*</span>
             </label>
             <Select
               value={selectedTermId}
               onValueChange={(v) => {
-                setSelectedTermId(v)
-                setLastResult(null)
-                setError(null)
+                setSelectedTermId(v);
+                setLastResult(null);
+                setError(null);
               }}
             >
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    termsLoading ? 'Loading terms...' : 'Select a term'
+                    termsLoading
+                      ? `Loading ${getPlural('academic_period').toLowerCase()}...`
+                      : `Select a ${getLabel('academic_period').toLowerCase()}`
                   }
                 />
               </SelectTrigger>
@@ -147,13 +175,15 @@ export function GenerateReportTab() {
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
               <SchoolIcon className="w-3.5 h-3.5 text-slate-400" />
-              Class <span className="text-red-400">*</span>
+              {getLabel('class_progression_name')} <span className="text-red-400">*</span>
             </label>
             <Select value={selectedClassId} onValueChange={handleClassChange}>
               <SelectTrigger>
                 <SelectValue
                   placeholder={
-                    classRoomsLoading ? 'Loading classes...' : 'Select a class'
+                    classRoomsLoading
+                      ? `Loading ${getPlural('class_progression_name').toLowerCase()}...`
+                      : `Select a ${getLabel('class_progression_name').toLowerCase()}`
                   }
                 />
               </SelectTrigger>
@@ -171,21 +201,10 @@ export function GenerateReportTab() {
           <AnimatePresence>
             {needsDepartment && (
               <motion.div
-                initial={{
-                  opacity: 0,
-                  height: 0,
-                }}
-                animate={{
-                  opacity: 1,
-                  height: 'auto',
-                }}
-                exit={{
-                  opacity: 0,
-                  height: 0,
-                }}
-                transition={{
-                  duration: 0.2,
-                }}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
                 className="space-y-1.5 overflow-hidden"
               >
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
@@ -195,9 +214,9 @@ export function GenerateReportTab() {
                 <Select
                   value={selectedDepartmentId}
                   onValueChange={(v) => {
-                    setSelectedDepartmentId(v)
-                    setLastResult(null)
-                    setError(null)
+                    setSelectedDepartmentId(v);
+                    setLastResult(null);
+                    setError(null);
                   }}
                 >
                   <SelectTrigger>
@@ -219,15 +238,15 @@ export function GenerateReportTab() {
                 </Select>
                 {filteredDepartments.length === 0 && !departmentsLoading && (
                   <p className="text-xs text-amber-600">
-                    No departments found for this class.
+                    No departments found for this {getLabel('class_progression_name').toLowerCase()}.
                   </p>
                 )}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Generate Button */}
-          <Can permission="generate_reports">
+          {/* Generate Button - permission protected */}
+          <Can permission="generate_reports.term">
             <Button
               onClick={handleGenerate}
               disabled={!canGenerate || generateMutation.isPending}
@@ -254,21 +273,10 @@ export function GenerateReportTab() {
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{
-              opacity: 0,
-              y: -8,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            exit={{
-              opacity: 0,
-              y: -8,
-            }}
-            transition={{
-              duration: 0.25,
-            }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25 }}
           >
             <Card className="border-red-200 bg-red-50">
               <CardContent className="py-4 flex items-center gap-3">
@@ -285,30 +293,14 @@ export function GenerateReportTab() {
         )}
       </AnimatePresence>
 
-      {/* Success State */}
+      {/* Success State with Download */}
       <AnimatePresence>
         {lastResult && (
           <motion.div
-            initial={{
-              opacity: 0,
-              y: -8,
-              scale: 0.98,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-              scale: 1,
-            }}
-            exit={{
-              opacity: 0,
-              y: -8,
-              scale: 0.98,
-            }}
-            transition={{
-              type: 'spring',
-              duration: 0.5,
-              bounce: 0.3,
-            }}
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ type: 'spring', duration: 0.5, bounce: 0.3 }}
           >
             <Card className="border-emerald-200 bg-emerald-50">
               <CardContent className="py-5">
@@ -345,5 +337,5 @@ export function GenerateReportTab() {
         )}
       </AnimatePresence>
     </div>
-  )
+  );
 }

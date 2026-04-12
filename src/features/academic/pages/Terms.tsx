@@ -11,8 +11,11 @@ import { termsApi } from '../hooks/terms';
 import { academicYearsApi } from '../hooks/academicyear';
 import { Can } from '@/hooks/shared/useHasPermission';
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+import { useGPA } from '@/features/settings/hooks/useInstitution';
 
-// Base Zod schema
+/**
+ * Zod schema for validating term form data.
+ */
 const termSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   academic_year: z.string().min(1, 'Academic year is required'),
@@ -21,6 +24,10 @@ const termSchema = z.object({
   end_date: z.string().min(1, 'End date is required'),
 });
 
+/**
+ * Main page for managing academic periods (terms).
+ * Uses dynamic labeling based on institution configuration.
+ */
 export function Terms() {
   const [response, setResponse] = useState<PaginatedResponse<Term> | null>(null);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
@@ -36,11 +43,14 @@ export function Terms() {
   const [editingItem, setEditingItem] = useState<Term | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Term | null>(null);
 
-  // New states for collapsible status section + sensitive completed confirmation
+  // States for collapsible status section and sensitive completion confirmation
   const [isStatusesOpen, setIsStatusesOpen] = useState(false);
   const [showCompletionConfirm, setShowCompletionConfirm] = useState(false);
 
+  // Institution configuration for dynamic labeling
+  const isGPA = useGPA()
   const { getPlural, getLabel } = useInstitutionConfig();
+
   const [formData, setFormData] = useState<Partial<Term>>({
     name: '',
     academic_year: '',
@@ -52,9 +62,14 @@ export function Terms() {
     is_completed: false,
   });
 
-  // Find the current academic year (used for the restricted dropdown)
+  /**
+   * Finds the currently active academic year.
+   */
   const currentAcademicYear = academicYears.find((ay) => ay.is_current);
 
+  /**
+   * Extracts a user-friendly error message from various error formats (Zod, server, etc.).
+   */
   const getErrorMessage = (error: any): string => {
     if (!error) return 'An unexpected error occurred';
 
@@ -63,7 +78,7 @@ export function Terms() {
       return error.issues[0]?.message || 'Validation failed';
     }
 
-    // Server error
+    // Server error response
     const data = error.response?.data;
     if (data && typeof data === 'object') {
       if (Array.isArray(data.non_field_errors) && data.non_field_errors.length > 0) {
@@ -79,6 +94,9 @@ export function Terms() {
     return error.message || 'An unexpected error occurred';
   };
 
+  /**
+   * Fetches all academic years for the filter dropdown and new term creation.
+   */
   const fetchAcademicYears = useCallback(async () => {
     try {
       const data = await academicYearsApi.getAll('', 1, 100);
@@ -88,6 +106,9 @@ export function Terms() {
     }
   }, []);
 
+  /**
+   * Fetches terms with server-side filtering by search term, page, and academic year.
+   */
   const fetchTerms = useCallback(async () => {
     try {
       setLoading(true);
@@ -109,6 +130,9 @@ export function Terms() {
     fetchTerms();
   }, [fetchTerms]);
 
+  /**
+   * Opens the add or edit modal and pre-fills form data when editing.
+   */
   const handleOpenModal = (item?: Term) => {
     setIsStatusesOpen(false);
     setShowCompletionConfirm(false);
@@ -132,10 +156,14 @@ export function Terms() {
     setIsModalOpen(true);
   };
 
+  /**
+   * Validates and saves (create or update) a term.
+   * Includes date range validation against the academic year.
+   */
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Basic Zod validation
+    // Basic Zod validation
     const validationResult = termSchema.safeParse(formData);
     if (!validationResult.success) {
       const firstError = validationResult.error.issues?.[0];
@@ -143,31 +171,31 @@ export function Terms() {
       return;
     }
 
-    // 2. Find the selected academic year
+    // Find selected academic year for date validation
     const selectedAY = academicYears.find((ay) => ay.id === formData.academic_year);
     if (!selectedAY) {
       toast.error('Selected academic year not found');
       return;
     }
 
-    // 3. Extra validation: Term dates must be inside academic year dates
+    // Extra validation: Term dates must be inside academic year dates
     const termStart = new Date(formData.start_date!);
     const termEnd = new Date(formData.end_date!);
     const ayStart = new Date(selectedAY.start_date);
     const ayEnd = new Date(selectedAY.end_date);
 
     if (termStart < ayStart || termEnd > ayEnd) {
-      toast.error(`Term dates must be within the academic year (${selectedAY.name})`);
+      toast.error(`${getLabel('academic_period')} dates must be within the academic year (${selectedAY.name})`);
       return;
     }
 
     try {
       if (editingItem?.id) {
         await termsApi.update(editingItem.id, formData);
-        toast.success('Term updated successfully');
+        toast.success(`${getLabel('academic_period')} updated successfully`);
       } else {
         await termsApi.create(formData);
-        toast.success('Term created successfully');
+        toast.success(`${getLabel('academic_period')} created successfully`);
       }
       setIsModalOpen(false);
       fetchTerms();
@@ -176,11 +204,14 @@ export function Terms() {
     }
   };
 
+  /**
+   * Deletes the selected term after confirmation.
+   */
   const handleDelete = async () => {
     if (!itemToDelete?.id) return;
     try {
       await termsApi.delete(itemToDelete.id);
-      toast.success('Term deleted successfully');
+      toast.success(`${getLabel('academic_period')} deleted successfully`);
       fetchTerms();
     } catch (error) {
       toast.error(getErrorMessage(error));
@@ -189,16 +220,20 @@ export function Terms() {
     }
   };
 
+  /**
+   * Sets a term as the current active term.
+   */
   const handleSetAsCurrent = async (id: string) => {
     try {
       await termsApi.setAsCurrent(id);
-      toast.success('Term set as current successfully');
+      toast.success(`${getLabel('academic_period')} set as current successfully`);
       fetchTerms();
     } catch (error) {
       toast.error(getErrorMessage(error));
     }
   };
 
+  // Fallback table response when data is not loaded
   const tableResponse: PaginatedResponse<Term> = response ?? {
     data: [],
     pagination: {
@@ -213,23 +248,26 @@ export function Terms() {
     filters: {},
   };
 
-  // Dynamic header using getPlural
-  const termHeader = `${getLabel('academic_period')} #`;
+  // Dynamic header text using institution config
+  const termHeader = `${getLabel('academic_period')}`;
   const modalTitle = editingItem
     ? `Edit ${termHeader}`
     : `Add ${termHeader}`;
 
   const columns = [
-    { 
-      header: 'Name', 
+    {
+      header: 'Name',
       accessor: (item: Term) => (
         <span className={item.is_completed ? 'line-through text-slate-400' : ''}>
           {item.name}
         </span>
-      ) 
+      )
     },
     { header: 'Academic Year', accessor: 'academic_year_name' as keyof Term },
-    { header: termHeader, accessor: 'term_number' as keyof Term },   // ← Dynamic!
+    {
+      header: `${termHeader} #`,
+      accessor: 'term_number' as keyof Term
+    },
     { header: 'Start Date', accessor: 'start_date' as keyof Term },
     { header: 'End Date', accessor: 'end_date' as keyof Term },
     {
@@ -248,7 +286,7 @@ export function Terms() {
       header: 'Actions',
       accessor: (item: Term) => (
         <div className="flex items-center gap-2">
-          {/* Set as Current – only for non-current AND non-completed terms (user request) */}
+          {/* Set as Current - only for non-current and non-completed terms */}
           {!item.is_current && !item.is_completed && (
             <Can permission="set_current.term">
               <button
@@ -260,6 +298,7 @@ export function Terms() {
             </Can>
           )}
 
+          {/* Edit Term */}
           <Can permission="change.term">
             <button
               onClick={() => handleOpenModal(item)}
@@ -269,6 +308,7 @@ export function Terms() {
             </button>
           </Can>
 
+          {/* Delete Term */}
           <Can permission="delete.term">
             <button
               onClick={() => {
@@ -287,13 +327,17 @@ export function Terms() {
 
   return (
     <div className="h-full flex flex-col gap-6">
+      {/* Page Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-[#1a1a2e]">{getPlural('academic_period')}</h1>
-          <p className="text-slate-500 mt-1 text-sm">Manage academic {getPlural('academic_period')} and their statuses.</p>
+          <p className="text-slate-500 mt-1 text-sm">
+            Manage academic {getPlural('academic_period').toLowerCase()} and their statuses.
+          </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Academic Year Filter */}
           <div className="relative">
             <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <select
@@ -313,6 +357,7 @@ export function Terms() {
             </select>
           </div>
 
+          {/* Add New Term - permission protected */}
           <Can permission="add.term">
             <button
               onClick={() => handleOpenModal()}
@@ -325,6 +370,7 @@ export function Terms() {
         </div>
       </div>
 
+      {/* Main DataTable */}
       <div className="flex-1 min-h-0">
         <DataTable
           data={tableResponse}
@@ -345,7 +391,7 @@ export function Terms() {
         />
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Term Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -381,7 +427,9 @@ export function Terms() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{getLabel('academic_period')} Number</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                {getLabel('academic_period')} Number
+              </label>
               <input
                 required
                 type="number"
@@ -414,28 +462,28 @@ export function Terms() {
             </div>
           </div>
 
-          {/* Resit Term – moved outside Status Settings as a normal toggle (always visible) */}
-          <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <div>
-              <div className="font-medium text-slate-700">Resit Term</div>
-              <div className="text-xs text-slate-500">This term is designated for resits only</div>
+          {/* Resit Term Toggle - always visible */}
+          {isGPA && (
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <div>
+                <div className="font-medium text-slate-700">Resit {getLabel('academic_period')}</div>
+                <div className="text-xs text-slate-500">This {getLabel('academic_period')} is designated for resits only</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, is_resit: !formData.is_resit })}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${formData.is_resit ? 'bg-orange-500' : 'bg-slate-200'
+                  }`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${formData.is_resit ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, is_resit: !formData.is_resit })}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                formData.is_resit ? 'bg-orange-500' : 'bg-slate-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                  formData.is_resit ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
+          )}
 
-          {/* Status Settings – only shown during editing + compact + animated */}
+          {/* Status Settings - collapsible, shown only when editing */}
           {editingItem && (
             <div className="pt-4 border-t border-slate-100">
               <button
@@ -449,14 +497,12 @@ export function Terms() {
                 </span>
               </button>
 
-              {/* Animated + compact content */}
               <div
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                  isStatusesOpen ? 'max-h-80 opacity-100 mt-3' : 'max-h-0 opacity-0'
-                }`}
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${isStatusesOpen ? 'max-h-80 opacity-100 mt-3' : 'max-h-0 opacity-0'
+                  }`}
               >
                 <div className="space-y-3 px-1">
-                  {/* Completed – sensitive animated toggle with confirmation */}
+                  {/* Mark as Completed - sensitive toggle with confirmation */}
                   <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <button
                       type="button"
@@ -465,20 +511,18 @@ export function Terms() {
                         if (formData.is_completed) return;
                         setShowCompletionConfirm(true);
                       }}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${
-                        (formData.is_completed || showCompletionConfirm) ? 'bg-emerald-500' : 'bg-slate-200'
-                      } ${(formData.is_completed || false) ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/30 ${(formData.is_completed || showCompletionConfirm) ? 'bg-emerald-500' : 'bg-slate-200'
+                        } ${(formData.is_completed || false) ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                     >
                       <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                          (formData.is_completed || showCompletionConfirm) ? 'translate-x-5' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${(formData.is_completed || showCompletionConfirm) ? 'translate-x-5' : 'translate-x-1'
+                          }`}
                       />
                     </button>
 
                     <div className="flex-1 text-sm">
                       <div className="font-medium text-slate-700">Mark as completed</div>
-                      <div className="text-xs text-slate-500">This term has ended and is now closed</div>
+                      <div className="text-xs text-slate-500">This {termHeader} has ended and is now closed</div>
                       <div className="text-xs text-amber-600 mt-px">This action cannot be undone.</div>
                     </div>
 
@@ -514,23 +558,23 @@ export function Terms() {
                     )}
                   </div>
 
-                  {/* Results Published – normal animated toggle */}
+                  {/* Results Published Toggle */}
                   <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                     <div>
                       <div className="font-medium text-slate-700">Results Published</div>
-                      <div className="text-xs text-slate-500">Results for the term are available and students can check their portal</div>
+                      <div className="text-xs text-slate-500">
+                        Results for the {termHeader} is available and students can check their portal
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, is_results_published: !formData.is_results_published })}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${
-                        formData.is_results_published ? 'bg-orange-500' : 'bg-slate-200'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500/30 ${formData.is_results_published ? 'bg-orange-500' : 'bg-slate-200'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                          formData.is_results_published ? 'translate-x-5' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${formData.is_results_published ? 'translate-x-5' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                   </div>
@@ -566,7 +610,8 @@ export function Terms() {
         <div className="space-y-4">
           <p className="text-slate-600">
             Are you sure you want to delete the {getLabel('academic_period')}{' '}
-            <span className="font-semibold text-slate-800">{itemToDelete?.name}</span>? This action cannot be undone.
+            <span className="font-semibold text-slate-800">{itemToDelete?.name}</span>?
+            This action cannot be undone.
           </p>
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button

@@ -17,7 +17,7 @@ import * as XLSX from 'xlsx' // ← Added for Excel preview (chosen because it s
 
 export function StudentBulkUpload() {
   const navigate = useNavigate()
-  const { getPlural } = useInstitutionConfig()
+  const { getLabel, getPlural } = useInstitutionConfig()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -432,7 +432,7 @@ export function StudentBulkUpload() {
             <div className="mt-8 pt-6 border-t border-slate-100">
               <h4 className="text-sm font-medium text-slate-900 mb-2">Example Row</h4>
               <div className="bg-slate-900 text-slate-300 p-3 rounded-2xl text-xs font-mono overflow-x-auto whitespace-nowrap">
-                S2025-001,John,Doe,Form 2,Electricity,john@school.cm
+                {`S2025-001,John,Doe,${getLabel('class_progression_name')} 2,Electricity,john@school.cm`}
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 // src/features/marks/pages/MarkUploadPage.tsx
-import React, { useMemo, useState, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import React, { useMemo, useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   UploadCloudIcon,
   FileSpreadsheetIcon,
@@ -10,213 +10,218 @@ import {
   InfoIcon,
   Loader2Icon,
   XIcon,
-} from 'lucide-react'
-import * as XLSX from 'xlsx'
-import { SearchableSelect } from '@/components/SearchableSelect'
-import { Modal } from '@/components/Modal'
-import { Label } from '@/components/ui/label'
-import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks'
-import { useSubjects } from '@/features/curriculum/hooks/useSubjects'
-import { useTerms } from '@/features/academic/hooks/terms'
-import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
-import { useSequence } from '@/features/academic/hooks/sequence'
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { SearchableSelect } from '@/components/SearchableSelect';
+import { Modal } from '@/components/Modal';
+import { Label } from '@/components/ui/label';
+import { useUploadScope, useUploadMarks } from '@/features/marks/hooks/useMarks';
+import { useSubjects } from '@/features/curriculum/hooks/useSubjects';
+import { useTerms } from '@/features/academic/hooks/terms';
+import { useClassRooms } from '@/features/structure/hooks/useClassRooms';
+import { useSequence } from '@/features/academic/hooks/sequence';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
+import { useGPA } from '@/features/settings/hooks/useInstitution';
 
+/**
+ * Page for uploading student marks via Excel/CSV file.
+ * Supports drag & drop, file preview, and dynamic institution labeling.
+ */
 export function MarkUploadPage() {
-  const navigate = useNavigate()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Institution configuration for dynamic naming
+  const { getLabel, getPlural } = useInstitutionConfig();
+  const isGPA = useGPA()
 
   // Form state
-  const [assignmentId, setAssignmentId] = useState<number | string | null>(null)
-  const [sequenceId, setSequenceId] = useState<number | string | null>(null)
-  const [classId, setClassId] = useState<number | string | null>(null)
-  const [termId, setTermId] = useState<number | string | null>(null)
-  const [isResit, setIsResit] = useState(false)
-  const [file, setFile] = useState<File | null>(null)
+  const [assignmentId, setAssignmentId] = useState<number | string | null>(null);
+  const [sequenceId, setSequenceId] = useState<number | string | null>(null);
+  const [classId, setClassId] = useState<number | string | null>(null);
+  const [termId, setTermId] = useState<number | string | null>(null);
+  const [isResit, setIsResit] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [successModal, setSuccessModal] = useState<{
-    groupKey: string
-    skipped: number
-  } | null>(null)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [errorMs, setErrorMs] = useState<string[]>([])
+    groupKey: string;
+    skipped: number;
+  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMs, setErrorMs] = useState<string[]>([]);
 
   // Drag & drop state
-  const [isDragging, setIsDragging] = useState(false)
+  const [isDragging, setIsDragging] = useState(false);
 
   // Excel/CSV preview (first 8 rows)
-  const [previewRows, setPreviewRows] = useState<any[][]>([])
+  const [previewRows, setPreviewRows] = useState<any[][]>([]);
 
-  // Fetch scope
-  const { data: scope, isLoading: scopeLoading } = useUploadScope()
+  // Fetch upload scope and reference data
+  const { data: scope, isLoading: scopeLoading } = useUploadScope();
+  const { data: termsData } = useTerms();
+  const { data: sequencesData } = useSequence();
+  const { data: classesData } = useClassRooms();
+  const { data: subjectsData } = useSubjects({ page_size: 200 });
 
-  // Fetch reference data
-  const { data: termsData } = useTerms()
-  const { data: sequencesData } = useSequence()
-  const { data: classesData } = useClassRooms()
+  const uploadMutation = useUploadMarks();
 
-  const { data: subjectsData } = useSubjects(
-    { page_size: 200 },
-  )
-
-  const uploadMutation = useUploadMarks()
-
-  // Build lookup maps
+  // Lookup maps for quick name resolution
   const termMap = useMemo(() => {
-    const m = new Map<number, string>()
-    termsData?.data?.forEach((t) => m.set(Number(t.id), t.name))
-    return m
-  }, [termsData])
+    const m = new Map<number, string>();
+    termsData?.data?.forEach((t) => m.set(Number(t.id), t.name));
+    return m;
+  }, [termsData]);
 
   const seqMap = useMemo(() => {
-    const m = new Map<number, string>()
+    const m = new Map<number, string>();
     sequencesData?.data?.forEach((s) =>
-      m.set(Number(s.id), `${s.name} (${s.code})`),
-    )
-    return m
-  }, [sequencesData])
+      m.set(Number(s.id), `${s.name} (${s.code})`)
+    );
+    return m;
+  }, [sequencesData]);
 
   const classMap = useMemo(() => {
-    const m = new Map<number, string>()
-    classesData?.data?.forEach((c) => m.set(Number(c.id), c.name))
-    return m
-  }, [classesData])
+    const m = new Map<number, string>();
+    classesData?.data?.forEach((c) => m.set(Number(c.id), c.name));
+    return m;
+  }, [classesData]);
 
   const subjectMap = useMemo(() => {
-    const m = new Map<number, string>()
+    const m = new Map<number, string>();
     subjectsData?.data?.forEach((s) =>
-      m.set(Number(s.id), `${s.name} (${s.code})`),
-    )
-    return m
-  }, [subjectsData])
+      m.set(Number(s.id), `${s.name} (${s.code})`)
+    );
+    return m;
+  }, [subjectsData]);
 
-  // Deduplicated assignments (no duplicate subjects)
-  // We use assignment.id as value, but group by subject_id to avoid duplicates
+  /**
+   * Deduplicated assignment options (one per subject).
+   */
   const assignmentOptions = useMemo(() => {
-    if (!scope?.assignments) return []
+    if (!scope?.assignments) return [];
 
-    const seen = new Map<number, any>()
-
+    const seen = new Map<number, any>();
     scope.assignments.forEach((a: any) => {
       if (!seen.has(a.subject_id)) {
         seen.set(a.subject_id, {
           value: a.id,
-          label: subjectMap.get(a.subject_id) || `Subject #${a.subject_id}`,
-          subject_id: a.subject_id,  // Store the subject_id too
-        })
+          label: subjectMap.get(a.subject_id) || `${getLabel('subject_naming')} #${a.subject_id}`,
+          subject_id: a.subject_id,
+        });
       }
-    })
+    });
 
-    return Array.from(seen.values())
-  }, [scope, subjectMap])
+    return Array.from(seen.values());
+  }, [scope, subjectMap, getLabel]);
 
-  // Get ALL classrooms for the selected subject
+  /**
+   * Class options filtered to classes associated with the selected subject assignment.
+   */
   const classOptions = useMemo(() => {
-    if (!scope?.assignments || !assignmentId) return []
+    if (!scope?.assignments || !assignmentId) return [];
 
-    // Find the selected option to get its subject_id
     const selectedOption = assignmentOptions.find(
       (opt) => opt.value === Number(assignmentId)
-    )
+    );
 
-    if (!selectedOption) return []
+    if (!selectedOption) return [];
 
-    // Find ALL assignments with this subject_id
     const assignmentsForSubject = scope.assignments.filter(
       (a: any) => a.subject_id === selectedOption.subject_id
-    )
+    );
 
-    // Get unique classroom IDs from all these assignments
     const uniqueClassIds = [...new Set(
       assignmentsForSubject
         .map((a: any) => a.class_rooms__id)
         .filter((id: number) => id != null)
-    )]
+    )];
 
-    // Return all classes as options
     return uniqueClassIds.map((classId: number) => ({
       value: classId,
-      label: classMap.get(classId) || `Class #${classId}`,
-    }))
-  }, [scope, assignmentId, assignmentOptions, classMap])
+      label: classMap.get(classId) || `${getLabel('class_progression_name')} #${classId}`,
+    }));
+  }, [scope, assignmentId, assignmentOptions, classMap, getLabel]);
 
   const termOptions = useMemo(() => {
-    if (!scope) return []
-    const scopeIds = new Set(scope.terms.map((t) => t.id))
+    if (!scope) return [];
+    const scopeIds = new Set(scope.terms.map((t) => t.id));
     return Array.from(scopeIds).map((id) => ({
       value: id,
-      label: termMap.get(id) || `Term #${id}`,
-    }))
-  }, [scope, termMap])
+      label: termMap.get(id) || `${getLabel('academic_period')} #${id}`,
+    }));
+  }, [scope, termMap, getLabel]);
 
   const sequenceOptions = useMemo(() => {
-    if (!scope) return []
+    if (!scope) return [];
     return scope.sequences.map((s) => ({
       value: s.id,
       label: seqMap.get(s.id) || `Sequence #${s.id}`,
-    }))
-  }, [scope, seqMap])
+    }));
+  }, [scope, seqMap]);
 
-  // Parse file for preview (first 8 rows)
+  /**
+   * Parses the uploaded file to show a preview of the first 8 rows.
+   */
   const parseFileForPreview = useCallback((f: File) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
-        const sheetName = workbook.SheetNames[0]
-        const worksheet = workbook.Sheets[sheetName]
-        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][]
-        setPreviewRows(json.slice(0, 8))
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as any[][];
+        setPreviewRows(json.slice(0, 8));
       } catch (err) {
-        console.error('Preview parse error', err)
-        setPreviewRows([])
+        console.error('Preview parse error', err);
+        setPreviewRows([]);
       }
-    }
-    reader.readAsArrayBuffer(f)
-  }, [])
+    };
+    reader.readAsArrayBuffer(f);
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
+    const f = e.target.files?.[0];
     if (f) {
-      const ext = f.name.split('.').pop()?.toLowerCase()
+      const ext = f.name.split('.').pop()?.toLowerCase();
       if (!['csv', 'xlsx', 'xls'].includes(ext || '')) {
-        setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.')
-        setFile(null)
-        setPreviewRows([])
-        return
+        setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.');
+        setFile(null);
+        setPreviewRows([]);
+        return;
       }
-      setErrorMsg('')
-      setFile(f)
-      parseFileForPreview(f)
+      setErrorMsg('');
+      setFile(f);
+      parseFileForPreview(f);
     }
-  }
+  };
 
   // Drag & drop handlers
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = () => {
-    setIsDragging(false)
-  }
+    setIsDragging(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const droppedFile = e.dataTransfer.files[0]
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
-      const ext = droppedFile.name.split('.').pop()?.toLowerCase()
+      const ext = droppedFile.name.split('.').pop()?.toLowerCase();
       if (!['csv', 'xlsx', 'xls'].includes(ext || '')) {
-        setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.')
-        setFile(null)
-        setPreviewRows([])
-        return
+        setErrorMsg('Only CSV or Excel (.xlsx, .xls) files are accepted.');
+        setFile(null);
+        setPreviewRows([]);
+        return;
       }
-      setErrorMsg('')
-      setFile(droppedFile)
-      parseFileForPreview(droppedFile)
+      setErrorMsg('');
+      setFile(droppedFile);
+      parseFileForPreview(droppedFile);
     }
-  }
+  };
 
   const canSubmit =
     assignmentId &&
@@ -224,64 +229,68 @@ export function MarkUploadPage() {
     classId &&
     termId &&
     file &&
-    !uploadMutation.isPending
+    !uploadMutation.isPending;
 
+  /**
+   * Submits the mark upload form with the selected file and metadata.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!canSubmit) return
-    setErrorMsg('')
-    const formData = new FormData()
-    formData.append('assignment_id', String(assignmentId))
-    formData.append('sequence_id', String(sequenceId))
-    formData.append('class_id', String(classId))
-    formData.append('term_id', String(termId))
-    formData.append('is_resit', String(isResit))
-    formData.append('file', file!)
+    e.preventDefault();
+    if (!canSubmit) return;
+    setErrorMsg('');
+    const formData = new FormData();
+    formData.append('assignment_id', String(assignmentId));
+    formData.append('sequence_id', String(sequenceId));
+    formData.append('class_id', String(classId));
+    formData.append('term_id', String(termId));
+    formData.append('is_resit', String(isResit));
+    formData.append('file', file!);
 
     try {
-      const result = await uploadMutation.mutateAsync(formData)
+      const result = await uploadMutation.mutateAsync(formData);
       setSuccessModal({
         groupKey: result.group_key,
         skipped: result.skipped_errors,
-      })
+      });
     } catch (err: any) {
       setErrorMsg(
         err?.response?.data?.error ||
         err?.message ||
-        'Upload failed.',
-      )
+        'Upload failed.'
+      );
       const raw =
         err?.response?.data?.details ||
         err?.message ||
-        'Upload failed. Please try again.'
+        'Upload failed. Please try again.';
 
-      let errorsArray: string[] = []
+      let errorsArray: string[] = [];
 
       if (typeof raw === 'string') {
         errorsArray = raw
           .split(/(?=Row \d+:)/g)
           .map((e) => e.trim())
-          .filter(Boolean)
+          .filter(Boolean);
       } else if (Array.isArray(raw)) {
-        errorsArray = raw
+        errorsArray = raw;
       } else {
-        errorsArray = ['Upload failed. Please try again.']
+        errorsArray = ['Upload failed. Please try again.'];
       }
 
-      setErrorMs(errorsArray)
+      setErrorMs(errorsArray);
     }
-  }
+  };
 
   const handleGoToPreview = () => {
     if (successModal) {
       navigate(
-        `/dashboard/marks/preview/${encodeURIComponent(successModal.groupKey)}?term_id=${termId}`,
-      )
+        `/dashboard/marks/preview/${encodeURIComponent(successModal.groupKey)}?term_id=${termId}`
+      );
     }
-  }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      {/* Page Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800">Upload Marks</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -289,7 +298,7 @@ export function MarkUploadPage() {
         </p>
       </div>
 
-      {/* Instructions card */}
+      {/* File Format Instructions */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -333,7 +342,7 @@ export function MarkUploadPage() {
           <AlertTriangleIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
           <p className="text-amber-800 font-medium">No Upload Permissions</p>
           <p className="text-sm text-amber-600 mt-1">
-            You don't have any subject assignments to upload marks for. Contact
+            You don't have any {getPlural('subject_naming').toLowerCase()} assignments to upload marks for. Contact
             your administrator.
           </p>
         </div>
@@ -347,22 +356,22 @@ export function MarkUploadPage() {
         >
           <div className="p-6 space-y-5">
             <SearchableSelect
-              label="Subject (Assignment)"
+              label={`${getLabel('subject_naming')} (Assignment)`}
               required
               options={assignmentOptions}
               value={assignmentId}
               onChange={(v) => setAssignmentId(v)}
-              placeholder="Select subject assignment..."
+              placeholder={`Select ${getLabel('subject_naming').toLowerCase()} assignment...`}
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <SearchableSelect
-                label="Term"
+                label={getLabel('academic_period')}
                 required
                 options={termOptions}
                 value={termId}
                 onChange={(v) => setTermId(v)}
-                placeholder="Select term..."
+                placeholder={`Select ${getLabel('academic_period').toLowerCase()}...`}
               />
               <SearchableSelect
                 label="Sequence"
@@ -374,29 +383,30 @@ export function MarkUploadPage() {
               />
             </div>
 
-            {/* Class dropdown now filtered to only the class of the selected assignment */}
             <SearchableSelect
-              label="Class"
+              label={getLabel('class_progression_name')}
               required
               options={classOptions}
               value={classId}
               onChange={(v) => setClassId(v)}
-              placeholder="Select class..."
+              placeholder={`Select ${getLabel('class_progression_name').toLowerCase()}...`}
             />
 
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isResit}
-                onChange={(e) => setIsResit(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500/30"
-              />
-              <span className="text-sm text-slate-700 font-medium">
-                This is a resit examination
-              </span>
-            </label>
+            {isGPA && (
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isResit}
+                  onChange={(e) => setIsResit(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-500/30"
+                />
+                <span className="text-sm text-slate-700 font-medium">
+                  This is a resit examination
+                </span>
+              </label>
+            )}
 
-            {/* File upload with drag & drop */}
+            {/* File Upload Area with Drag & Drop */}
             <div>
               <Label className="block text-sm font-medium text-slate-700 mb-1">
                 File <span className="text-red-400">*</span>
@@ -435,10 +445,10 @@ export function MarkUploadPage() {
                     <button
                       type="button"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        setFile(null)
-                        setPreviewRows([])
-                        if (fileInputRef.current) fileInputRef.current.value = ''
+                        e.stopPropagation();
+                        setFile(null);
+                        setPreviewRows([]);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
                       }}
                       className="p-1 hover:bg-slate-200 rounded"
                     >
@@ -460,7 +470,7 @@ export function MarkUploadPage() {
               </div>
             </div>
 
-            {/* Excel/CSV Preview */}
+            {/* File Preview Table */}
             {file && previewRows.length > 0 && (
               <div className="mt-4">
                 <Label className="text-xs text-slate-500 mb-2 block">
@@ -540,7 +550,7 @@ export function MarkUploadPage() {
         </motion.form>
       )}
 
-      {/* Success Modal */}
+      {/* Success Confirmation Modal */}
       <Modal
         isOpen={!!successModal}
         onClose={() => setSuccessModal(null)}
@@ -591,5 +601,5 @@ export function MarkUploadPage() {
         </div>
       </Modal>
     </div>
-  )
+  );
 }

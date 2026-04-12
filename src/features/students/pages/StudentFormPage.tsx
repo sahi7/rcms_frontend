@@ -453,7 +453,7 @@ export function StudentForm() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {getLabel('classLabel')}
+                {getLabel('class_progression_name')}
               </label>
               <SearchableSelect
                 options={
@@ -469,7 +469,7 @@ export function StudentForm() {
                     current_class: val ? Number(val) : undefined,
                   }))
                 }
-                placeholder={`Select ${getLabel('classLabel')}...`}
+                placeholder={`Select ${getLabel('class_progression_name')}...`}
               />
             </div>
             <div>

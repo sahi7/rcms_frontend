@@ -158,3 +158,8 @@ export function useUserDetails(userId: string) {
     classroomsData,
   }
 }
+
+// Resend welcome email mutation
+export function useResendWelcomeEmail() {
+  return useCreateMutation('/auth/resend-welcome/', [KEY])
+}

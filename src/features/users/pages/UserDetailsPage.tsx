@@ -5,11 +5,15 @@ import {
   User,
   AlertCircle,
   Loader2,
+  Mail,
 } from 'lucide-react'
-import { useUserDetails, useRoleType } from '@/hooks/shared/useUsers'
+import { useUserDetails, useRoleType, useResendWelcomeEmail } from '@/hooks/shared/useUsers'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { cn } from '@/lib/utils'
 import { MultiSelect } from '@/components/MultiSelect'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 export function UserDetails() {
   const { id } = useParams<{ id: string }>()
@@ -65,13 +69,6 @@ export function UserDetails() {
                 src={user.profile_picture}
                 alt={`${user.first_name} ${user.last_name}`}
                 className="h-full w-full object-cover"
-                // onError={(e) => {
-                //   // Fallback to initials if image fails to load
-                //   const target = e.currentTarget
-                //   target.style.display = 'none'
-                //   const fallback = target.parentElement?.querySelector('.initials-fallback')
-                //   if (fallback) fallback.style.display = 'flex'
-                // }}
               />
             ) : null}
             {/* Initials fallback (always rendered but hidden when image loads successfully) */}
@@ -99,6 +96,9 @@ export function UserDetails() {
         </div>
       </div>
 
+      {/* NEW: Resend Email trigger (exactly as requested) */}
+      <ResendWelcomeEmailSection userId={id!} />
+
       {/* Only Overview tab remains */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
@@ -115,6 +115,80 @@ export function UserDetails() {
       </div>
 
       <OverviewTab user={user} isTeacher={isTeacher} subjectsData={subjectsData} />
+    </div>
+  )
+}
+
+/**
+ * Minimal resend welcome email section.
+ * - Starts collapsed (only "Resend Email" text visible).
+ * - Clicking the text reveals the actual button.
+ * - Button rotates on loading.
+ * - Shows toast on success/error.
+ */
+function ResendWelcomeEmailSection({ userId }: { userId: string }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const resendMutation = useResendWelcomeEmail()
+
+  const handleResend = () => {
+    resendMutation.mutate(
+      { user_id: userId },
+      {
+        onSuccess: () => {
+          toast.success('Welcome email has been resent successfully!')
+        },
+        onError: () => {
+          toast.error('Failed to resend welcome email. Please try again.')
+        },
+      }
+    )
+  }
+
+  return (
+    <div className="w-50 bg-grey-20 border border-gray-100 hover:bg-gray-50 rounded-2xl shadow-sm overflow-hidden">
+      {/* Clickable placeholder text */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+      >
+        <span className="flex bg-gray-20 text-xs font-medium text-orange-600">Resend Email →</span>
+      </button>
+
+      {/* Revealed content with animation */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="px-6 pb-6 border-t border-gray-100"
+          >
+            <button
+              onClick={handleResend}
+              disabled={resendMutation.isPending}
+              className="w-full mt-4 flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-400 text-white rounded-xl font-medium transition-all active:scale-95"
+            >
+              {resendMutation.isPending ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  >
+                    <Loader2 className="h-5 w-5" />
+                  </motion.div>
+                  <span>Resending welcome email...</span>
+                </>
+              ) : (
+                <>
+                  <Mail className="h-5 w-5" />
+                  <span>Send Welcome Email Now</span>
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

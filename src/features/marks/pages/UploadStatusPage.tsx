@@ -1,7 +1,7 @@
 // src/features/marks/pages/UploadStatusPage.tsx
-import React, { useEffect, useMemo, useState, useRef } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion'
+import { motion } from 'framer-motion';
 import {
   Loader2Icon,
   FilterIcon,
@@ -10,91 +10,115 @@ import {
   CalendarIcon,
   UserIcon,
   ExternalLinkIcon,
-} from 'lucide-react'
-import { StatusBadge } from '@/components/StatusBadge'
-import { SearchableSelect } from '@/components/SearchableSelect'
-import { useUploadStatus } from '@/features/marks/hooks/useMarks'
-import { useListQuery } from '@/hooks/shared/useApiQuery'
-import type { Sequence } from '@/types/academic'
-import { useTerms } from '@/features/academic/hooks/terms'
-import { useDepartments } from '../../structure/hooks/useDepartments'
-import { useSubjects } from '@/features/curriculum/hooks/useSubjects'
-import { useClassRooms } from '../../structure/hooks/useClassRooms'
-import { useTeachers } from '@/hooks/shared/useUsers'
-import { formatDate } from '@/lib/utils'
+} from 'lucide-react';
+import { StatusBadge } from '@/components/StatusBadge';
+import { SearchableSelect } from '@/components/SearchableSelect';
+import { useUploadStatus } from '@/features/marks/hooks/useMarks';
+import { useListQuery } from '@/hooks/shared/useApiQuery';
+import type { Sequence } from '@/types/academic';
+import { useTerms } from '@/features/academic/hooks/terms';
+import { useDepartments } from '../../structure/hooks/useDepartments';
+import { useSubjects } from '@/features/curriculum/hooks/useSubjects';
+import { useClassRooms } from '../../structure/hooks/useClassRooms';
+import { useTeachers } from '@/hooks/shared/useUsers';
+import { formatDate } from '@/lib/utils';
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
 
+/**
+ * Page that displays the status of mark uploads across subjects, teachers, classes, etc.
+ * Supports filtering and infinite scrolling with enriched display names.
+ */
 export function UploadStatusPage() {
   const navigate = useNavigate();
-  const [showFilters, setShowFilters] = useState(false)
-  const [filters, setFilters] = useState<{
-    term?: string
-    department?: string
-    teacher?: string
-    subject?: string
-    class?: string
-    sequence?: string
-  }>({})
-  const [expandedId, setExpandedId] = useState<number | null>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Supporting data
-  const { data: termsData } = useTerms()
-  const { data: sequencesData } = useListQuery<Sequence>('sequences', '/sequence/', { page_size: 100 })
-  const { data: deptsData } = useDepartments()
-  const { data: subjectsData } = useSubjects()
-  const { data: classroomsData } = useClassRooms()
-  const { data: teachersData } = useTeachers({ page_size: 300 })
+  // Institution configuration for dynamic labeling
+  const { getLabel, getPlural } = useInstitutionConfig();
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<{
+    term?: string;
+    department?: string;
+    teacher?: string;
+    subject?: string;
+    class?: string;
+    sequence?: string;
+  }>({});
+
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Supporting data fetches
+  const { data: termsData } = useTerms();
+  const { data: sequencesData } = useListQuery<Sequence>('sequences', '/sequence/', { page_size: 100 });
+  const { data: deptsData } = useDepartments();
+  const { data: subjectsData } = useSubjects();
+  const { data: classroomsData } = useClassRooms();
+  const { data: teachersData } = useTeachers({ page_size: 300 });
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useUploadStatus({
     ...filters,
-  })
+  });
 
+  /**
+   * Flattens all paginated results into a single array.
+   */
   const allResults = useMemo(() => {
-    if (!data?.pages) return []
-    return data.pages.flatMap((p) => p.results)
-  }, [data])
+    if (!data?.pages) return [];
+    return data.pages.flatMap((p) => p.results);
+  }, [data]);
 
-  // Enrich with names + prepare meta
+  /**
+   * Enriches raw upload records with human-readable names from related entities.
+   */
   const enrichedResults = useMemo(() => {
     return allResults.map((item) => {
-      const subject = subjectsData?.data?.find((s: any) => s.id === item.subject_id)
-      const teacher = teachersData?.data?.find((t: any) => t.id === item.teacher_id)
-      const classroom = classroomsData?.data?.find((c: any) => c.id === item.class_room_id)
-      const department = deptsData?.data?.find((d: any) => d.id === item.department_id)
-      const createdBy = teachersData?.data?.find((t: any) => t.id === item.created_by_id)
+      const subject = subjectsData?.data?.find((s: any) => s.id === item.subject_id);
+      const teacher = teachersData?.data?.find((t: any) => t.id === item.teacher_id);
+      const classroom = classroomsData?.data?.find((c: any) => c.id === item.class_room_id);
+      const department = deptsData?.data?.find((d: any) => d.id === item.department_id);
+      const createdBy = teachersData?.data?.find((t: any) => t.id === item.created_by_id);
 
       return {
         ...item,
-        subjectName: subject ? `${subject.name} (${subject.code})` : `Subject #${item.subject_id}`,
+        subjectName: subject
+          ? `${subject.name} (${subject.code})`
+          : `${getLabel('subject_naming')} #${item.subject_id}`,
         teacherName: teacher
           ? `${teacher.first_name} ${teacher.last_name}`
-          : `Teacher #${item.teacher_id}`,
-        className: classroom ? classroom.name : `Class #${item.class_room_id}`,
+          : `${getLabel('instructor_title')} #${item.teacher_id}`,
+        className: classroom
+          ? classroom.name
+          : `${getLabel('class_progression_name')} #${item.class_room_id}`,
         departmentName: department ? department.name : null,
         createdByName: createdBy
           ? `${createdBy.first_name} ${createdBy.last_name}`
           : `User #${item.created_by_id}`,
-      }
-    })
-  }, [allResults, subjectsData, teachersData, classroomsData, deptsData])
+      };
+    });
+  }, [allResults, subjectsData, teachersData, classroomsData, deptsData, getLabel]);
 
-  // Infinite scroll
+  /**
+   * Handles infinite scroll: loads more data when user scrolls near the bottom.
+   */
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
+    const el = scrollRef.current;
+    if (!el) return;
+
     const handleScroll = () => {
       if (
         el.scrollHeight - el.scrollTop - el.clientHeight < 200 &&
         hasNextPage &&
         !isFetchingNextPage
       ) {
-        fetchNextPage()
+        fetchNextPage();
       }
-    }
-    el.addEventListener('scroll', handleScroll)
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+    };
 
+    el.addEventListener('scroll', handleScroll);
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Filter options (memoized for performance)
   const termOptions = useMemo(
     () =>
       termsData?.data?.map((t: any) => ({
@@ -102,7 +126,7 @@ export function UploadStatusPage() {
         label: t.name,
       })) || [],
     [termsData]
-  )
+  );
 
   const seqOptions = useMemo(
     () =>
@@ -111,7 +135,7 @@ export function UploadStatusPage() {
         label: `${s.name} (${s.code})`,
       })) || [],
     [sequencesData]
-  )
+  );
 
   const deptOptions = useMemo(
     () =>
@@ -120,7 +144,7 @@ export function UploadStatusPage() {
         label: `${d.name} (${d.code})`,
       })) || [],
     [deptsData]
-  )
+  );
 
   const subjectOptions = useMemo(
     () =>
@@ -129,7 +153,7 @@ export function UploadStatusPage() {
         label: `${s.name} (${s.code})`,
       })) || [],
     [subjectsData]
-  )
+  );
 
   const classOptions = useMemo(
     () =>
@@ -138,28 +162,31 @@ export function UploadStatusPage() {
         label: c.name,
       })) || [],
     [classroomsData]
-  )
+  );
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
-  // Current term for preview link (use filter if selected, otherwise first term)
-  const currentTermId = filters.term || termsData?.data?.[0]?.id
+  // Current term for preview link
+  const currentTermId = filters.term || termsData?.data?.[0]?.id;
 
   return (
     <div className="space-y-4 h-full flex flex-col">
+      {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Upload Status</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Track subject mark upload progress
+            Track {getPlural('subject_naming').toLowerCase()} mark upload progress
           </p>
         </div>
+
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`px-3 py-2 text-sm border rounded-lg flex items-center gap-2 transition-colors ${showFilters || activeFilterCount > 0
+          className={`px-3 py-2 text-sm border rounded-lg flex items-center gap-2 transition-colors ${
+            showFilters || activeFilterCount > 0
               ? 'border-orange-300 bg-orange-50 text-orange-600'
               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
+          }`}
         >
           <FilterIcon className="w-4 h-4" />
           Filters
@@ -171,7 +198,7 @@ export function UploadStatusPage() {
         </button>
       </div>
 
-      {/* Filters panel */}
+      {/* Filters Panel */}
       {showFilters && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -190,9 +217,10 @@ export function UploadStatusPage() {
               </button>
             )}
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <SearchableSelect
-              label="Term"
+              label={getLabel('academic_period')}
               options={termOptions}
               value={filters.term || null}
               onChange={(v) =>
@@ -201,8 +229,9 @@ export function UploadStatusPage() {
                   term: v ? String(v) : undefined,
                 }))
               }
-              placeholder="All terms"
+              placeholder={`All ${getPlural('academic_period').toLowerCase()}`}
             />
+
             <SearchableSelect
               label="Department"
               options={deptOptions}
@@ -215,6 +244,7 @@ export function UploadStatusPage() {
               }
               placeholder="All departments"
             />
+
             <SearchableSelect
               label="Sequence"
               options={seqOptions}
@@ -227,8 +257,9 @@ export function UploadStatusPage() {
               }
               placeholder="All sequences"
             />
+
             <SearchableSelect
-              label="Subject"
+              label={getLabel('subject_naming')}
               options={subjectOptions}
               value={filters.subject || null}
               onChange={(v) =>
@@ -237,10 +268,11 @@ export function UploadStatusPage() {
                   subject: v ? String(v) : undefined,
                 }))
               }
-              placeholder="All subjects"
+              placeholder={`All ${getPlural('subject_naming').toLowerCase()}`}
             />
+
             <SearchableSelect
-              label="Class"
+              label={getLabel('class_progression_name')}
               options={classOptions}
               value={filters.class || null}
               onChange={(v) =>
@@ -249,13 +281,13 @@ export function UploadStatusPage() {
                   class: v ? String(v) : undefined,
                 }))
               }
-              placeholder="All classes"
+              placeholder={`All ${getPlural('class_progression_name').toLowerCase()}`}
             />
           </div>
         </motion.div>
       )}
 
-      {/* Table */}
+      {/* Main Scrollable Results Table */}
       <div ref={scrollRef} className="flex-1 overflow-auto rounded-xl bg-white border border-slate-100">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
@@ -272,16 +304,22 @@ export function UploadStatusPage() {
             <thead className="sticky top-0 z-10 bg-slate-50">
               <tr className="text-slate-500">
                 <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">#</th>
-                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">Subject</th>
-                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">Teacher</th>
-                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">Class</th>
+                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">
+                  {getLabel('subject_naming')}
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">
+                  {getLabel('instructor_title')}
+                </th>
+                <th className="px-5 py-3.5 text-left text-xs font-medium uppercase tracking-wider">
+                  {getLabel('class_progression_name')}
+                </th>
                 <th className="px-5 py-3.5 text-center text-xs font-medium uppercase tracking-wider">Type</th>
               </tr>
             </thead>
             <tbody>
               {enrichedResults.map((item, i) => (
                 <React.Fragment key={item.id}>
-                  {/* Main row - clickable */}
+                  {/* Main clickable row */}
                   <motion.tr
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -313,7 +351,7 @@ export function UploadStatusPage() {
                     </td>
                   </motion.tr>
 
-                  {/* Expanded meta row */}
+                  {/* Expanded details row */}
                   {expandedId === item.id && (
                     <motion.tr
                       initial={{ opacity: 0, height: 0 }}
@@ -336,7 +374,9 @@ export function UploadStatusPage() {
                                 <CalendarIcon className="w-3 h-3" />
                                 CREATED
                               </div>
-                              <div className="font-medium text-slate-800">{formatDate(item.created_at, true)}</div>
+                              <div className="font-medium text-slate-800">
+                                {formatDate(item.created_at, true)}
+                              </div>
                             </div>
 
                             {/* Updated at */}
@@ -345,7 +385,9 @@ export function UploadStatusPage() {
                                 <CalendarIcon className="w-3 h-3" />
                                 LAST UPDATED
                               </div>
-                              <div className="font-medium text-slate-800">{formatDate(item.updated_at, true)}</div>
+                              <div className="font-medium text-slate-800">
+                                {formatDate(item.updated_at, true)}
+                              </div>
                             </div>
 
                             {/* Created by */}
@@ -401,5 +443,5 @@ export function UploadStatusPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
