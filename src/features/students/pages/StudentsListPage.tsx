@@ -120,7 +120,7 @@ export function StudentsList() {
       },
     },
     {
-      header: getLabel('departmentLabel'),
+      header: 'Department',
       accessor: (student: Student) => {
         if (!student.department) return '-'
         const department = departmentsData?.data?.find(
@@ -146,7 +146,7 @@ export function StudentsList() {
           >
             <Eye className="h-4 w-4" />
           </button>
-          <Can permission="edit_student">
+          <Can permission="change_student">
             <button
               onClick={() => navigate(`/dashboard/students/create?id=${student.id}`)}
               className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"

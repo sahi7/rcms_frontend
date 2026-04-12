@@ -22,6 +22,7 @@ import type {
   SubjectReport,
   SequenceSubjectReport,
 } from '@/types/marks'
+import { useGPA } from '@/features/settings/hooks/useInstitution'
 
 
 function isTermResponse(r: any): r is StudentReportTermResponse {
@@ -79,6 +80,7 @@ export function StudentReportPage({ studentId: propStudentId }: Props) {
   const [sequenceId, setSequenceId] = useState<string | null>(null)
   const { data: termsData } = useTerms()
   const { data: seqData } = useSequence()
+  const isGPA = useGPA()
 
   const sequenceMap = React.useMemo(() => {
     const map = new Map<number, string>()
@@ -246,11 +248,15 @@ export function StudentReportPage({ studentId: propStudentId }: Props) {
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase tracking-wider">
-                  GPA
+                  {isGPA
+                    ? 'GPA'
+                    : 'AVERAGE'}
+                  
                 </p>
                 <p className="text-xl font-bold text-slate-800">
-                  {report.overall.average.toFixed(2)}
-                  {/* {report.overall.grade} */}
+                  {isGPA
+                    ? report.overall.grade
+                    : report.overall.average.toFixed(2)}
                 </p>
               </div>
             </div>

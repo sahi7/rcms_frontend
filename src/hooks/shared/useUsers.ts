@@ -122,7 +122,7 @@ export function useUserForm(userId?: string) {
 
   const updateMutation = usePutMutation<any, any>(
     ENDPOINT,
-    userId ? ([['user', userId], KEY] as unknown as string[]) : [KEY] // Type Assertion to treat the mixed array as string[].
+    userId ? ([KEY,['user', userId]] as unknown as string[]) : [KEY] // Type Assertion to treat the mixed array as string[].
     // Normally we would send [['user', userId], KEY] but it gives a type error
   )
 

@@ -38,3 +38,8 @@ export function useIsSubjectConfig() {
   const { data: prefs } = usePreferences();
   return prefs?.student_grouping === 'teacher_course';
 }
+
+export function useGPA() {
+  const { data: prefs } = usePreferences();
+  return prefs?.grading_scheme != 'grades_af';
+}
