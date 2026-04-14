@@ -12,6 +12,7 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -50,6 +51,20 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!adminEmail) return;
+
+    setIsResending(true);
+    try {
+      await api.post('/onboarding/resend-verification/', { email: adminEmail });
+      toast.success('Verification email resent successfully!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || 'Failed to resend verification email');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   if (isSubmitted) {
     return (
       <div className="text-center py-12">
@@ -64,11 +79,12 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
 
         <div className="mt-10 space-y-4">
           <Button
-            onClick={() => api.post('/onboarding/resend-verification/', { email: adminEmail })}
+            onClick={handleResendVerification}
+            disabled={isResending}
             variant="outline"
             className="w-full"
           >
-            Resend Verification Email
+            {isResending ? 'Resending...' : 'Resend Verification Email'}
           </Button>
 
           <Button onClick={() => navigate('/login')} className="w-full bg-orange-600">
