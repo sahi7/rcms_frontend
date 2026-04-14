@@ -1,5 +1,5 @@
 // src/app/layout/FlatDashboardSidebar.tsx
-// NEW COMPONENT #1 — Flat hierarchy for TEACHER
+// Updated with the same beautiful mobile off-canvas drawer + swipe support
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -7,12 +7,12 @@ import {
   GraduationCap,
   ClipboardCheck,
   Upload,
-  Edit3,
   FileBarChart,
   Settings,
   Pin,
   PinOff,
   LogOut,
+  X,
 } from 'lucide-react';
 
 import { TooltipProvider } from '../../components/ui/Tooltip';
@@ -28,12 +28,15 @@ interface FlatDashboardSidebarProps {
   setIsPinned: (pinned: boolean) => void;
   isHovered: boolean;
   setIsHovered: (hovered: boolean) => void;
+  // ── NEW: Mobile off-canvas props ──
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 const teacherNavItems = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: 'view.dashboard' },
-  { title: 'Mark Upload', icon: Upload, path: 'marks/upload', permission: 'add.markupload' },
-  { title: 'Subject Upload Status', icon: FileBarChart, path: 'marks/upload-status', permission: 'view.subjectuploadstatus' },
+  { title: 'Mark Upload', icon: Upload, path: '/dashboard/marks/upload', permission: 'add.markupload' },
+  { title: 'Subject Upload Status', icon: FileBarChart, path: '/dashboard/marks/upload-status', permission: 'view.subjectuploadstatus' },
 ];
 
 const studentNavItems = [
@@ -47,10 +50,13 @@ export function FlatDashboardSidebar({
   setIsPinned,
   isHovered,
   setIsHovered,
+  isMobileOpen,
+  onMobileClose,
 }: FlatDashboardSidebarProps) {
   const location = useLocation();
   const { user } = useAuthStore();
   const isExpanded = isPinned || isHovered;
+  const showLabels = isExpanded || isMobileOpen;
 
   const role = user?.role?.toLowerCase() || '';
   const navItems = role === 'teacher' ? teacherNavItems : studentNavItems;
@@ -60,15 +66,9 @@ export function FlatDashboardSidebar({
     return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase();
   };
 
-  return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isExpanded ? 280 : 72 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="fixed top-0 left-0 h-screen z-40 bg-gray-900/90 backdrop-blur-xl border-r border-white/5 flex flex-col shadow-2xl overflow-hidden"
-    >
+  // ── Reusable inner content ──
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
@@ -76,7 +76,7 @@ export function FlatDashboardSidebar({
             <GraduationCap size={24} />
           </div>
           <AnimatePresence>
-            {isExpanded && (
+            {showLabels && (
               <motion.span
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -90,10 +90,10 @@ export function FlatDashboardSidebar({
         </div>
 
         <AnimatePresence>
-          {isExpanded && (
+          {showLabels && (
             <motion.button
               onClick={() => setIsPinned(!isPinned)}
-              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10"
+              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10 md:block hidden"
             >
               {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
             </motion.button>
@@ -108,6 +108,7 @@ export function FlatDashboardSidebar({
               <Can key={item.path} permission={item.permission}>
                 <Link
                   to={item.path}
+                  onClick={isMobileOpen ? onMobileClose : undefined}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                     location.pathname === item.path || location.pathname.startsWith(item.path + '/')
                       ? 'bg-orange-500/10 text-orange-400'
@@ -116,7 +117,7 @@ export function FlatDashboardSidebar({
                 >
                   <item.icon size={20} />
                   <AnimatePresence>
-                    {isExpanded && (
+                    {showLabels && (
                       <motion.span
                         initial={{ opacity: 0, width: 0 }}
                         animate={{ opacity: 1, width: 'auto' }}
@@ -136,7 +137,7 @@ export function FlatDashboardSidebar({
 
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-white/10 shrink-0">
-        <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+        <div className={`flex items-center ${showLabels ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-3 overflow-hidden">
             <Avatar className="h-10 w-10 border border-white/10 shrink-0">
               <AvatarImage src={user?.profile_picture} />
@@ -146,7 +147,7 @@ export function FlatDashboardSidebar({
             </Avatar>
 
             <AnimatePresence>
-              {isExpanded && (
+              {showLabels && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -165,7 +166,7 @@ export function FlatDashboardSidebar({
           </div>
 
           <AnimatePresence>
-            {isExpanded && (
+            {showLabels && (
               <motion.button
                 onClick={() => useAuthStore.getState().logout()}
                 className="text-gray-400 hover:text-red-400 p-2 rounded-md hover:bg-red-500/10 shrink-0"
@@ -176,6 +177,66 @@ export function FlatDashboardSidebar({
           </AnimatePresence>
         </div>
       </div>
-    </motion.aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* DESKTOP SIDEBAR */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isExpanded ? 280 : 72 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="hidden md:flex fixed top-0 left-0 h-screen z-40 bg-gray-900/90 backdrop-blur-xl border-r border-white/5 flex-col shadow-2xl overflow-hidden"
+      >
+        {sidebarContent}
+      </motion.aside>
+
+      {/* MOBILE OFF-CANVAS DRAWER */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 md:hidden"
+              onClick={onMobileClose}
+            />
+
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(event, info) => {
+                if (info.offset.x < -90 || info.velocity.x < -400) {
+                  onMobileClose();
+                }
+              }}
+              className="fixed top-0 left-0 h-screen w-72 bg-gray-900/95 backdrop-blur-xl border-r border-white/5 shadow-2xl flex flex-col z-50 md:hidden overflow-hidden"
+            >
+              {sidebarContent}
+
+              {/* Mobile-only close button */}
+              <button
+                onClick={onMobileClose}
+                className="absolute top-5 right-5 text-gray-300 hover:text-white p-2 rounded-full hover:bg-white/10 md:hidden z-10"
+              >
+                <X size={26} />
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 // src/app/layout/DashboardSidebar.tsx
-// Now includes role-based logic to render the appropriate sidebar
+// Now includes beautiful mobile off-canvas drawer with smooth animations + swipe support
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,7 @@ import {
   PinOff,
   LogOut,
   ChevronRight,
+  X,
 } from 'lucide-react';
 
 import { TooltipProvider } from '../../components/ui/Tooltip';
@@ -116,6 +117,8 @@ interface DashboardSidebarProps {
   setIsPinned: (pinned: boolean) => void;
   isHovered: boolean;
   setIsHovered: (hovered: boolean) => void;
+  isMobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 export function DashboardSidebar({
@@ -123,25 +126,14 @@ export function DashboardSidebar({
   setIsPinned,
   isHovered,
   setIsHovered,
+  isMobileOpen,
+  onMobileClose,
 }: DashboardSidebarProps) {
   const { user } = useAuthStore();
   const role = user?.role?.toLowerCase?.() || '';
 
-  // ─────────────────────────────────────────────────────────────
-  // Role-based rendering for separate dashboards
-  // Teacher & Student → flat hierarchy (FlatDashboardSidebar)
-  // All other roles → original nested hierarchy
-  // ─────────────────────────────────────────────────────────────
-  console.log("role: ", role)
   if (role === 'teacher' || role === 'student') {
-    return (
-      <FlatDashboardSidebar
-        isPinned={isPinned}
-        setIsPinned={setIsPinned}
-        isHovered={isHovered}
-        setIsHovered={setIsHovered}
-      />
-    );
+    return <FlatDashboardSidebar {...{ isPinned, setIsPinned, isHovered, setIsHovered, isMobileOpen, onMobileClose }} />;
   }
 
   // Original nested sidebar (admin / principal / etc.)
@@ -149,7 +141,9 @@ export function DashboardSidebar({
   const { getPlural } = useInstitutionConfig();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const isSubjectConfig = useIsSubjectConfig();
+
   const isExpanded = isPinned || isHovered;
+  const showLabels = isExpanded || isMobileOpen; // always show text in mobile drawer
 
   const getInitials = (firstName?: string, lastName?: string) => {
     if (!firstName && !lastName) return 'JD';
@@ -172,11 +166,10 @@ export function DashboardSidebar({
   }, [location.pathname]);
 
   const toggleGroup = (title: string) => {
-    if (!isExpanded) return;
+    if (!showLabels) return;
     setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
-  // Helper to get dynamic title for children that use config keys
   const getDynamicTitle = (item: any) => {
     if (item.titleKey) {
       return getPlural(item.titleKey as any);
@@ -184,7 +177,6 @@ export function DashboardSidebar({
     return item.title;
   };
 
-  // Filter children based on isSubjectConfig (hides class-related assignment when in teacher_course mode and vice versa)
   const getFilteredChildren = (children: any[] = []) => {
     return children.filter((child) => {
       if (child.titleKey === 'class_progression_name Assignments' && isSubjectConfig) return false;
@@ -193,15 +185,9 @@ export function DashboardSidebar({
     });
   };
 
-  return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isExpanded ? 280 : 72 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className="fixed top-0 left-0 h-screen z-40 bg-gray-900/90 backdrop-blur-xl border-r border-white/5 flex flex-col shadow-2xl overflow-hidden"
-    >
+  // ── Reusable inner content (used by both desktop and mobile drawer) ──
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
@@ -209,7 +195,7 @@ export function DashboardSidebar({
             <GraduationCap size={24} />
           </div>
           <AnimatePresence>
-            {isExpanded && (
+            {showLabels && (
               <motion.span
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -223,10 +209,10 @@ export function DashboardSidebar({
         </div>
 
         <AnimatePresence>
-          {isExpanded && (
+          {showLabels && (
             <motion.button
               onClick={() => setIsPinned(!isPinned)}
-              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10"
+              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10 md:block hidden"
             >
               {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
             </motion.button>
@@ -252,7 +238,7 @@ export function DashboardSidebar({
                     <div className="flex items-center gap-3">
                       <group.icon size={20} />
                       <AnimatePresence>
-                        {isExpanded && (
+                        {showLabels && (
                           <motion.span
                             initial={{ opacity: 0, width: 0 }}
                             animate={{ opacity: 1, width: 'auto' }}
@@ -265,7 +251,7 @@ export function DashboardSidebar({
                       </AnimatePresence>
                     </div>
 
-                    {isExpanded && group.children?.length && (
+                    {showLabels && group.children?.length && (
                       <ChevronRight
                         size={16}
                         className={`shrink-0 transition-transform ${openGroups[group.title] ? 'rotate-90' : ''}`}
@@ -275,7 +261,7 @@ export function DashboardSidebar({
 
                   {/* Children */}
                   <AnimatePresence>
-                    {group.children?.length && isExpanded && openGroups[group.title] && (
+                    {group.children?.length && showLabels && openGroups[group.title] && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -286,6 +272,7 @@ export function DashboardSidebar({
                           <Can key={child.path} permission={child.permission}>
                             <Link
                               to={child.path}
+                              onClick={isMobileOpen ? onMobileClose : undefined}
                               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                                 location.pathname === child.path
                                   ? 'text-orange-400 bg-orange-500/5'
@@ -308,7 +295,7 @@ export function DashboardSidebar({
 
       {/* Footer / User Profile */}
       <div className="p-4 border-t border-white/10 shrink-0">
-        <div className={`flex items-center ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+        <div className={`flex items-center ${showLabels ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-3 overflow-hidden">
             <Avatar className="h-10 w-10 border border-white/10 shrink-0">
               <AvatarImage src={user?.profile_picture} />
@@ -318,7 +305,7 @@ export function DashboardSidebar({
             </Avatar>
 
             <AnimatePresence>
-              {isExpanded && (
+              {showLabels && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -337,7 +324,7 @@ export function DashboardSidebar({
           </div>
 
           <AnimatePresence>
-            {isExpanded && (
+            {showLabels && (
               <motion.button
                 onClick={() => useAuthStore.getState().logout()}
                 className="text-gray-400 hover:text-red-400 p-2 rounded-md hover:bg-red-500/10 shrink-0"
@@ -348,6 +335,58 @@ export function DashboardSidebar({
           </AnimatePresence>
         </div>
       </div>
-    </motion.aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* DESKTOP */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isExpanded ? 280 : 72 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="hidden md:flex fixed top-0 left-0 h-screen z-40 bg-gray-900/90 backdrop-blur-xl border-r border-white/5 flex-col shadow-2xl overflow-hidden"
+      >
+        {sidebarContent}
+      </motion.aside>
+
+      {/* MOBILE OFF-CANVAS (beautiful + swipeable) */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 md:hidden"
+              onClick={onMobileClose}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_, info) => {
+                if (info.offset.x < -90 || info.velocity.x < -400) onMobileClose();
+              }}
+              className="fixed top-0 left-0 h-screen w-72 bg-gray-900/95 backdrop-blur-xl border-r border-white/5 shadow-2xl flex flex-col z-50 md:hidden overflow-hidden"
+            >
+              {sidebarContent}
+              <button
+                onClick={onMobileClose}
+                className="absolute top-5 right-5 text-gray-300 hover:text-white p-2 rounded-full hover:bg-white/10 md:hidden"
+              >
+                <X size={26} />
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
