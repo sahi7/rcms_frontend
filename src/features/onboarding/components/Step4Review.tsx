@@ -11,6 +11,7 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -35,10 +36,15 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
       await api.post('/onboarding/register/', payload);
 
       toast.success('Registration successful! Verification email sent.');
+
+      // Capture email before the data is reset
+      setAdminEmail(data.admin_email ?? '');
+
       setIsSubmitted(true);
       reset(); // clear stored data
     } catch (err: any) {
-      toast.error(err.response?.data?.detail || 'Something went wrong');
+      const errorMsg = err.response?.data?.message || err.response?.data?.error
+      toast.error(errorMsg || 'Something went wrong');
     } finally {
       setIsSubmitting(false);
     }
@@ -52,13 +58,13 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
         </div>
         <h2 className="text-2xl font-bold">Almost there!</h2>
         <p className="mt-4 text-gray-600">
-          We have sent a verification link to <strong>{data.email}</strong>.<br />
+          We have sent a verification link to <strong>{adminEmail}</strong>.<br />
           Please check your inbox (and spam folder).
         </p>
 
         <div className="mt-10 space-y-4">
           <Button
-            onClick={() => api.post('/onboarding/resend-verification/', { email: data.email })}
+            onClick={() => api.post('/onboarding/resend-verification/', { email: adminEmail })}
             variant="outline"
             className="w-full"
           >

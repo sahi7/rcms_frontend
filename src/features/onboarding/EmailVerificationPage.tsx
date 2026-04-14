@@ -73,7 +73,7 @@ export default function EmailVerificationPage() {
                 Your account has been activated. You can now log in.
               </p>
               <Button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/login')}
                 className="w-full h-12 bg-orange-600 hover:bg-orange-700"
               >
                 Go to Login
