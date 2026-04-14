@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   Upload,
   FileBarChart,
-  Settings,
   Pin,
   PinOff,
   LogOut,
