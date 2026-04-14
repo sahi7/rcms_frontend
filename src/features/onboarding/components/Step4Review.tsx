@@ -15,6 +15,21 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
   const [isResending, setIsResending] = useState(false);
 
   const handleSubmit = async () => {
+    // === VALIDATION: Avoid POST if necessary fields are missing ===
+    if (
+      !data.school_name?.trim() ||
+      !data.short_name?.trim() ||
+      !data.email?.trim() ||
+      !data.admin_email?.trim() ||
+      !data.admin_first_name?.trim() ||
+      !data.admin_last_name?.trim() ||
+      !data.password?.trim() ||
+      !data.subscription?.plan
+    ) {
+      toast.error('Please ensure all required fields are filled before submitting.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
@@ -44,7 +59,7 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
       setIsSubmitted(true);
       reset(); // clear stored data
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.response?.data?.error
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.response?.data?.detail;
       toast.error(errorMsg || 'Something went wrong');
     } finally {
       setIsSubmitting(false);
