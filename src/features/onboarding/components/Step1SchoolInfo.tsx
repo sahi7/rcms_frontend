@@ -15,7 +15,18 @@ const schema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email('Please enter a valid email'),
-  website: z.string().url().optional().or(z.literal('')),
+  website: z.string()
+    .optional()
+    .transform((val) => {
+      if (!val) return '';
+      const trimmed = val.trim();
+      if (trimmed === '') return '';
+      if (!/^https?:\/\//i.test(trimmed)) {
+        return `https://${trimmed}`;
+      }
+      return trimmed;
+    })
+    .pipe(z.string().url().or(z.literal(''))),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -94,7 +105,12 @@ export default function Step1SchoolInfo({ onNext }: { onNext: () => void }) {
         </div>
         <div>
           <Label htmlFor="website">Website (optional)</Label>
-          <Input id="website" {...register('website')} placeholder="https://greenfield.edu" className="focus-visible:ring-orange-500" />
+          <Input 
+            id="website" 
+            {...register('website')} 
+            placeholder="greenfield.edu" 
+            className="focus-visible:ring-orange-500" 
+          />
         </div>
       </div>
 
