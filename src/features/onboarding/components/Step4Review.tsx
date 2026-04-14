@@ -1,5 +1,5 @@
 // src/features/onboarding/components/Step4Review.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useOnboardingStore } from '@/app/store/onboardingStore';
@@ -13,9 +13,26 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [isResending, setIsResending] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Countdown timer for resend cooldown (3 minutes = 180 seconds)
+  useEffect(() => {
+    if (cooldown <= 0) return;
+
+    const interval = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [cooldown]);
 
   const handleSubmit = async () => {
-    // === VALIDATION: Avoid POST if necessary fields are missing ===
+    // VALIDATION: Avoid POST if necessary fields are missing
     if (
       !data.school_name?.trim() ||
       !data.short_name?.trim() ||
@@ -67,12 +84,15 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
   };
 
   const handleResendVerification = async () => {
-    if (!adminEmail) return;
+    if (!adminEmail || cooldown > 0) return;
 
     setIsResending(true);
     try {
       await api.post('/onboarding/resend-verification/', { email: adminEmail });
       toast.success('Verification email resent successfully!');
+
+      // Start 3-minute cooldown
+      setCooldown(180);
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to resend verification email');
     } finally {
@@ -95,11 +115,15 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
         <div className="mt-10 space-y-4">
           <Button
             onClick={handleResendVerification}
-            disabled={isResending}
+            disabled={isResending || cooldown > 0}
             variant="outline"
             className="w-full"
           >
-            {isResending ? 'Resending...' : 'Resend Verification Email'}
+            {isResending
+              ? 'Resending...'
+              : cooldown > 0
+                ? `Resend in ${Math.floor(cooldown / 60)}:${(cooldown % 60).toString().padStart(2, '0')}`
+                : 'Resend Verification Email'}
           </Button>
 
           <Button onClick={() => navigate('/login')} className="w-full bg-orange-600">
