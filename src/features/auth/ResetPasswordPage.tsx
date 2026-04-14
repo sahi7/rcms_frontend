@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
             <h2 className="text-3xl font-bold text-gray-900">Invalid Link</h2>
             <p className="text-gray-500 mt-2">This password reset link is not valid or has expired.</p>
           </motion.div>
-          <Link to="/">
+          <Link to="/login">
             <Button className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white">
               Back to Login
             </Button>
@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md mx-auto">
         {/* Back button */}
         <Link
-          to="/"
+          to="/login"
           className="absolute top-6 left-6 sm:top-12 sm:left-12 flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors z-10"
         >
           <ArrowLeft size={16} />

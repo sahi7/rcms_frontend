@@ -71,7 +71,7 @@ export default function Step4Review({ onBack }: { onBack: () => void }) {
             Resend Verification Email
           </Button>
 
-          <Button onClick={() => navigate('/')} className="w-full bg-orange-600">
+          <Button onClick={() => navigate('/login')} className="w-full bg-orange-600">
             Back to Login
           </Button>
         </div>

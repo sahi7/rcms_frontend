@@ -100,7 +100,7 @@ export default function EmailVerificationPage() {
                 </Button>
 
                 <Button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/login')}
                   className="w-full h-12 bg-orange-600 hover:bg-orange-700"
                 >
                   Back to Login
