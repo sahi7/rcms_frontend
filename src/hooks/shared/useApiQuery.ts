@@ -3,8 +3,25 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { PaginatedResponse, ListQueryParams } from '@/types/shared'
 import api from "@/lib/api";
+import { User } from '@/app/store/authStore'
 
 const THIRTY_MINUTES = 30 * 60 * 1000
+
+export function useMe() {
+  return useQuery<User>({
+    queryKey: ['auth', 'me'],
+    queryFn: () => api.get<User>('/auth/me/').then((res) => res.data),
+    staleTime: THIRTY_MINUTES,   // same as your list queries
+    gcTime: THIRTY_MINUTES,
+    retry: (failureCount, error: any) => {
+      // Let our axios interceptor handle the 401 → refresh flow
+      if (error?.response?.status === 401) return false;
+      return failureCount < 2;
+    },
+    // Optional: only run if we actually have a token
+    // enabled: !!Cookies.get('access_token'),   // you already import Cookies in authStore
+  });
+}
 
 export function useListQuery<T>(
   key: string,

@@ -1,3 +1,4 @@
+// src/features/structure/hooks/useFaculties.ts
 import {
   useListQuery,
   useCreateMutation,

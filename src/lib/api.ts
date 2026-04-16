@@ -3,8 +3,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 // Use the same style you originally had to avoid TS error
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api';
-const UPSTREAM_SERVER = (import.meta as any).env?.VITE_UPSTREAM_SERVER || 'http://127.0.0.1:3000/api';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL;
+const UPSTREAM_SERVER = (import.meta as any).env?.VITE_UPSTREAM_SERVER;
 
 // console.log('🔥 API_BASE_URL =', API_BASE_URL);
 // console.log('🔥 UPSTREAM_SERVER (should be 3000) =', UPSTREAM_SERVER);
@@ -17,7 +17,7 @@ const api = axios.create({
 
 // Upload API (should hit port 3000)
 export const uploadApi = axios.create({
-  baseURL: UPSTREAM_SERVER,          // ← THIS MUST BE THE UPSTREAM VARIABLE
+  baseURL: UPSTREAM_SERVER,  
   withCredentials: true,
 });
 

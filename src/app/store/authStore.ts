@@ -5,8 +5,9 @@ import Cookies from "js-cookie";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { clearStorage } from "@/lib/clearStorage";
+import { queryClient } from "@/main";
 
-interface User {
+export interface User {
   id: number;
   username: string;
   email: string;
@@ -31,9 +32,7 @@ export const useAuthStore = create<{
   isAuthenticated: boolean;
   isLoading: boolean;
   permissions: string[];
-  // role: string | null;
-  // value: number | null;
-  // profile_picture: string | null
+
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
@@ -42,9 +41,6 @@ export const useAuthStore = create<{
   isAuthenticated: false,
   isLoading: true, // Start as true — App.tsx will set it to false
   permissions: [],
-  // role: null,
-  // value: null,
-  // profile_picture: null,
 
   login: async (username: string, password: string) => {
     try {
@@ -53,18 +49,23 @@ export const useAuthStore = create<{
         password,
       });
 
-      const { access, refresh } = res.data;
-      Cookies.set("access_token", access, { expires: 7 });
-      // Cookies.set("refresh_token", refresh, { expires: 7 });
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      // const access = data.access;
+
+      Cookies.remove("access_token");
+      Cookies.set("access_token", data['access'], { expires: 7 });
 
       // Fetch user after login
-      const meRes = await api.get<User>("/auth/me/");
+      // ← NEW: Use TanStack Query (cached!)
+      const userData = await queryClient.fetchQuery({
+        queryKey: ['auth', 'me'],
+        queryFn: () => api.get<User>('/auth/me/').then((res) => res.data),
+      });
+
       set({
-        user: meRes.data,
+        user: userData,
         isAuthenticated: true,
-        // role: meRes.data.role,
-        // value: meRes.data.value,
-        permissions: meRes.data.permissions || [],
+        permissions: userData.permissions || [],
         isLoading: false,
       });
 
@@ -79,6 +80,7 @@ export const useAuthStore = create<{
   logout: () => {
     Cookies.remove("access_token");
     Cookies.remove("refresh_token");
+    queryClient.removeQueries({ queryKey: ['auth', 'me'] });
     // set({ user: null, role: null, value: null, permissions: [], isAuthenticated: false, isLoading: false });
     set({ user: null, permissions: [], isAuthenticated: false, isLoading: false });
     clearStorage();
@@ -94,19 +96,23 @@ export const useAuthStore = create<{
 
     try {
       set({ isLoading: true });
-      const res = await api.get<User>("/auth/me/");
+      const userData = await queryClient.fetchQuery({
+        queryKey: ['auth', 'me'],
+        queryFn: () => api.get<User>('/auth/me/').then((res) => res.data),
+        staleTime: 30 * 60 * 1000,
+      });
+
       set({
-        user: res.data,
+        user: userData,
         isAuthenticated: true,
-        // role: res.data.role,
-        // value: res.data.value,
-        permissions: res.data.permissions || [],
+        permissions: userData.permissions || [],
         isLoading: false,
       });
     } catch (err) {
       console.warn("Invalid token – logging out");
       Cookies.remove("access_token");
       Cookies.remove("refresh_token");
+      queryClient.removeQueries({ queryKey: ['auth', 'me'] });
       // set({ user: null, role: null, value: null, permissions: [], isAuthenticated: false, isLoading: false });
       set({ user: null, permissions: [], isAuthenticated: false, isLoading: false });
     }
