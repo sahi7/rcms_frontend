@@ -31,8 +31,10 @@ export const studyLevelsApi = {
   },
 };
 
-export function useStudyLevels() {
-  return useListQuery<StudyLevel>('study-levels', '/study-levels/');
+export function useStudyLevels(enabled = true) {
+  return useListQuery<StudyLevel>('study-levels', '/study-levels/', {}, api, {
+    enabled,
+  })
 }
 
 export function useCreateStudyLevel() {

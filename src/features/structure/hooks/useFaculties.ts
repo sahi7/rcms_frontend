@@ -10,8 +10,8 @@ import { Faculty, FacultyPayload } from '@/types/structure'
 const KEY = 'faculties'
 const ENDPOINT = '/faculties/'
 
-export function useFaculties(params: Record<string, any> = {}) {
-  return useListQuery<Faculty>(KEY, ENDPOINT, params)
+export function useFaculties(params: Record<string, any> = {}, enabled = true) {
+  return useListQuery<Faculty>(KEY, ENDPOINT, params, undefined, { enabled })
 }
 
 export function useCreateFaculty() {

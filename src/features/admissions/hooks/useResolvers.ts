@@ -4,16 +4,20 @@ import { useClassRooms } from '@/features/structure/hooks/useClassRooms'
 import { useFaculties } from '@/features/structure/hooks/useFaculties'
 // import { studyLevelsApi } from '@/features/academic/hooks/studylevels'
 import { useStudyLevels } from '@/features/academic/hooks/studylevels'
+import { useIsUni } from '@/features/settings/hooks/useInstitution'
 
 /**
  * Unified resolver for structure entities used across admissions pages.
  * Provides maps (id -> name) and lists for selects.
  */
 export function useStructureLookups() {
+    const isUni = useIsUni()
     const departmentsQ = useDepartments()
     const classRoomsQ = useClassRooms()
-    const facultiesQ = useFaculties()
-    const studyLevelsQ = useStudyLevels()
+    const facultiesQ = useFaculties(undefined, isUni)
+    const studyLevelsQ = useStudyLevels(isUni)
+
+
     //   const [levels, setLevels] = useState<any[]>([])
     //   const [levelsLoading, setLevelsLoading] = useState(true)
 
@@ -33,16 +37,15 @@ export function useStructureLookups() {
     //     }
     //   }, [])
 
-    const departments =
-        (departmentsQ.data as any)?.items ?? (departmentsQ.data as any) ?? []
-    const classRooms =
-        (classRoomsQ.data as any)?.items ?? (classRoomsQ.data as any) ?? []
-    const faculties =
-        (facultiesQ.data as any)?.items ?? (facultiesQ.data as any) ?? []
-    const levels =
-        (studyLevelsQ.data as any)?.items ?? (studyLevelsQ.data as any) ?? []
+    const extractList = (res: any) =>
+        res?.data ?? []
 
-    console.log("study levels: ", levels);
+    const departments = extractList(departmentsQ.data)
+    const classRooms = extractList(classRoomsQ.data)
+
+    // Faculties + Study Levels are only fetched/used for universities
+    const faculties = isUni ? extractList(facultiesQ.data) : []
+    const levels = isUni ? extractList(studyLevelsQ.data) : []
 
     // Programs = departments with type === 'program'
     const programs = (departments as any[]).filter(
@@ -63,8 +66,8 @@ export function useStructureLookups() {
         isLoading:
             departmentsQ.isLoading ||
             classRoomsQ.isLoading ||
-            facultiesQ.isLoading ||
-            studyLevelsQ.isLoading,
+            (isUni ? facultiesQ.isLoading : false) ||
+            (isUni ? studyLevelsQ.isLoading : false),
         //   levelsLoading,
         departments: regularDepartments,
         programs,
@@ -74,7 +77,9 @@ export function useStructureLookups() {
         departmentMap: makeMap(regularDepartments),
         programMap: makeMap(programs),
         classRoomMap: makeMap(classRooms),
-        facultyMap: makeMap(faculties),
-        levelMap: makeMap(levels),
+        ...(isUni && {
+            facultyMap: makeMap(faculties),
+            levelMap: makeMap(levels),
+        }),
     }
 }

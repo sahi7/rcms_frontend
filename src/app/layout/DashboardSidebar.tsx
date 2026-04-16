@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
+  UserPlus,
   GraduationCap,
   BookOpen,
   Building2,
@@ -112,7 +113,7 @@ const baseNavStructure = [
   },
   {
     title: 'Admissions',
-    icon: LayoutDashboard,
+    icon: UserPlus,
     permission: 'view.schoolsettings',
     children: [
       { title: 'Overview', path: '/dashboard/admissions', permission: 'view.schoolsettings' },

@@ -1,5 +1,5 @@
 // src/hooks/useApiQuery.ts
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, UseQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { PaginatedResponse, ListQueryParams } from '@/types/shared'
 import api from "@/lib/api";
@@ -45,7 +45,8 @@ export function useListQuery<
   key: string,
   endpoint: string,
   params: ListQueryParams = {},
-  client = api // default client
+  client = api, // default client
+  options?: Omit<UseQueryOptions<TResponse>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery<TResponse>({
     queryKey: [key, params],
@@ -53,6 +54,7 @@ export function useListQuery<
       client.get<TResponse>(endpoint, { params }).then((res) => res.data),
     staleTime: THIRTY_MINUTES,
     gcTime: THIRTY_MINUTES,
+    ...options, // pass true/false to enable or disable the query allows enabled, etc.
   })
 }
 
@@ -64,7 +66,7 @@ export function useDetailQuery<T>(
 ) {
   return useQuery<T>({
     queryKey: [key, id],
-    queryFn: () => 
+    queryFn: () =>
       client.get<T>(`${endpoint}${id}/`).then((res) => res.data),
     enabled: !!id,
     staleTime: THIRTY_MINUTES,
