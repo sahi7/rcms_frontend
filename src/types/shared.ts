@@ -55,3 +55,14 @@ export interface ListQueryParams {
   search?: string
   [key: string]: any
 }
+
+// The following below id only for the Admisions feature. They have a different response structure
+export interface AdPaginatedResponse<T> {
+  items: T[]
+  total: number
+}
+
+export interface SearchPaginatedResponse<T> {
+  results: T[]
+  total: number
+}

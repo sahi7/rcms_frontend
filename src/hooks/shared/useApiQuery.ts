@@ -23,15 +23,34 @@ export function useMe() {
   });
 }
 
-export function useListQuery<T>(
+// export function useListQuery<T>(
+//   key: string,
+//   endpoint: string,
+//   params: ListQueryParams = {},
+// ) {
+//   return useQuery<PaginatedResponse<T>>({
+//     queryKey: [key, params],
+//     queryFn: () =>
+//       api.get<PaginatedResponse<T>>(endpoint, { params }).then((res) => res.data),
+//     staleTime: THIRTY_MINUTES,
+//     gcTime: THIRTY_MINUTES,
+//   })
+// }
+
+// Modifies to take Adpagination for admissions
+export function useListQuery<
+  T,
+  TResponse = PaginatedResponse<T> // ✅ default
+>(
   key: string,
   endpoint: string,
   params: ListQueryParams = {},
+  client = api // default client
 ) {
-  return useQuery<PaginatedResponse<T>>({
+  return useQuery<TResponse>({
     queryKey: [key, params],
     queryFn: () =>
-      api.get<PaginatedResponse<T>>(endpoint, { params }).then((res) => res.data),
+      client.get<TResponse>(endpoint, { params }).then((res) => res.data),
     staleTime: THIRTY_MINUTES,
     gcTime: THIRTY_MINUTES,
   })
@@ -41,11 +60,12 @@ export function useDetailQuery<T>(
   key: string,
   endpoint: string,
   id: number | string | null,
+  client = api
 ) {
   return useQuery<T>({
     queryKey: [key, id],
     queryFn: () => 
-      api.get<T>(`${endpoint}${id}/`).then((res) => res.data),
+      client.get<T>(`${endpoint}${id}/`).then((res) => res.data),
     enabled: !!id,
     staleTime: THIRTY_MINUTES,
     gcTime: THIRTY_MINUTES,
@@ -55,11 +75,12 @@ export function useDetailQuery<T>(
 export function useCreateMutation<TPayload, TResponse = any>(
   endpoint: string,
   invalidateKeys: string[],
+  client = api
 ) {
   const queryClient = useQueryClient()
   return useMutation<TResponse, Error, TPayload>({
     mutationFn: (payload) =>
-      api.post<TResponse>(endpoint, payload).then((res) => res.data),
+      client.post<TResponse>(endpoint, payload).then((res) => res.data),
     onSuccess: () => {
       invalidateKeys.forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] }),
@@ -71,6 +92,7 @@ export function useCreateMutation<TPayload, TResponse = any>(
 export function useUpdateMutation<TPayload, TResponse = any>(
   endpoint: string,
   invalidateKeys: string[],
+  client = api
 ) {
   const queryClient = useQueryClient()
   return useMutation<
@@ -79,7 +101,7 @@ export function useUpdateMutation<TPayload, TResponse = any>(
     { id: number | string; payload: TPayload }
   >({
     mutationFn: ({ id, payload }) =>
-      api.patch<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
+      client.patch<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
     onSuccess: () => {
       invalidateKeys.forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] }),
@@ -92,11 +114,12 @@ export function useUpdateMutation<TPayload, TResponse = any>(
 export function usePutMutation<TPayload, TResponse = any>(
   endpoint: string,
   invalidateKeys: (string | (string | number)[])[],
+  client = api
 ) {
   const queryClient = useQueryClient()
   return useMutation<TResponse, Error, { id: number | string; payload: TPayload }>({
     mutationFn: ({ id, payload }) =>
-      api.put<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
+      client.put<TResponse>(`${endpoint}${id}/`, payload).then((res) => res.data),
     onSuccess: () => {
       invalidateKeys.forEach((key) =>
         queryClient.invalidateQueries({
@@ -108,10 +131,10 @@ export function usePutMutation<TPayload, TResponse = any>(
   })
 }
 
-export function useDeleteMutation(endpoint: string, invalidateKeys: string[]) {
+export function useDeleteMutation(endpoint: string, invalidateKeys: string[], client = api) {
   const queryClient = useQueryClient()
   return useMutation<void, Error, number | string>({
-    mutationFn: (id) => api.delete(`${endpoint}${id}/`),
+    mutationFn: (id) => client.delete(`${endpoint}${id}/`),
     onSuccess: () => {
       invalidateKeys.forEach((key) =>
         queryClient.invalidateQueries({ queryKey: [key] }),

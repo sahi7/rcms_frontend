@@ -40,6 +40,22 @@ import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 import { SettingsPage } from './features/settings/pages/SettingsPage'
 import { ReportCardPage } from './features/reports/report_cards/ReportCardPage'
 
+import { 
+  AdmissionsDashboard,
+  AdmissionCyclesPage,
+  ApplicationTypesPage,
+  StudyProgramsPage,
+  FormFieldsPage,
+  ApplicantsPage,
+  ApplicantDetailPage 
+} from './features/admissions'
+// import { AdmissionCyclesPage } from './features/admissions/pages/AdmissionCyclesPage'
+// import { ApplicationTypesPage } from './features/admissions/pages/ApplicationTypesPage'
+// import { StudyProgramsPage } from './features/admissions/pages/StudyProgramsPage'
+// import { FormFieldsPage } from './features/admissions/pages/FormFieldsPage'
+// import { ApplicantsPage } from './features/admissions/pages/ApplicantsPage'
+// import { ApplicantDetailPage } from './features/admissions/pages/ApplicantDetailPage'
+
 
 export default function App() {
   const { isAuthenticated, fetchMe } = useAuthStore();
@@ -111,6 +127,16 @@ export default function App() {
 
         <Route path="settings" element={<SettingsPage />} />
         <Route path="reports/cards/generate" element={<ReportCardPage />} />
+
+        <Route path="admissions">
+          <Route index element={<AdmissionsDashboard />} />
+          <Route path="cycles" element={<AdmissionCyclesPage />} />
+          <Route path="application-types" element={<ApplicationTypesPage />} />
+          <Route path="study-programs" element={<StudyProgramsPage />} />
+          <Route path="form-fields" element={<FormFieldsPage />} />
+          <Route path="applicants" element={<ApplicantsPage />} />
+          <Route path="applicants/:id" element={<ApplicantDetailPage />} />
+        </Route>
 
         
         {/* <Route path="*" element={<PlaceholderPage />} /> */}

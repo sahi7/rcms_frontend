@@ -1,0 +1,7 @@
+export { AdmissionsDashboard } from './pages/AdmissionsDashboard'
+export { AdmissionCyclesPage } from './pages/AdmissionCyclesPage'
+export { ApplicationTypesPage } from './pages/ApplicationTypesPage'
+export { StudyProgramsPage } from './pages/StudyProgramsPage'
+export { FormFieldsPage } from './pages/FormFieldsPage'
+export { ApplicantsPage } from './pages/ApplicantsPage'
+export { ApplicantDetailPage } from './pages/ApplicantDetailPage'

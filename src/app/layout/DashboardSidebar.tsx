@@ -110,6 +110,19 @@ const baseNavStructure = [
       { title: 'Plans & Features', path: '/dashboard/plans', permission: 'view.plans' },
     ],
   },
+  {
+    title: 'Admissions',
+    icon: LayoutDashboard,
+    permission: 'view.schoolsettings',
+    children: [
+      { title: 'Overview', path: '/dashboard/admissions', permission: 'view.schoolsettings' },
+      { title: 'Admission Cycles', path: '/dashboard/admissions/cycles', permission: 'view.schoolsettings' },
+      { title: 'Application Types', path: '/dashboard/admissions/application-types', permission: 'view.schoolsettings' },
+      { title: 'Study Programs', path: '/dashboard/admissions/study-programs', permission: 'view.schoolsettings' },
+      { title: 'Form Fields', path: '/dashboard/admissions/form-fields', permission: 'view.schoolsettings' },
+      { title: 'Applicants', path: '/dashboard/admissions/applicants', permission: 'view.schoolsettings' },
+    ],
+  },
 ];
 
 interface DashboardSidebarProps {
