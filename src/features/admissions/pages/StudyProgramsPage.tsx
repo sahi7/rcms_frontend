@@ -23,12 +23,24 @@ import { SearchableSelect } from '@/components/SearchableSelect'
 import { MultiSelect } from '@/components/MultiSelect'
 import { Modal } from '@/components/AdModal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { useIsUni } from '@/features/settings/hooks/useInstitution'
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { toast } from 'sonner'
 
 
 export function StudyProgramsPage() {
   const { data, isLoading } = useStudyProgramsList()
+  const { getLabel } = useInstitutionConfig()
+  const isUni = useIsUni()
   const lookups = useStructureLookups()
+
+  // ─────────────────────────────────────────────────────────────
+  // ONLY the two requested conditions
+  const showFacultyAndLevel = isUni
+  const showDepartmentAndProgram =
+    lookups.classRooms?.some((c: any) => c.has_departments === true) ?? false
+  // ─────────────────────────────────────────────────────────────
+
   const createMut = useCreateStudyProgram()
   const updateMut = useUpdateStudyProgram()
   const deleteMut = useDeleteStudyProgram()
@@ -186,21 +198,21 @@ export function StudyProgramsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-900">
                     {lookups.classRoomMap.get(p.class_room_id) ||
-                      `Classroom #${p.class_room_id}`}
+                      `${getLabel('class_progression_name')} #${p.class_room_id}`}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 space-x-2">
-                    {p.faculty_id && (
+                    {showFacultyAndLevel && p.faculty_id && (
                       <span>{lookups.facultyMap.get(p.faculty_id)}</span>
                     )}
-                    {p.department_id && (
+                    {showDepartmentAndProgram && p.department_id && (
                       <span>
                         • {lookups.departmentMap.get(p.department_id)}
                       </span>
                     )}
-                    {p.program_id && (
+                    {showDepartmentAndProgram && p.program_id && (
                       <span>• {lookups.programMap.get(p.program_id)}</span>
                     )}
-                    {p.level_id && (
+                    {showFacultyAndLevel && p.level_id && (
                       <span>• {lookups.levelMap.get(p.level_id)}</span>
                     )}
                   </div>
@@ -254,11 +266,11 @@ export function StudyProgramsPage() {
                       className="rounded text-orange-500 focus:ring-orange-500"
                     />
                   </th>
-                  <th className="px-4 py-3">Classroom</th>
-                  <th className="px-4 py-3">Faculty</th>
-                  <th className="px-4 py-3">Department</th>
-                  <th className="px-4 py-3">Program</th>
-                  <th className="px-4 py-3">Level</th>
+                  <th className="px-4 py-3">{getLabel('class_progression_name')}</th>
+                  {showFacultyAndLevel && <th className="px-4 py-3">Faculty</th>}
+                  {showDepartmentAndProgram && <th className="px-4 py-3">Department</th>}
+                  {showDepartmentAndProgram && <th className="px-4 py-3">Program</th>}
+                  {showFacultyAndLevel && <th className="px-4 py-3">Study Level</th>}
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 w-24"></th>
                 </tr>
@@ -278,22 +290,30 @@ export function StudyProgramsPage() {
                       {lookups.classRoomMap.get(p.class_room_id) ||
                         `#${p.class_room_id}`}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {(p.faculty_id && lookups.facultyMap.get(p.faculty_id)) ||
-                        '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {(p.department_id &&
-                        lookups.departmentMap.get(p.department_id)) ||
-                        '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {(p.program_id && lookups.programMap.get(p.program_id)) ||
-                        '—'}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {(p.level_id && lookups.levelMap.get(p.level_id)) || '—'}
-                    </td>
+                    {showFacultyAndLevel && (
+                      <td className="px-4 py-3 text-slate-600">
+                        {(p.faculty_id && lookups.facultyMap.get(p.faculty_id)) ||
+                          '—'}
+                      </td>
+                    )}
+                    {showDepartmentAndProgram && (
+                      <td className="px-4 py-3 text-slate-600">
+                        {(p.department_id &&
+                          lookups.departmentMap.get(p.department_id)) ||
+                          '—'}
+                      </td>
+                    )}
+                    {showDepartmentAndProgram && (
+                      <td className="px-4 py-3 text-slate-600">
+                        {(p.program_id && lookups.programMap.get(p.program_id)) ||
+                          '—'}
+                      </td>
+                    )}
+                    {showFacultyAndLevel && (
+                      <td className="px-4 py-3 text-slate-600">
+                        {(p.level_id && lookups.levelMap.get(p.level_id)) || '—'}
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <StatusBadge
                         status={p.is_active ? 'active' : 'inactive'}
@@ -350,6 +370,8 @@ export function StudyProgramsPage() {
             setEditing(null)
           }}
           onSubmit={handleSave}
+          showFacultyAndLevel={showFacultyAndLevel}
+          showDepartmentAndProgram={showDepartmentAndProgram}
         />
       </Modal>
 
@@ -367,6 +389,8 @@ export function StudyProgramsPage() {
             toast.error(e?.response?.data?.detail || 'Bulk create failed')
           }
         }}
+        showFacultyAndLevel={showFacultyAndLevel}
+        showDepartmentAndProgram={showDepartmentAndProgram}
       />
 
       <ConfirmDialog
@@ -399,12 +423,16 @@ function StudyProgramForm({
   submitting,
   onCancel,
   onSubmit,
+  showFacultyAndLevel,
+  showDepartmentAndProgram,
 }: {
   initial: StudyProgram | null
   lookups: ReturnType<typeof useStructureLookups>
   submitting: boolean
   onCancel: () => void
   onSubmit: (p: StudyProgramPayload) => Promise<void>
+  showFacultyAndLevel: boolean
+  showDepartmentAndProgram: boolean
 }) {
   const [classRoomId, setClassRoomId] = useState<number | null>(
     initial?.class_room_id ?? null,
@@ -422,10 +450,11 @@ function StudyProgramForm({
     initial?.level_id ?? null,
   )
   const [isActive, setIsActive] = useState(initial?.is_active ?? true)
+  const { getLabel } = useInstitutionConfig()
   const [err, setErr] = useState('')
   const handleSubmit = () => {
     if (!classRoomId) {
-      setErr('Classroom is required')
+      setErr(`${getLabel('class_progression_name')} is required`)
       return
     }
     const payload: StudyProgramPayload = {
@@ -441,7 +470,7 @@ function StudyProgramForm({
   return (
     <div className="space-y-4">
       <SearchableSelect
-        label="Classroom"
+        label={getLabel('class_progression_name')}
         required
         options={lookups.classRooms.map((c: any) => ({
           value: c.id,
@@ -452,50 +481,58 @@ function StudyProgramForm({
           setClassRoomId(v as number)
           setErr('')
         }}
-        placeholder="Select classroom..."
+        placeholder={`Select ${getLabel('class_progression_name')}...`}
       />
       {err && <p className="text-xs text-red-600 -mt-2">{err}</p>}
 
-      <SearchableSelect
-        label="Faculty"
-        options={lookups.faculties.map((f: any) => ({
-          value: f.id,
-          label: f.name,
-        }))}
-        value={facultyId}
-        onChange={(v) => setFacultyId(v as number | null)}
-        placeholder="Select faculty... (optional)"
-      />
-      <SearchableSelect
-        label="Department"
-        options={lookups.departments.map((d: any) => ({
-          value: d.id,
-          label: d.name,
-        }))}
-        value={departmentId}
-        onChange={(v) => setDepartmentId(v as number | null)}
-        placeholder="Select department... (optional)"
-      />
-      <SearchableSelect
-        label="Program"
-        options={lookups.programs.map((p: any) => ({
-          value: p.id,
-          label: p.name,
-        }))}
-        value={programId}
-        onChange={(v) => setProgramId(v as number | null)}
-        placeholder="Select program... (optional)"
-      />
-      <SearchableSelect
-        label="Study level"
-        options={lookups.levels.map((l: any) => ({
-          value: l.id,
-          label: l.name,
-        }))}
-        value={levelId}
-        onChange={(v) => setLevelId(v as number | null)}
-        placeholder="Select level... (optional)"
-      />
+      {showFacultyAndLevel && (
+        <SearchableSelect
+          label="Faculty"
+          options={lookups.faculties.map((f: any) => ({
+            value: f.id,
+            label: f.name,
+          }))}
+          value={facultyId}
+          onChange={(v) => setFacultyId(v as number | null)}
+          placeholder="Select faculty... (optional)"
+        />
+      )}
+      {showDepartmentAndProgram && (
+        <SearchableSelect
+          label="Department"
+          options={lookups.departments.map((d: any) => ({
+            value: d.id,
+            label: d.name,
+          }))}
+          value={departmentId}
+          onChange={(v) => setDepartmentId(v as number | null)}
+          placeholder="Select department... (optional)"
+        />
+      )}
+      {showDepartmentAndProgram && (
+        <SearchableSelect
+          label="Program"
+          options={lookups.programs.map((p: any) => ({
+            value: p.id,
+            label: p.name,
+          }))}
+          value={programId}
+          onChange={(v) => setProgramId(v as number | null)}
+          placeholder="Select program... (optional)"
+        />
+      )}
+      {showFacultyAndLevel && (
+        <SearchableSelect
+          label="Study level"
+          options={lookups.levels.map((l: any) => ({
+            value: l.id,
+            label: l.name,
+          }))}
+          value={levelId}
+          onChange={(v) => setLevelId(v as number | null)}
+          placeholder="Select level... (optional)"
+        />
+      )}
       <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
         <input
           type="checkbox"
@@ -531,18 +568,23 @@ function BulkCreateModal({
   submitting,
   onClose,
   onSubmit,
+  showFacultyAndLevel,
+  showDepartmentAndProgram,
 }: {
   open: boolean
   lookups: ReturnType<typeof useStructureLookups>
   submitting: boolean
   onClose: () => void
   onSubmit: (rows: StudyProgramPayload[]) => Promise<void>
+  showFacultyAndLevel: boolean
+  showDepartmentAndProgram: boolean
 }) {
   const [classRoomIds, setClassRoomIds] = useState<(number | string)[]>([])
   const [facultyId, setFacultyId] = useState<number | null>(null)
   const [departmentId, setDepartmentId] = useState<number | null>(null)
   const [programId, setProgramId] = useState<number | null>(null)
   const [levelId, setLevelId] = useState<number | null>(null)
+  const { getLabel } = useInstitutionConfig()
   const reset = () => {
     setClassRoomIds([])
     setFacultyId(null)
@@ -552,7 +594,7 @@ function BulkCreateModal({
   }
   const handleSubmit = async () => {
     if (classRoomIds.length === 0) {
-      toast.error('Select at least one classroom')
+      toast.error(`Select at least one ${getLabel('class_progression_name')}`)
       return
     }
     const rows: StudyProgramPayload[] = classRoomIds.map((id) => {
@@ -573,7 +615,7 @@ function BulkCreateModal({
     <Modal
       open={open}
       title="Bulk create study programs"
-      subtitle="Apply the same faculty / department / program / level to many classrooms"
+      subtitle={`Apply the same faculty / department / program / level to many ${getLabel('class_progression_name')}`}
       onClose={() => {
         onClose()
         reset()
@@ -582,7 +624,7 @@ function BulkCreateModal({
     >
       <div className="space-y-4">
         <MultiSelect
-          label="Classrooms"
+          label={getLabel('class_progression_name')}
           required
           options={lookups.classRooms.map((c: any) => ({
             value: c.id,
@@ -590,49 +632,57 @@ function BulkCreateModal({
           }))}
           value={classRoomIds}
           onChange={setClassRoomIds}
-          placeholder="Select classrooms..."
+          placeholder={`Select ${getLabel('class_progression_name')}...`}
         />
         <div className="grid sm:grid-cols-2 gap-3">
-          <SearchableSelect
-            label="Faculty"
-            options={lookups.faculties.map((f: any) => ({
-              value: f.id,
-              label: f.name,
-            }))}
-            value={facultyId}
-            onChange={(v) => setFacultyId(v as number | null)}
-            placeholder="Optional"
-          />
-          <SearchableSelect
-            label="Department"
-            options={lookups.departments.map((d: any) => ({
-              value: d.id,
-              label: d.name,
-            }))}
-            value={departmentId}
-            onChange={(v) => setDepartmentId(v as number | null)}
-            placeholder="Optional"
-          />
-          <SearchableSelect
-            label="Program"
-            options={lookups.programs.map((p: any) => ({
-              value: p.id,
-              label: p.name,
-            }))}
-            value={programId}
-            onChange={(v) => setProgramId(v as number | null)}
-            placeholder="Optional"
-          />
-          <SearchableSelect
-            label="Level"
-            options={lookups.levels.map((l: any) => ({
-              value: l.id,
-              label: l.name,
-            }))}
-            value={levelId}
-            onChange={(v) => setLevelId(v as number | null)}
-            placeholder="Optional"
-          />
+          {showFacultyAndLevel && (
+            <SearchableSelect
+              label="Faculty"
+              options={lookups.faculties.map((f: any) => ({
+                value: f.id,
+                label: f.name,
+              }))}
+              value={facultyId}
+              onChange={(v) => setFacultyId(v as number | null)}
+              placeholder="Optional"
+            />
+          )}
+          {showDepartmentAndProgram && (
+            <SearchableSelect
+              label="Department"
+              options={lookups.departments.map((d: any) => ({
+                value: d.id,
+                label: d.name,
+              }))}
+              value={departmentId}
+              onChange={(v) => setDepartmentId(v as number | null)}
+              placeholder="Optional"
+            />
+          )}
+          {showDepartmentAndProgram && (
+            <SearchableSelect
+              label="Program"
+              options={lookups.programs.map((p: any) => ({
+                value: p.id,
+                label: p.name,
+              }))}
+              value={programId}
+              onChange={(v) => setProgramId(v as number | null)}
+              placeholder="Optional"
+            />
+          )}
+          {showFacultyAndLevel && (
+            <SearchableSelect
+              label="Level"
+              options={lookups.levels.map((l: any) => ({
+                value: l.id,
+                label: l.name,
+              }))}
+              value={levelId}
+              onChange={(v) => setLevelId(v as number | null)}
+              placeholder="Optional"
+            />
+          )}
         </div>
         <div className="text-xs text-slate-500">
           {classRoomIds.length > 0 && (
