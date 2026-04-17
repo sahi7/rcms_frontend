@@ -279,7 +279,7 @@ export function ApplicantsPage() {
                         {data.hits.map((a) => (
                             <Link
                                 key={a.id}
-                                to={`/admissions/applicants/${a.id}`}
+                                to={`/dashboard/admissions/applicants/${a.id}`}
                                 className="block p-4 hover:bg-slate-50"
                             >
                                 <div className="flex items-start gap-3">
@@ -361,7 +361,7 @@ export function ApplicantsPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <Link
-                                                to={`/admissions/applicants/${a.id}`}
+                                                to={`/dashboard/admissions/applicants/${a.id}`}
                                                 className="block"
                                             >
                                                 <div className="font-medium text-slate-900 hover:text-orange-600">

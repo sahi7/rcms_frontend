@@ -164,6 +164,7 @@ export interface Applicant {
 
 export interface ApplicantSearchParams {
   q?: string
+  id?: string
   page?: number
   limit?: number
   status?: ApplicantStatus

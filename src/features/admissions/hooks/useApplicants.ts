@@ -24,13 +24,20 @@ export function useApplicantsSearch(params: ApplicantSearchParams) {
   })
 }
 
-export function useApplicantDetail(id: string | null) {
-  return useQuery<Applicant>({
-    queryKey: [KEY, id],
-    queryFn: () =>
-      uploadApi
-        .get<Applicant>(`/admissions/admin/applicants/${id}/`)
-        .then((r) => r.data),
+export function useApplicantDetail(
+  params: ApplicantSearchParams,
+  id: string | null
+) {
+  return useQuery<Applicant | null>({
+    queryKey: [KEY, params],
+    queryFn: async () => {
+      const res = await uploadApi.get(`/admissions/admin/applicants/search/`, {
+        params,
+      })
+      const hit = res.data?.hits?.[0]
+      if (!hit) return null // safe fallback
+      return hit
+    },
     enabled: !!id,
   })
 }

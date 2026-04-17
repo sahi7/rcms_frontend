@@ -136,6 +136,7 @@ export default function App() {
           <Route path="form-fields" element={<FormFieldsPage />} />
           <Route path="applicants" element={<ApplicantsPage />} />
           <Route path="applicants/:id" element={<ApplicantDetailPage />} />
+          {/* <Route path="search" element={<ApplicantDetailPage />} /> */}
         </Route>
 
         

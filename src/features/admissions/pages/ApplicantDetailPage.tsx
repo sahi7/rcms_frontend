@@ -31,34 +31,36 @@ import { formatDate } from '@/lib/utils'
 import { Modal } from '@/components/AdModal'
 import { toast } from 'sonner'
 const STATUSES: ApplicantStatus[] = [
-  'PENDING',
-  'UNDER_REVIEW',
-  'APPROVED',
-  'REJECTED',
-  'WAITLISTED',
+    'PENDING',
+    'UNDER_REVIEW',
+    'APPROVED',
+    'REJECTED',
+    'WAITLISTED',
 ]
 const statusToBadge = (s: ApplicantStatus) => {
-  switch (s) {
-    case 'APPROVED':
-      return 'active'
-    case 'REJECTED':
-      return 'inactive'
-    case 'UNDER_REVIEW':
+    switch (s) {
+        case 'APPROVED':
+            return 'active'
+            case 'REJECTED':
+                return 'inactive'
+                case 'UNDER_REVIEW':
       return 'published'
-    case 'WAITLISTED':
-      return 'resit'
-    default:
-      return 'optional'
-  }
-}
-
-
+      case 'WAITLISTED':
+          return 'resit'
+          default:
+              return 'optional'
+            }
+        }
+        
+        
 export function ApplicantDetailPage() {
   const { id } = useParams<{
     id: string
   }>()
-  const { data: applicant, isLoading } = useApplicantDetail(id ?? null)
-  const eduHistory = useEducationalHistory(applicant?.application_id ?? null)
+  const { data: applicant, isLoading } = useApplicantDetail({
+    id: id,
+  }, id ?? null)
+  const eduHistory = useEducationalHistory(id ?? null)
   const cycles = useCyclesList()
   const types = useApplicationTypesList()
   const programs = useStudyProgramsList()
@@ -109,7 +111,7 @@ export function ApplicantDetailPage() {
           Applicant not found
         </h3>
         <Link
-          to="/admissions/applicants"
+          to="/dashboard/admissions/applicants"
           className="text-sm text-orange-600 hover:text-orange-700 font-medium mt-2 inline-block"
         >
           ← Back to applicants
@@ -130,7 +132,7 @@ export function ApplicantDetailPage() {
       className="space-y-5"
     >
       <Link
-        to="/admissions/applicants"
+        to="/dashboard/admissions/applicants"
         className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
       >
         <ArrowLeftIcon className="w-4 h-4" /> Back to applicants
