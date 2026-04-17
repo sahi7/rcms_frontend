@@ -126,7 +126,7 @@ export type GroupedFormFields = Record<string, FormField[]>
 
 // ── Applicants ──
 export type ApplicantStatus =
-  | 'PENDING'
+  | 'SUBMITTED'
   | 'UNDER_REVIEW'
   | 'APPROVED'
   | 'REJECTED'

@@ -30,7 +30,7 @@ import { Modal } from '@/components/AdModal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { toast } from 'sonner'
 const STATUSES: ApplicantStatus[] = [
-    'PENDING',
+    'SUBMITTED',
     'UNDER_REVIEW',
     'APPROVED',
     'REJECTED',
@@ -65,6 +65,7 @@ export function ApplicantsPage() {
             study_program_id: searchParams.get('study_program_id') || undefined,
             gender: searchParams.get('gender') || undefined,
             nationality: searchParams.get('nationality') || undefined,
+            fields: "id,full_name,email,application_type_id,study_program_id,admission_cycle_id,submitted_at,status",
             page: Number(searchParams.get('page') || 1),
             limit: 20,
         }),

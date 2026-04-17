@@ -59,7 +59,7 @@ export function AdmissionsDashboard() {
   const appTypes = useApplicationTypesList()
   const programs = useStudyProgramsList()
   const pending = useApplicantsSearch({
-    status: 'PENDING',
+    status: 'SUBMITTED',
     limit: 1,
   })
   const approved = useApplicantsSearch({
@@ -150,7 +150,7 @@ export function AdmissionsDashboard() {
           label="Pending applications"
           value={pending.data?.total ?? 0}
           icon={FormInputIcon}
-          to="/dashboard/admissions/applicants?status=PENDING"
+          to="/dashboard/admissions/applicants?status=SUBMITTED"
           loading={pending.isLoading}
         />
         <StatCard
