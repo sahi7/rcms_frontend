@@ -63,6 +63,6 @@ export interface AdPaginatedResponse<T> {
 }
 
 export interface SearchPaginatedResponse<T> {
-  results: T[]
+  hits: T[]
   total: number
 }

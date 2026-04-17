@@ -18,7 +18,7 @@ const KEY = 'admission-cycles'
 const ENDPOINT = '/admissions/admin/cycles/'
 
 export function useCyclesList() {
-  return useListQuery<AdmissionCycle, AdPaginatedResponse<AdmissionCycle>>(KEY, ENDPOINT, uploadApi)
+  return useListQuery<AdmissionCycle, AdPaginatedResponse<AdmissionCycle>>(KEY, ENDPOINT, {}, uploadApi)
 }
 
 export function useCreateCycle() {

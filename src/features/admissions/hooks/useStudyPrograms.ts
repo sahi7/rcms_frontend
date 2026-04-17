@@ -13,7 +13,7 @@ const KEY = 'study-programs'
 const ENDPOINT = '/admissions/admin/study-programs/'
 
 export function useStudyProgramsList() {
-  return useListQuery<StudyProgram, AdPaginatedResponse<StudyProgram>>(KEY, ENDPOINT, uploadApi)
+  return useListQuery<StudyProgram, AdPaginatedResponse<StudyProgram>>(KEY, ENDPOINT, {}, uploadApi)
 }
 
 export function useCreateStudyProgram() {
