@@ -1,59 +1,50 @@
-// src/features/academic/pages/ClassRooms.tsx
-import React, { useState } from 'react';
-import { PlusIcon, Building2Icon, LayersIcon, SchoolIcon } from 'lucide-react';
-import { DataTable } from '@/components/DataTable';
-import { Modal } from '@/components/Modal';
-import { StatusBadge } from '@/components/StatusBadge';
-import { PageSummaryCards } from '@/components/PageSummaryCards';
-import { ClassRoom, ClassRoomPayload } from '@/types/structure';
+import React, { useState } from 'react'
+import {
+  PlusIcon,
+  Building2Icon,
+  LayersIcon,
+  SchoolIcon,
+  FileTextIcon,
+} from 'lucide-react'
+import { DataTable } from '@/components/DataTable'
+import { Modal } from '@/components/Modal'
+import { StatusBadge } from '@/components/StatusBadge'
+import { PageSummaryCards } from '@/components/PageSummaryCards'
+import { ClassRoom, ClassRoomPayload } from '@/types/structure'
 import {
   useClassRooms,
   useCreateClassRoom,
   useUpdateClassRoom,
   useDeleteClassRoom,
-} from '../hooks/useClassRooms';
-import { Can } from '@/hooks/shared/useHasPermission';
-import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig';
-
-/**
- * Main component for managing classrooms / class progression levels.
- * Uses dynamic labeling via institution configuration.
- */
+} from '../hooks/useClassRooms'
+import { Can, useHasPermission } from '@/hooks/shared/useHasPermission'
+import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
+import { ClassListGeneratorModal } from '../components/ClassListGeneratorModal'
 export function ClassRooms() {
-  // Institution configuration for dynamic naming (e.g., Classroom → Form, Grade, Class, etc.)
-  const { getLabel, getPlural } = useInstitutionConfig();
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
-
-  // Data fetching with React Query hooks
+  const { getLabel, getPlural } = useInstitutionConfig()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 20
   const { data, isLoading } = useClassRooms({
     search: searchTerm,
     page: currentPage,
     page_size: pageSize,
-  });
-
-  const createMutation = useCreateClassRoom();
-  const updateMutation = useUpdateClassRoom();
-  const deleteMutation = useDeleteClassRoom();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ClassRoom | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<ClassRoom | null>(null);
-
-  // Local form state (uncontrolled by react-hook-form in this component)
+  })
+  const createMutation = useCreateClassRoom()
+  const updateMutation = useUpdateClassRoom()
+  const deleteMutation = useDeleteClassRoom()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<ClassRoom | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<ClassRoom | null>(null)
+  // Class list generation
+  const [classListTarget, setClassListTarget] = useState<ClassRoom | null>(null)
+  const canViewStudents = useHasPermission('view_student')
   const [formData, setFormData] = useState<ClassRoomPayload>({
     name: '',
     progression_level: 1,
     has_departments: false,
-  });
-
-  /**
-   * Table columns definition.
-   * Note: Headers that are not dynamic are kept as-is; only classroom-related labels are generic.
-   */
+  })
   const columns = [
     {
       header: 'Name',
@@ -72,69 +63,71 @@ export function ClassRooms() {
         />
       ),
     },
-  ];
-
-  /**
-   * Opens the add or edit modal and populates form data accordingly.
-   */
+    {
+      header: 'Class List',
+      accessor: (item: ClassRoom) =>
+        canViewStudents ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setClassListTarget(item)
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors"
+            title={`Generate ${getLabel('class_progression_name')} list PDF`}
+          >
+            <FileTextIcon className="w-3.5 h-3.5" />
+            Generate
+          </button>
+        ) : (
+          <span className="text-xs text-slate-300">—</span>
+        ),
+    },
+  ]
   const handleOpenModal = (item?: ClassRoom) => {
     if (item) {
-      setEditingItem(item);
+      setEditingItem(item)
       setFormData({
         name: item.name,
         progression_level: item.progression_level,
         has_departments: item.has_departments,
-      });
+      })
     } else {
-      setEditingItem(null);
+      setEditingItem(null)
       setFormData({
         name: '',
         progression_level: 1,
         has_departments: false,
-      });
+      })
     }
-    setIsModalOpen(true);
-  };
-
-  /**
-   * Handles form submission for creating or updating a classroom.
-   */
+    setIsModalOpen(true)
+  }
   const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     try {
       if (editingItem) {
         await updateMutation.mutateAsync({
           id: editingItem.id,
           payload: formData,
-        });
+        })
       } else {
-        await createMutation.mutateAsync(formData);
+        await createMutation.mutateAsync(formData)
       }
-      setIsModalOpen(false);
+      setIsModalOpen(false)
     } catch (error) {
-      console.error('Failed to save classroom', error);
+      console.error('Failed to save classroom', error)
     }
-  };
-
-  /**
-   * Deletes the selected classroom after confirmation.
-   */
+  }
   const handleDelete = async () => {
     if (itemToDelete) {
       try {
-        await deleteMutation.mutateAsync(itemToDelete.id);
-        setIsDeleteModalOpen(false);
-        setItemToDelete(null);
+        await deleteMutation.mutateAsync(itemToDelete.id)
+        setIsDeleteModalOpen(false)
+        setItemToDelete(null)
       } catch (error) {
-        console.error('Failed to delete classroom', error);
+        console.error('Failed to delete classroom', error)
       }
     }
-  };
-
-  /**
-   * Summary cards displayed at the top of the page.
-   * Values are derived from the fetched data.
-   */
+  }
   const summaryCards = [
     {
       title: `Total ${getPlural('class_progression_name')}`,
@@ -159,22 +152,19 @@ export function ClassRooms() {
       icon: SchoolIcon,
       color: 'purple' as const,
     },
-  ];
-
+  ]
   return (
     <div className="h-full flex flex-col gap-6">
-      {/* Page Header */}
       <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-[#1a1a2e]">
             {getPlural('class_progression_name')}
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Manage {getPlural('class_progression_name')} and their progression levels.
+            Manage {getPlural('class_progression_name')} and their progression
+            levels.
           </p>
         </div>
-
-        {/* Add New Button - permission protected */}
         <Can permission="add.classroom">
           <button
             onClick={() => handleOpenModal()}
@@ -201,14 +191,14 @@ export function ClassRooms() {
             columns={columns}
             onPageChange={setCurrentPage}
             onSearch={(term) => {
-              setSearchTerm(term);
-              setCurrentPage(1);
+              setSearchTerm(term)
+              setCurrentPage(1)
             }}
             searchTerm={searchTerm}
             onEdit={handleOpenModal}
             onDelete={(item) => {
-              setItemToDelete(item);
-              setIsDeleteModalOpen(true);
+              setItemToDelete(item)
+              setIsDeleteModalOpen(true)
             }}
           />
         ) : (
@@ -222,7 +212,11 @@ export function ClassRooms() {
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingItem ? `Edit ${getLabel('class_progression_name')}` : `Add ${getLabel('class_progression_name')}`}
+        title={
+          editingItem
+            ? `Edit ${getLabel('class_progression_name')}`
+            : `Add ${getLabel('class_progression_name')}`
+        }
       >
         <form onSubmit={handleSave} className="space-y-4">
           <div>
@@ -243,7 +237,6 @@ export function ClassRooms() {
               placeholder={`e.g. ${getLabel('class_progression_name')} 1`}
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Progression Level
@@ -262,7 +255,6 @@ export function ClassRooms() {
               className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
             />
           </div>
-
           <div className="flex items-center gap-2 pt-2">
             <input
               type="checkbox"
@@ -280,7 +272,6 @@ export function ClassRooms() {
               Has Departments
             </label>
           </div>
-
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
             <button
               type="button"
@@ -289,8 +280,6 @@ export function ClassRooms() {
             >
               Cancel
             </button>
-
-            {/* Save button protected by change permission */}
             <Can permission="change.classroom">
               <button
                 type="submit"
@@ -306,7 +295,6 @@ export function ClassRooms() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -316,8 +304,7 @@ export function ClassRooms() {
           <p className="text-slate-600">
             Are you sure you want to delete the{' '}
             <span className="font-semibold text-slate-800">
-              {getLabel('class_progression_name')}{' '}
-              {itemToDelete?.name}
+              {getLabel('class_progression_name')} {itemToDelete?.name}
             </span>
             ? This action cannot be undone.
           </p>
@@ -328,8 +315,6 @@ export function ClassRooms() {
             >
               Cancel
             </button>
-
-            {/* Delete button protected by delete permission */}
             <Can permission="delete.classroom">
               <button
                 onClick={handleDelete}
@@ -342,6 +327,13 @@ export function ClassRooms() {
           </div>
         </div>
       </Modal>
+
+      {/* Class list PDF generator */}
+      <ClassListGeneratorModal
+        isOpen={!!classListTarget}
+        onClose={() => setClassListTarget(null)}
+        classroom={classListTarget}
+      />
     </div>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2Icon, ShieldCheckIcon, MailIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,12 +20,9 @@ import {
   SelectItem,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-  // isUni,
-  useInstitution,
-  useUpdateInstitution,
-} from '../hooks/useInstitution'
+import { useInstitution, useUpdateInstitution } from '../hooks/useInstitution'
 import { InstitutionPayload } from '@/types/settings'
+import { LetterheadEditor } from '../components/LetterheadEditor'
 
 
 export function InstitutionSettings() {
@@ -33,7 +30,6 @@ export function InstitutionSettings() {
   const updateMutation = useUpdateInstitution()
   const [form, setForm] = useState<InstitutionPayload>({})
   const [hasChanges, setHasChanges] = useState(false)
-
   useEffect(() => {
     if (data) {
       setForm({
@@ -132,6 +128,7 @@ export function InstitutionSettings() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="code">Institution Code</Label>
               <Input
@@ -141,6 +138,7 @@ export function InstitutionSettings() {
                 onChange={(e) => updateField('code', e.target.value)}
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="identifier">Identifier</Label>
               <Input
@@ -150,6 +148,7 @@ export function InstitutionSettings() {
                 onChange={(e) => updateField('identifier', e.target.value)}
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="subject_rotation">Subject Rotation</Label>
               <Select
@@ -166,6 +165,7 @@ export function InstitutionSettings() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="max_score_default">Max Score Default</Label>
               <Input
@@ -178,6 +178,7 @@ export function InstitutionSettings() {
                 }
               />
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="passing_score">Passing Score</Label>
               <Input
@@ -192,7 +193,7 @@ export function InstitutionSettings() {
         </CardContent>
       </Card>
 
-      {/* Save */}
+      {/* Save core settings */}
       <div className="flex justify-end">
         <Button
           onClick={handleSave}
@@ -208,6 +209,9 @@ export function InstitutionSettings() {
           )}
         </Button>
       </div>
+
+      {/* Letterhead editor — persists as JSON on the institution record */}
+      <LetterheadEditor />
     </div>
   )
 }
