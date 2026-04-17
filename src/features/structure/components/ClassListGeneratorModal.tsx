@@ -1,4 +1,4 @@
-import React, { useMemo, useState, createElement } from 'react'
+import { useMemo, useState } from 'react'
 import { pdf } from '@react-pdf/renderer'
 import { toast } from 'sonner'
 import { Loader2Icon, DownloadIcon, FileTextIcon } from 'lucide-react'
@@ -15,6 +15,8 @@ interface Props {
   onClose: () => void
   classroom: ClassRoom | null
 }
+
+
 export function ClassListGeneratorModal({ isOpen, onClose, classroom }: Props) {
   const { getLabel } = useInstitutionConfig()
   const [departmentId, setDepartmentId] = useState<string | number | null>(null)

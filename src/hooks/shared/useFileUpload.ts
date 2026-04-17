@@ -15,7 +15,7 @@ export function useFileUpload() {
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
 
-  const UPSTREAM_URL = (import.meta as any).env?.VITE_UPSTREAM_SERVER || 'http://127.0.0.1:3000/api';
+  const UPSTREAM_URL = (import.meta as any).env?.VITE_UPSTREAM_SERVER;
 
   const upload = useCallback(
     async (file: File, category = 'internal'): Promise<UploadResult> => {
