@@ -73,7 +73,7 @@ const inputCls =
             Categories of applications you accept.
           </p>
         </div>
-        <Can permission="admissions.manage_application_type">
+        <Can permission="add_applicationtype">
           <button
             onClick={() => {
               setEditing(null)
@@ -117,7 +117,7 @@ const inputCls =
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Can permission="admissions.manage_application_type">
+                  <Can permission="change_applicationtype">
                     <button
                       onClick={() => {
                         setEditing(t)
@@ -129,7 +129,7 @@ const inputCls =
                       <PencilIcon className="w-3.5 h-3.5" />
                     </button>
                   </Can>
-                  <Can permission="admissions.manage_application_type">
+                  <Can permission="delete_applicationtype">
                     <button
                       onClick={() => setDeleteTarget(t)}
                       className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded"

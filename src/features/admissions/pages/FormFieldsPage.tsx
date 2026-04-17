@@ -109,7 +109,7 @@ export function FormFieldsPage() {
             </button>
           )}
           {currentId && (
-            <Can permission="admissions.manage_form_field">
+            <Can permission="add_formfield">
               <button
                 onClick={() => {
                   setEditing(null)
@@ -220,7 +220,7 @@ export function FormFieldsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Can permission="admissions.manage_form_field">
+                      <Can permission="change_formfield">
                         <button
                           onClick={() => {
                             setEditing(f)
@@ -232,7 +232,7 @@ export function FormFieldsPage() {
                           <PencilIcon className="w-3.5 h-3.5" />
                         </button>
                       </Can>
-                      <Can permission="admissions.manage_form_field">
+                      <Can permission="delete_formfield">
                         <button
                           onClick={() => setDeleteTarget(f)}
                           className="p-1.5 text-red-500 hover:bg-red-50 rounded"

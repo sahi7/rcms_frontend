@@ -104,7 +104,7 @@ export function StudyProgramsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Can permission="admissions.manage_study_program">
+          <Can permission="add_studyprogram">
             <button
               onClick={() => setBulkOpen(true)}
               className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-sm font-medium rounded-lg"
@@ -112,7 +112,7 @@ export function StudyProgramsPage() {
               <LayersIcon className="w-4 h-4" /> Bulk create
             </button>
           </Can>
-          <Can permission="admissions.manage_study_program">
+          <Can permission="add_studyprogram">
             <button
               onClick={() => {
                 setEditing(null)
@@ -209,7 +209,7 @@ export function StudyProgramsPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Can permission="admissions.manage_study_program">
+                  <Can permission="change_studyprogram">
                     <button
                       onClick={() => {
                         setEditing(p)
@@ -221,7 +221,7 @@ export function StudyProgramsPage() {
                       <PencilIcon className="w-3.5 h-3.5" />
                     </button>
                   </Can>
-                  <Can permission="admissions.manage_study_program">
+                  <Can permission="delete_studyprogram">
                     <button
                       onClick={() => setDeleteTarget(p)}
                       className="p-1.5 text-red-500 hover:bg-red-50 rounded"
@@ -301,7 +301,7 @@ export function StudyProgramsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 justify-end">
-                        <Can permission="admissions.manage_study_program">
+                        <Can permission="change_studyprogram">
                           <button
                             onClick={() => {
                               setEditing(p)
@@ -313,7 +313,7 @@ export function StudyProgramsPage() {
                             <PencilIcon className="w-3.5 h-3.5" />
                           </button>
                         </Can>
-                        <Can permission="admissions.manage_study_program">
+                        <Can permission="delete_studyprogram">
                           <button
                             onClick={() => setDeleteTarget(p)}
                             className="p-1.5 text-red-500 hover:bg-red-50 rounded"

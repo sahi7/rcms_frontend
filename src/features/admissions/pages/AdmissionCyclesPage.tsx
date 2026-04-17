@@ -108,7 +108,7 @@ export function AdmissionCyclesPage() {
             Manage academic intake periods and closure.
           </p>
         </div>
-        <Can permission="admissions.manage_cycle">
+        <Can permission="add_admissioncycle">
           <button
             onClick={openCreate}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg"
@@ -192,7 +192,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <p className="text-sm text-slate-500 mt-1">
         Create your first cycle to start accepting applications.
       </p>
-      <Can permission="admissions.manage_cycle">
+      <Can permission="add_admissioncycle">
         <button
           onClick={onCreate}
           className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg"
@@ -248,7 +248,7 @@ function CycleCard({
       </div>
       <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
         {!cycle.is_current && (
-          <Can permission="admissions.manage_cycle">
+          <Can permission="change.admissioncycle">
             <button
               onClick={onSetCurrent}
               disabled={settingCurrent}
@@ -264,7 +264,7 @@ function CycleCard({
           </Can>
         )}
         {!cycle.is_admissions_closed && (
-          <Can permission="admissions.manage_cycle">
+          <Can permission="change_admissioncycle">
             <button
               onClick={onClose}
               className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-800 px-2 py-1 rounded hover:bg-slate-100"
@@ -274,7 +274,7 @@ function CycleCard({
           </Can>
         )}
         {cycle.is_admissions_closed && !cycle.migration_completed_at && (
-          <Can permission="admissions.manage_cycle">
+          <Can permission="change_admissioncycle">
             <button
               onClick={onMigrate}
               className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 px-2 py-1 rounded hover:bg-emerald-50"
@@ -284,7 +284,7 @@ function CycleCard({
           </Can>
         )}
         <div className="ml-auto flex items-center gap-1">
-          <Can permission="admissions.manage_cycle">
+          <Can permission="change_admissioncycle">
             <button
               onClick={onEdit}
               className="p-1.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded"
@@ -293,7 +293,7 @@ function CycleCard({
               <PencilIcon className="w-3.5 h-3.5" />
             </button>
           </Can>
-          <Can permission="admissions.manage_cycle">
+          <Can permission="delete_admissioncycle">
             <button
               onClick={onDelete}
               className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 rounded"

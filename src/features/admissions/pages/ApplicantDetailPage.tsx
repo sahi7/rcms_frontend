@@ -162,7 +162,7 @@ export function ApplicantDetailPage() {
               </div>
             </div>
           </div>
-          <Can permission="admissions.manage_application">
+          <Can permission="change_applicant">
             <button
               onClick={() => setStatusOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg"

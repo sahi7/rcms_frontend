@@ -238,7 +238,7 @@ export function ApplicantsPage() {
                         >
                             Clear
                         </button>
-                        <Can permission="admissions.manage_application">
+                        <Can permission="change_applicant">
                             <button
                                 onClick={() => setBulkStatusOpen(true)}
                                 className="text-sm text-white bg-orange-500 hover:bg-orange-600 px-3 py-1.5 rounded"
@@ -246,7 +246,7 @@ export function ApplicantsPage() {
                                 Update status
                             </button>
                         </Can>
-                        <Can permission="admissions.manage_application">
+                        <Can permission="delete_applicant">
                             <button
                                 onClick={() => setBulkDeleteOpen(true)}
                                 className="text-sm text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded"
