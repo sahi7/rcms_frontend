@@ -3,6 +3,7 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { Letterhead } from '@/types/letterhead'
 import { Student } from '@/types/academic'
 import { LetterheadHeader } from './LetterheadHeader'
+
 interface Props {
   letterhead: Letterhead
   title: string
@@ -10,6 +11,7 @@ interface Props {
   students: Student[]
   generatedAt?: Date
 }
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 28,
@@ -85,6 +87,7 @@ const styles = StyleSheet.create({
     color: '#9ca3af',
   },
 })
+
 export function ClassListPDF({
   letterhead,
   title,
@@ -97,14 +100,13 @@ export function ClassListPDF({
     const bn = `${b.user__first_name || ''} ${b.user__last_name || ''}`.toLowerCase().trim()
     return an.localeCompare(bn)
   })
+
   return (
     <Document title={title}>
       <Page size="A4" style={styles.page}>
         <LetterheadHeader letterhead={letterhead} />
-
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-
         <View style={styles.table}>
           <View style={[styles.row, styles.headerRow]} fixed>
             <Text style={[styles.headerCell, styles.colNum]}>#</Text>
@@ -113,7 +115,6 @@ export function ClassListPDF({
             <Text style={[styles.headerCell, styles.colGender]}></Text>
             <Text style={[styles.headerCell, styles.colStatus]}></Text>
           </View>
-
           {sorted.map((s, i) => (
             <View
               key={String(s.id)}
@@ -127,15 +128,10 @@ export function ClassListPDF({
               <Text style={[styles.cell, styles.colName]}>
                 {`${s.user__first_name || ''} ${s.user__last_name || ''}`.trim() || '-'}
               </Text>
-              <Text style={[styles.cell, styles.colGender]}>
-                
-              </Text>
-              <Text style={[styles.cell, styles.colStatus]}>
-               
-              </Text>
+              <Text style={[styles.cell, styles.colGender]}></Text>
+              <Text style={[styles.cell, styles.colStatus]}></Text>
             </View>
           ))}
-
           {sorted.length === 0 && (
             <View style={styles.row}>
               <Text
@@ -153,7 +149,6 @@ export function ClassListPDF({
             </View>
           )}
         </View>
-
         <View style={styles.footer} fixed>
           <Text>Generated {generatedAt.toLocaleString()}</Text>
           <Text
