@@ -104,7 +104,8 @@ export function ClassListPDF({
   return (
     <Document title={title}>
       <Page size="A4" style={styles.page}>
-        <LetterheadHeader letterhead={letterhead} />
+        {/* <LetterheadHeader letterhead={letterhead} /> */}
+        <LetterheadHeader letterhead={letterhead} fixed={false} />
         <Text style={styles.title}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         <View style={styles.table}>

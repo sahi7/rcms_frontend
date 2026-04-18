@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 // src/features/settings/components/LetterheadEditor/LetterheadEditor.tsx
 //
 // Adds per-column width sliders. Widths are stored on the Letterhead record

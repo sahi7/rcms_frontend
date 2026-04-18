@@ -1,10 +1,10 @@
 // src/features/structure/components/pdf/LetterheadHeader.tsx
 import { View, StyleSheet } from '@react-pdf/renderer'
 import Html from 'react-pdf-html'
-import { Font } from '@react-pdf/renderer'   // ← added
+import { Font } from '@react-pdf/renderer'
 import { Letterhead } from '@/types/letterhead'
 
-// Disable hyphenation globally (whole words move to the next line)
+// Disable hyphenation globally (whole words move to next line)
 Font.registerHyphenationCallback((word) => [word])
 
 const styles = StyleSheet.create({
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   },
 })
 
-// react-pdf-html stylesheet (we kept the previous font-size cleanup)
+// react-pdf-html stylesheet
 const htmlStyles = {
   p: {
     margin: 0,
@@ -68,7 +68,7 @@ function Block({
 }: {
   html: string
   align: 'left' | 'center' | 'right'
-  width?: number // percent from Letterhead (10–80)
+  width?: number
 }) {
   const content = html && html.trim() ? html : '<p></p>'
   const colWidth = width ? `${width}%` : '33.33%'
@@ -85,7 +85,7 @@ function Block({
       <Html
         stylesheet={htmlStyles}
         style={{
-          fontSize: 9, // base fallback
+          fontSize: 9,
         }}
       >
         {`<div style="text-align:${align}">${content}</div>`}
@@ -94,9 +94,20 @@ function Block({
   )
 }
 
-export function LetterheadHeader({ letterhead }: { letterhead: Letterhead }) {
+interface Props {
+  letterhead: Letterhead
+  /** 
+   * Whether the letterhead should repeat on EVERY page (true)
+   * or appear ONLY on the first page (false).
+   * Default = true (keeps current behavior in ClasslistPDF, etc.)
+   * Usage; <LetterheadHeader letterhead={letterhead} fixed={false} />
+   */
+  fixed?: boolean
+}
+
+export function LetterheadHeader({ letterhead, fixed = true }: Props) {
   return (
-    <View style={styles.header} fixed>
+    <View style={styles.header} fixed={fixed}>
       <Block
         html={letterhead.left_html}
         align="left"
