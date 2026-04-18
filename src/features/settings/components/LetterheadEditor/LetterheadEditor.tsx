@@ -1,3 +1,4 @@
+// src/features/settings/components/LetterheadEditor/LetterheadEditor.tsx
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2Icon, FileTextIcon } from 'lucide-react'

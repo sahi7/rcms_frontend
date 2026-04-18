@@ -1,3 +1,5 @@
+// src/features/settings/components/LetterheadEditor/RichTextEditor.tsx
+
 import React, { useEffect, useCallback } from 'react'
 import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -15,7 +17,7 @@ import {
   ImageIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useFileUpload } from '@/hooks/shared/useFileUpload' // ← adjust path if needed
+import { useFileUpload } from '@/hooks/shared/useFileUpload'
 
 interface RichTextEditorProps {
   value: string

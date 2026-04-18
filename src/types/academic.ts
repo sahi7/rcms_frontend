@@ -82,6 +82,8 @@ export interface Student {
   relationship_to_guardian?: string
   created_at?: string
   updated_at?: string
+  user__last_name?: string
+  user__first_name?: string
 }
 
 export interface Subject {

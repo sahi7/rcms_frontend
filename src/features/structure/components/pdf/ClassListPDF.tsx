@@ -109,8 +109,8 @@ export function ClassListPDF({
             <Text style={[styles.headerCell, styles.colNum]}>#</Text>
             <Text style={[styles.headerCell, styles.colReg]}>Reg. No.</Text>
             <Text style={[styles.headerCell, styles.colName]}>Name</Text>
-            <Text style={[styles.headerCell, styles.colGender]}>Gender</Text>
-            <Text style={[styles.headerCell, styles.colStatus]}>Status</Text>
+            <Text style={[styles.headerCell, styles.colGender]}></Text>
+            <Text style={[styles.headerCell, styles.colStatus]}></Text>
           </View>
 
           {sorted.map((s, i) => (
@@ -127,10 +127,10 @@ export function ClassListPDF({
                 {`${s.first_name || ''} ${s.last_name || ''}`.trim() || '-'}
               </Text>
               <Text style={[styles.cell, styles.colGender]}>
-                {(s as any).gender || '-'}
+                
               </Text>
               <Text style={[styles.cell, styles.colStatus]}>
-                {s.enrollment_status || 'active'}
+               
               </Text>
             </View>
           ))}
