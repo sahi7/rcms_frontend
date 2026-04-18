@@ -1,3 +1,4 @@
+// src/features/structure/components/pdf/LetterheadHeader.tsx
 import { View, StyleSheet } from '@react-pdf/renderer'
 import Html from 'react-pdf-html'
 import { Letterhead } from '@/types/letterhead'

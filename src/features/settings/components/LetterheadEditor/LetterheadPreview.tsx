@@ -1,19 +1,36 @@
+import React from 'react'
+// src/features/settings/components/LetterheadEditor/LetterheadPreview.tsx
+//
+// Same shape as your original, but now honors optional per-column widths
+// (percent of row). If widths aren't set, it falls back to even 3-column flex
+// — identical behavior to before.
 import { Letterhead } from '@/types/letterhead'
 interface Props {
   letterhead: Letterhead
+  // Optional widths coming from the editor. Percent values that sum to ~100.
+  widths?: {
+    left: number
+    center: number
+    right: number
+  }
 }
 function Block({
   html,
   align,
+  widthPct,
 }: {
   html: string
   align: 'left' | 'center' | 'right'
+  widthPct?: number
 }) {
   return (
     <div
-      className="flex-1 text-xs text-slate-700 min-w-0 [&_p]:m-0 [&_p]:leading-snug [&_ul]:pl-4 [&_ol]:pl-4"
+      className="text-xs text-slate-700 min-w-0 [&_p]:m-0 [&_p]:leading-snug [&_ul]:pl-4 [&_ol]:pl-4 [&_img]:inline-block"
       style={{
         textAlign: align,
+        // If a width is provided, use flex-basis; otherwise fill equally.
+        flex: widthPct ? `0 0 ${widthPct}%` : '1 1 0%',
+        maxWidth: widthPct ? `${widthPct}%` : undefined,
       }}
       dangerouslySetInnerHTML={{
         __html: html || `<p class="text-slate-300 italic">Empty</p>`,
@@ -21,9 +38,7 @@ function Block({
     />
   )
 }
-
-
-export function LetterheadPreview({ letterhead }: Props) {
+export function LetterheadPreview({ letterhead, widths }: Props) {
   return (
     <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
       {/* Faux page */}
@@ -31,9 +46,21 @@ export function LetterheadPreview({ letterhead }: Props) {
         <div className="mx-auto max-w-2xl bg-white shadow-md">
           <div className="px-6 pt-6 pb-4 border-b-2 border-slate-900">
             <div className="flex items-start gap-4">
-              <Block html={letterhead.left_html} align="left" />
-              <Block html={letterhead.center_html} align="center" />
-              <Block html={letterhead.right_html} align="right" />
+              <Block
+                html={letterhead.left_html}
+                align="left"
+                widthPct={widths?.left}
+              />
+              <Block
+                html={letterhead.center_html}
+                align="center"
+                widthPct={widths?.center}
+              />
+              <Block
+                html={letterhead.right_html}
+                align="right"
+                widthPct={widths?.right}
+              />
             </div>
           </div>
           <div className="px-6 py-8 space-y-2">

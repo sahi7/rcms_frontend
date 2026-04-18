@@ -1,3 +1,4 @@
+// src/features/structure/components/pdf/ClasslistPDF.tsx
 import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { Letterhead } from '@/types/letterhead'
 import { Student } from '@/types/academic'
