@@ -1,5 +1,4 @@
 // src/features/settings/components/LetterheadEditor/RichTextEditor.tsx
-
 import React, { useEffect, useCallback } from 'react'
 import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -23,7 +22,6 @@ interface RichTextEditorProps {
   value: string
   onChange: (html: string) => void
   placeholder?: string
-  align?: 'left' | 'center' | 'right'
 }
 
 function ToolbarButton({
@@ -143,7 +141,6 @@ export function RichTextEditor({
   value,
   onChange,
   placeholder,
-  align = 'left',
 }: RichTextEditorProps) {
   const { upload, isUploading } = useFileUpload()
 
@@ -155,13 +152,25 @@ export function RichTextEditor({
       Image.configure({
         inline: true,
         allowBase64: false,
+        // ──────────────────────────────────────────────────────────────
+        // THIS IS THE EXACT TIPTAP BUILT-IN FEATURE THAT GIVES YOU
+        // MOUSE-DRAG RESIZE HANDLES JUST LIKE TINY MCE
+        // (no extra packages, no custom NodeView code)
+        resize: {
+          enabled: true,
+          directions: ['bottom-right', 'bottom-left', 'top-right', 'top-left'], // diagonal corners feel most natural
+          minWidth: 80,
+          minHeight: 60,
+          alwaysPreserveAspectRatio: true, // keeps aspect ratio while dragging (TinyMCE style)
+        },
+        // ──────────────────────────────────────────────────────────────
       }),
     ],
     content: value || '',
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm max-w-none min-h-[120px] px-3 py-2 focus:outline-none text-slate-800',
+          'prose prose-sm max-w-none min-h-[160px] px-3 py-3 focus:outline-none text-slate-800',
         'data-placeholder': placeholder || '',
       },
     },
@@ -169,14 +178,9 @@ export function RichTextEditor({
       const html = editor.getHTML()
       onChange(html === '<p></p>' ? '' : html)
     },
-    onCreate: ({ editor }) => {
-      if (align) {
-        editor.commands.setTextAlign(align)
-      }
-    },
   })
 
-  // Sync external value changes (e.g. after save or data fetch)
+  // Sync external value changes
   useEffect(() => {
     if (!editor) return
     const current = editor.getHTML()
@@ -198,7 +202,12 @@ export function RichTextEditor({
 
       try {
         const { publicUrl } = await upload(file, 'letterhead')
-        editor.chain().focus().setImage({ src: publicUrl, alt: 'Logo' }).run()
+        // Insert image – resize handles appear immediately
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: publicUrl, alt: 'Logo' })
+          .run()
       } catch (err: any) {
         toast.error(err.message || 'Failed to upload image')
       }

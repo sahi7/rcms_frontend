@@ -17,6 +17,7 @@ import { Letterhead } from '@/types/letterhead'
 import { useLetterhead, useUpdateLetterhead } from '../../hooks/useLetterhead'
 import { RichTextEditor } from './RichTextEditor'
 import { LetterheadPreview } from './LetterheadPreview'
+
 type Side = 'left' | 'center' | 'right'
 const SIDE_CONFIG: {
   key: Side
@@ -44,16 +45,17 @@ const SIDE_CONFIG: {
   },
 ]
 
-
 export function LetterheadEditor() {
   const { letterhead, isLoading } = useLetterhead()
   const update = useUpdateLetterhead()
   const [form, setForm] = useState<Letterhead>(letterhead)
   const [hasChanges, setHasChanges] = useState(false)
+
   useEffect(() => {
     setForm(letterhead)
     setHasChanges(false)
   }, [letterhead])
+
   const setField = (field: keyof Letterhead, value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -61,6 +63,7 @@ export function LetterheadEditor() {
     }))
     setHasChanges(true)
   }
+
   const handleSave = async () => {
     try {
       await update.mutateAsync(form)
@@ -70,6 +73,7 @@ export function LetterheadEditor() {
       toast.error('Failed to save letterhead')
     }
   }
+
   if (isLoading) {
     return (
       <Card>
@@ -82,6 +86,7 @@ export function LetterheadEditor() {
       </Card>
     )
   }
+
   return (
     <Card>
       <CardHeader>
@@ -115,7 +120,6 @@ export function LetterheadEditor() {
                   value={form[s.field]}
                   onChange={(v) => setField(s.field, v)}
                   placeholder={s.placeholder}
-                  align={s.key}
                 />
               </TabsContent>
             ))}
@@ -132,7 +136,6 @@ export function LetterheadEditor() {
                 value={form[s.field]}
                 onChange={(v) => setField(s.field, v)}
                 placeholder={s.placeholder}
-                align={s.key}
               />
             </div>
           ))}

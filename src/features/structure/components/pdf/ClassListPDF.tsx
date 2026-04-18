@@ -92,8 +92,8 @@ export function ClassListPDF({
   generatedAt = new Date(),
 }: Props) {
   const sorted = [...students].sort((a, b) => {
-    const an = `${a.first_name || ''} ${a.last_name || ''}`.toLowerCase().trim()
-    const bn = `${b.first_name || ''} ${b.last_name || ''}`.toLowerCase().trim()
+    const an = `${a.user__first_name || ''} ${a.user__last_name || ''}`.toLowerCase().trim()
+    const bn = `${b.user__first_name || ''} ${b.user__last_name || ''}`.toLowerCase().trim()
     return an.localeCompare(bn)
   })
   return (
@@ -124,7 +124,7 @@ export function ClassListPDF({
                 {s.registration_number || '-'}
               </Text>
               <Text style={[styles.cell, styles.colName]}>
-                {`${s.first_name || ''} ${s.last_name || ''}`.trim() || '-'}
+                {`${s.user__first_name || ''} ${s.user__last_name || ''}`.trim() || '-'}
               </Text>
               <Text style={[styles.cell, styles.colGender]}>
                 
