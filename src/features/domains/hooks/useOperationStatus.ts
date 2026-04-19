@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { spaceApi } from '@/lib/api'
+import { uploadApi } from '@/lib/api'
 import type { AsyncOperation } from '@/types/domains'
 
 /**
@@ -20,8 +20,8 @@ export function useOperationStatus(
   const query = useQuery<AsyncOperation>({
     queryKey: ['async-operation', operationId],
     queryFn: () =>
-      spaceApi
-        .get<AsyncOperation>(`/api/v1/async-operations/${operationId}`)
+      uploadApi
+        .get<AsyncOperation>(`/domains/async/${operationId}`)
         .then((r) => r.data),
     enabled: !!operationId && !done,
     refetchInterval: (q) => {

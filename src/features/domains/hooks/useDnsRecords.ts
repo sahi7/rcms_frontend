@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { uploadApi, spaceApi } from '@/lib/api'
+import { uploadApi } from '@/lib/api'
 import type {
   DnsRecordsResponse,
   DnsSavePayload,
@@ -7,14 +7,14 @@ import type {
 } from '@/types/domains'
 
 /**
- * GET /v1/dns/records/<DomainName> — list DNS records (spaceApi).
+ * GET /domains/dns/records/<DomainName> — list DNS records
  */
 export function useDnsRecords(domainName: string | null | undefined) {
   return useQuery<DnsRecordsResponse>({
     queryKey: ['domains', 'dns', domainName],
     queryFn: () =>
-      spaceApi
-        .get<DnsRecordsResponse>(`/v1/dns/records/${domainName}`)
+      uploadApi
+        .get<DnsRecordsResponse>(`/domains/dns/records/${domainName}`)
         .then((r) => r.data),
     enabled: !!domainName,
     staleTime: 30 * 1000,

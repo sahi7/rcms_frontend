@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { uploadApi, spaceApi } from '@/lib/api'
+import { uploadApi } from '@/lib/api'
 import type {
   DomainContact,
   DomainContactCreateResponse,
@@ -22,16 +22,15 @@ export function useCreateDomainContact() {
 }
 
 /**
- * GET /v1/contacts/<DomainContactID> — read contact details (spaceApi).
+ * GET /contacts/<DomainContactID> — read contact details 
  */
-export function useDomainContact(contactId: string | null | undefined) {
+export function useDomainContact() {
   return useQuery<DomainContact>({
-    queryKey: ['domains', 'contact', contactId],
+    queryKey: ['domains', 'contact'],
     queryFn: () =>
-      spaceApi
-        .get<DomainContact>(`/v1/contacts/${contactId}`)
+      uploadApi
+        .get<DomainContact>(`/domains/contacts/`)
         .then((r) => r.data),
-    enabled: !!contactId,
     staleTime: 5 * 60 * 1000,
   })
 }

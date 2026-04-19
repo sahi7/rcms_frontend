@@ -109,7 +109,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export function ContactDetailsSection() {
   const info = useDomainInfo()
   const contactId = info.data?.DomainContactID || null
-  const contact = useDomainContact(contactId)
+  const contact = useDomainContact()
   const create = useCreateDomainContact()
   const [form, setForm] = useState<DomainContact>(emptyForm)
   const [errors, setErrors] = useState<
@@ -222,8 +222,8 @@ export function ContactDetailsSection() {
     if (!form.city.trim()) e.city = 'Required'
     if (!form.country.trim()) e.country = 'Required'
     if (!form.phone.trim()) e.phone = 'Required'
-    else if (!/^\+?[0-9.\-\s()]{6,}$/.test(form.phone))
-      e.phone = 'Use format +1.1234567890'
+    else if (!/^\+\d{1,3}\.\d{4,}$/.test(form.phone))
+      e.phone = 'Phone must be country code first then dot(.) then the rest of the numbers (e.g. +1.34567890)'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -237,7 +237,25 @@ export function ContactDetailsSection() {
   }
   const handleSubmit = async () => {
     try {
-      const res = await create.mutateAsync(form)
+      // Optional fields that are not filled are removed from the request payload
+      const payload = { ...form } as DomainContact
+      const optionalFields: (keyof DomainContact)[] = [
+        'organization',
+        'address2',
+        'stateProvince',
+        'postalCode',
+        'phoneExt',
+        'fax',
+        'faxExt',
+        'taxNumber',
+      ]
+      for (const key of optionalFields) {
+        if (!payload[key]?.toString().trim()) {
+          delete (payload as any)[key]
+        }
+      }
+
+      const res = await create.mutateAsync(payload)
       toast.success(`Contact saved (ID: ${res.contactId.slice(0, 8)}…)`)
       setConfirmOpen(false)
     } catch (err) {
@@ -282,14 +300,14 @@ export function ContactDetailsSection() {
               <Input
                 value={form.firstName}
                 onChange={(e) => update('firstName', e.target.value)}
-                placeholder="John"
+                placeholder="Mbarka"
               />
             </Field>
             <Field label="Last name" required error={errors.lastName}>
               <Input
                 value={form.lastName}
                 onChange={(e) => update('lastName', e.target.value)}
-                placeholder="Doe"
+                placeholder="Stephen"
               />
             </Field>
             <Field label="Organization">
@@ -311,7 +329,7 @@ export function ContactDetailsSection() {
               <Input
                 value={form.phone}
                 onChange={(e) => update('phone', e.target.value)}
-                placeholder="+1.1234567890"
+                placeholder="+237.634567890"
               />
             </Field>
             <Field label="Phone ext.">
