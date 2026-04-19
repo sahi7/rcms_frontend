@@ -1,4 +1,3 @@
-import React from 'react'
 // src/features/settings/components/LetterheadEditor/LetterheadPreview.tsx
 //
 // Same shape as your original, but now honors optional per-column widths

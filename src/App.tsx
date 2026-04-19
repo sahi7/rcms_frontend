@@ -40,6 +40,9 @@ import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 import { SettingsPage } from './features/settings/pages/SettingsPage'
 import { ReportCardPage } from './features/reports/report_cards/ReportCardPage'
 
+import { DomainsDashboard } from './features/domains/pages/DomainsDashboard'
+import { DomainManager } from './features/domains/pages/DomainManager'
+
 import { 
   AdmissionsDashboard,
   AdmissionCyclesPage,
@@ -139,8 +142,10 @@ export default function App() {
           {/* <Route path="search" element={<ApplicantDetailPage />} /> */}
         </Route>
 
-        
-        {/* <Route path="*" element={<PlaceholderPage />} /> */}
+        <Route path="domains" element={<DomainsDashboard />} />
+        <Route path="domains/manage" element={<DomainManager />}/>
+        {/* <Route path="/" element={<Navigate to="/dashboard/domains" replace />} /> */}
+        {/* <Route path="/dashboard" element={<Navigate to="/dashboard/domains" replace />} /> */}
       </Route>
 
       {/* Fallback: any other protected route goes to dashboard */}

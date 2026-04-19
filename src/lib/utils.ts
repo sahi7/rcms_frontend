@@ -31,3 +31,17 @@ export function formatDate(
 
   return new Intl.DateTimeFormat('en-US', options).format(date)
 }
+
+// Handles the { detail: "..." } format used by spaceApi
+export function getErrorMessage(error: any, defaultMessage: string = 'An unexpected error occurred'): string {
+  if (error?.response?.data?.detail) {
+    return error.response.data.detail;
+  }
+  if (typeof error?.response?.data === 'string') {
+    return error.response.data;
+  }
+  if (error?.message) {
+    return error.message;
+  }
+  return defaultMessage;
+}

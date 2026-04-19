@@ -5,6 +5,9 @@ import Cookies from "js-cookie";
 // Use the same style you originally had to avoid TS error
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL;
 const UPSTREAM_SERVER = (import.meta as any).env?.VITE_UPSTREAM_SERVER;
+const SPACE_API_SECRET = (import.meta as any).env?.VITE_SPACE_API_SECRET;
+const SPACE_API_KEY = (import.meta as any).env?.VITE_SPACE_API_KEY;
+const SPACE_SERVER = (import.meta as any).env?.VITE_SPACE_SERVER;
 
 // console.log('🔥 API_BASE_URL =', API_BASE_URL);
 // console.log('🔥 UPSTREAM_SERVER (should be 3000) =', UPSTREAM_SERVER);
@@ -19,6 +22,15 @@ const api = axios.create({
 export const uploadApi = axios.create({
   baseURL: UPSTREAM_SERVER,  
   withCredentials: true,
+});
+
+// Space API[](https://spaceship.dev/api) - sets X-Api-Secret and X-Api-Key from .env
+export const spaceApi = axios.create({
+  baseURL: SPACE_SERVER,
+  headers: {
+    'X-Api-Secret': SPACE_API_SECRET,
+    'X-Api-Key': SPACE_API_KEY,
+  },
 });
 
 // Apply interceptors to both
@@ -59,3 +71,5 @@ applyInterceptors(api);
 applyInterceptors(uploadApi);
 
 export default api;
+
+// Helper to extract API error message (only for spaceApi)

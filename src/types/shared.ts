@@ -66,3 +66,11 @@ export interface SearchPaginatedResponse<T> {
   hits: T[]
   total: number
 }
+
+export interface ApiError {
+  detail: string
+}
+
+export interface AsyncOperationResponse {
+  operationId: string
+}
