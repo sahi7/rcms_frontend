@@ -85,7 +85,7 @@ export function DomainsDashboard() {
             Domains
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Purchase domain names, configure DNS records, and manage
+            Manage admission portal domain name, configure DNS records, and manage
             nameservers.
           </p>
         </div>

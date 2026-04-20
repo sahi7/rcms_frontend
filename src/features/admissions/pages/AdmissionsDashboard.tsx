@@ -91,6 +91,31 @@ export function AdmissionsDashboard() {
           applicants.
         </p>
       </div>
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, delay: 0.1 }}
+        className="flex justify-end"
+      >
+        <Link
+          to="/dashboard/domains/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg 
+               bg-gradient-to-r from-orange-500 to-amber-500 
+               text-white text-sm font-medium 
+               shadow-sm hover:shadow-md 
+               hover:from-orange-600 hover:to-amber-600 
+               transition-all"
+        >
+          Manage Admissions portal and domain name
+          <motion.span
+            initial={{ x: 0 }}
+            whileHover={{ x: 4 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+          >
+            <ArrowRightIcon className="w-4 h-4" />
+          </motion.span>
+        </Link>
+      </motion.div>
 
       {currentCycle && (
         <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-xl p-4 sm:p-5">
