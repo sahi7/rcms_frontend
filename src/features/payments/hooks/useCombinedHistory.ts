@@ -1,3 +1,4 @@
+// src/features/payments/hooks/useCombinedHistory.ts
 import { useMemo } from 'react'
 import { usePaymentHistory } from './usePaymentHistory'
 import { useRegistrationsHistory } from './useRegistrationsHistory'
@@ -9,7 +10,6 @@ interface Filters {
 }
 
 export function useCombinedHistory(filters: Filters = {}) {
-  // Backend is no longer filtered – we fetch everything and filter on the frontend only
   const payments = usePaymentHistory({
     limit: filters.limit,
   })
@@ -18,12 +18,19 @@ export function useCombinedHistory(filters: Filters = {}) {
   })
 
   const combined = useMemo<CombinedHistoryItem[]>(() => {
-    const paymentItems = payments.data?.pages.flatMap((p) => p.items) || []
-    const registrationItems =
-      registrations.data?.pages.flatMap((p) => p.items) || []
+    // Safely handle backend responses where `items: null` (instead of `items: []`)
+    // This is the exact cause of "p is null" / "can't access property domain_name"
+    const paymentItems = payments.data?.pages
+      ?.flatMap((page) => page?.items ?? [])
+      .filter((item): item is NonNullable<typeof item> => item != null) ?? []
+
+    const registrationItems = registrations.data?.pages
+      ?.flatMap((page) => page?.items ?? [])
+      .filter((item): item is NonNullable<typeof item> => item != null) ?? []
 
     const byDomain = new Map<string, CombinedHistoryItem>()
 
+    // Process payments
     for (const p of paymentItems) {
       const key = `${p.domain_name}:${p.created_at}`
       byDomain.set(key, {
@@ -34,12 +41,17 @@ export function useCombinedHistory(filters: Filters = {}) {
       })
     }
 
+    // Process registrations (with matching logic)
     for (const r of registrationItems) {
-      // Try to match with the closest payment for the same domain (within 24h)
       let matched: CombinedHistoryItem | undefined
       const rTime = new Date(r.created_at).getTime()
+
       for (const item of byDomain.values()) {
-        if (item.domain === r.domain && item.payment && !item.registration) {
+        if (
+          item.domain === r.domain &&
+          item.payment &&
+          !item.registration
+        ) {
           const pTime = new Date(item.payment.created_at).getTime()
           if (Math.abs(rTime - pTime) < 24 * 3600 * 1000) {
             matched = item
@@ -47,6 +59,7 @@ export function useCombinedHistory(filters: Filters = {}) {
           }
         }
       }
+
       if (matched) {
         matched.registration = r
       } else {
@@ -65,11 +78,11 @@ export function useCombinedHistory(filters: Filters = {}) {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
 
-    // Frontend-only filtering (applied after combining and sorting)
+    // Frontend-only filtering
     if (filters.domain?.trim()) {
       const searchTerm = filters.domain.toLowerCase().trim()
       result = result.filter((item) =>
-        item.domain.toLowerCase().includes(searchTerm),
+        item.domain?.toLowerCase().includes(searchTerm),
       )
     }
 

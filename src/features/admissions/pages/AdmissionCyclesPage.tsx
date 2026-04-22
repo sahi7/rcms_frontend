@@ -1,4 +1,5 @@
-import { useState } from 'react'
+// src/features/admissions/pages/AdmissionCyclesPage.tsx
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   PlusIcon,
@@ -29,14 +30,21 @@ import { formatDate } from '@/lib/utils'
 import { Modal } from '@/components/AdModal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { toast } from 'sonner'
+
 const inputCls =
   'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500'
+
 export function AdmissionCyclesPage() {
   const { data, isLoading } = useCyclesList()
   const createMut = useCreateCycle()
   const updateMut = useUpdateCycle()
   const deleteMut = useDeleteCycle()
   const setCurrentMut = useSetCurrentCycle()
+
+  // Safely handle backend responses where `items: null` when empty (instead of `items: []`)
+  // This fixes the exact error: "can't access property 'length', data.items is null"
+  const items = data?.items ?? []
+
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<AdmissionCycle | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AdmissionCycle | null>(null)
@@ -44,14 +52,17 @@ export function AdmissionCyclesPage() {
   const [migrateTarget, setMigrateTarget] = useState<AdmissionCycle | null>(
     null,
   )
+
   const openCreate = () => {
     setEditing(null)
     setFormOpen(true)
   }
+
   const openEdit = (c: AdmissionCycle) => {
     setEditing(c)
     setFormOpen(true)
   }
+
   const handleSave = async (payload: AdmissionCyclePayload) => {
     try {
       if (editing) {
@@ -69,6 +80,7 @@ export function AdmissionCyclesPage() {
       toast.error(e?.response?.data?.detail || 'Failed to save cycle')
     }
   }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     try {
@@ -79,6 +91,7 @@ export function AdmissionCyclesPage() {
       toast.error(e?.response?.data?.detail || 'Failed to delete cycle')
     }
   }
+
   const handleSetCurrent = async (c: AdmissionCycle) => {
     try {
       await setCurrentMut.mutateAsync(c.id)
@@ -87,6 +100,7 @@ export function AdmissionCyclesPage() {
       toast.error(e?.response?.data?.detail || 'Failed to set current cycle')
     }
   }
+
   return (
     <motion.div
       initial={{
@@ -122,11 +136,11 @@ export function AdmissionCyclesPage() {
         <div className="flex items-center justify-center py-12 text-slate-400">
           <LoaderIcon className="w-5 h-5 animate-spin mr-2" /> Loading cycles...
         </div>
-      ) : !data?.items.length ? (
+      ) : !items.length ? (
         <EmptyState onCreate={openCreate} />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {data.items.map((c) => (
+          {items.map((c) => (
             <CycleCard
               key={c.id}
               cycle={c}
@@ -183,6 +197,7 @@ export function AdmissionCyclesPage() {
     </motion.div>
   )
 }
+
 function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <div className="bg-white border border-dashed border-slate-200 rounded-xl p-10 text-center">
@@ -203,6 +218,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
     </div>
   )
 }
+
 function CycleCard({
   cycle,
   onEdit,
@@ -307,6 +323,7 @@ function CycleCard({
     </motion.div>
   )
 }
+
 function CycleFormModal({
   open,
   initial,
@@ -325,13 +342,7 @@ function CycleFormModal({
   const [endDate, setEndDate] = useState('')
   const [isCurrent, setIsCurrent] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  // reset on open
-  useState(() => {
-    // no-op: handled below
-  })
-  if (open && !initial && !name && !startDate && !endDate) {
-    // fresh state
-  }
+
   const onOpen = () => {
     if (initial) {
       setName(initial.name)
@@ -346,10 +357,12 @@ function CycleFormModal({
     }
     setErrors({})
   }
-  // Mount/open trigger
-  useState(() => onOpen())
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // use a key-based reset instead
+
+  // Reset form when modal opens/closes
+  React.useEffect(() => {
+    if (open) onOpen()
+  }, [open, initial])
+
   return (
     <Modal
       open={open}
@@ -366,6 +379,7 @@ function CycleFormModal({
     </Modal>
   )
 }
+
 function CycleFormBody({
   initial,
   submitting,
@@ -386,6 +400,7 @@ function CycleFormBody({
   )
   const [isCurrent, setIsCurrent] = useState(initial?.is_current ?? false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+
   const validate = (): boolean => {
     const e: Record<string, string> = {}
     if (!name.trim()) e.name = 'Name is required'
@@ -396,6 +411,7 @@ function CycleFormBody({
     setErrors(e)
     return Object.keys(e).length === 0
   }
+
   const handleSubmit = async () => {
     if (!validate()) return
     const payload: AdmissionCyclePayload = {
@@ -406,6 +422,7 @@ function CycleFormBody({
     }
     await onSubmit(payload)
   }
+
   return (
     <div className="space-y-4">
       <div>
@@ -481,6 +498,7 @@ function CycleFormBody({
     </div>
   )
 }
+
 function CloseCycleModal({
   cycle,
   onClose,
@@ -491,6 +509,7 @@ function CloseCycleModal({
   const { data, isLoading, isError, error } = useClosureStatus(cycle.id)
   const closeMut = useCloseCycle()
   const canClose = !data?.is_admissions_closed
+
   const handleClose = async () => {
     try {
       await closeMut.mutateAsync(cycle.id)
@@ -500,6 +519,7 @@ function CloseCycleModal({
       toast.error(e?.response?.data?.detail || 'Failed to close cycle')
     }
   }
+
   return (
     <Modal
       open
@@ -580,6 +600,7 @@ function CloseCycleModal({
     </Modal>
   )
 }
+
 function MigrateCycleModal({
   cycle,
   onClose,
@@ -590,6 +611,7 @@ function MigrateCycleModal({
   const [started, setStarted] = useState(false)
   const startMut = useMigrateCycle()
   const { data: status } = useMigrationStatus(cycle.id, started)
+
   const handleStart = async () => {
     try {
       await startMut.mutateAsync(cycle.id)
@@ -599,10 +621,12 @@ function MigrateCycleModal({
       toast.error(e?.response?.data?.detail || 'Failed to start migration')
     }
   }
+
   const pct =
     status && status.total_approved > 0
       ? Math.round((status.migrated / status.total_approved) * 100)
       : 0
+
   return (
     <Modal
       open

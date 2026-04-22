@@ -66,7 +66,7 @@ export function AdmissionsDashboard() {
     status: 'APPROVED',
     limit: 1,
   })
-  const currentCycle = cycles.data?.items.find((c) => c.is_current)
+  const currentCycle = (cycles.data?.items ?? []).find((c) => c.is_current)
   return (
     <motion.div
       initial={{

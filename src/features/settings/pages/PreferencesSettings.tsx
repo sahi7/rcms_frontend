@@ -574,9 +574,9 @@ export function PreferencesSettings() {
                   <SelectValue placeholder="Select progression" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="levels">Levels</SelectItem>
-                  <SelectItem value="forms">Forms</SelectItem>
-                  <SelectItem value="classrooms">Classes</SelectItem>
+                  <SelectItem value="level">Level</SelectItem>
+                  <SelectItem value="form">Form</SelectItem>
+                  <SelectItem value="classroom">Class</SelectItem>
                 </SelectContent>
               </Select>
             </div>

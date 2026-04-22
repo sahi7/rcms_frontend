@@ -1,3 +1,4 @@
+// src/features/admissions/pages/StudyProgramsPage.tsx
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
@@ -27,7 +28,6 @@ import { useIsUni } from '@/features/settings/hooks/useInstitution'
 import { useInstitutionConfig } from '@/hooks/shared/useInstitutionConfig'
 import { toast } from 'sonner'
 
-
 export function StudyProgramsPage() {
   const { data, isLoading } = useStudyProgramsList()
   const { getLabel } = useInstitutionConfig()
@@ -41,6 +41,11 @@ export function StudyProgramsPage() {
     lookups.classRooms?.some((c: any) => c.has_departments === true) ?? false
   // ─────────────────────────────────────────────────────────────
 
+  // Safely handle backend responses where `items: null` when empty
+  // (instead of `items: []`). This fixes the exact error:
+  // "can't access property 'length', data.items is null"
+  const items = data?.items ?? []
+
   const createMut = useCreateStudyProgram()
   const updateMut = useUpdateStudyProgram()
   const deleteMut = useDeleteStudyProgram()
@@ -52,10 +57,12 @@ export function StudyProgramsPage() {
   const [deleteTarget, setDeleteTarget] = useState<StudyProgram | null>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+
   const toggleSelect = (id: number) =>
     setSelected((s) =>
       s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
     )
+
   const handleSave = async (payload: StudyProgramPayload) => {
     try {
       if (editing) {
@@ -74,6 +81,7 @@ export function StudyProgramsPage() {
       toast.error(e?.response?.data?.detail || 'Failed to save')
     }
   }
+
   const handleDelete = async () => {
     if (!deleteTarget) return
     try {
@@ -84,6 +92,7 @@ export function StudyProgramsPage() {
       toast.error(e?.response?.data?.detail || 'Failed to delete')
     }
   }
+
   const handleBulkDelete = async () => {
     try {
       await bulkDeleteMut.mutateAsync(selected)
@@ -94,6 +103,7 @@ export function StudyProgramsPage() {
       toast.error(e?.response?.data?.detail || 'Bulk delete failed')
     }
   }
+
   return (
     <motion.div
       initial={{
@@ -174,7 +184,7 @@ export function StudyProgramsPage() {
         <div className="flex items-center justify-center py-12 text-slate-400">
           <LoaderIcon className="w-5 h-5 animate-spin mr-2" /> Loading...
         </div>
-      ) : !data?.items.length ? (
+      ) : !items.length ? (
         <div className="bg-white border border-dashed border-slate-200 rounded-xl p-10 text-center">
           <h3 className="text-base font-semibold text-slate-800">
             No study programs yet
@@ -187,7 +197,7 @@ export function StudyProgramsPage() {
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           {/* Mobile cards */}
           <div className="sm:hidden divide-y divide-slate-100">
-            {data.items.map((p) => (
+            {items.map((p) => (
               <div key={p.id} className="p-4 flex items-start gap-3">
                 <input
                   type="checkbox"
@@ -197,23 +207,23 @@ export function StudyProgramsPage() {
                 />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-slate-900">
-                    {lookups.classRoomMap.get(p.class_room_id) ||
+                    {lookups.classRoomMap?.get(p.class_room_id) ||
                       `${getLabel('class_progression_name')} #${p.class_room_id}`}
                   </div>
                   <div className="text-xs text-slate-500 mt-0.5 space-x-2">
                     {showFacultyAndLevel && p.faculty_id && (
-                      <span>{lookups.facultyMap.get(p.faculty_id)}</span>
+                      <span>{lookups.facultyMap?.get(p.faculty_id)}</span>
                     )}
                     {showDepartmentAndProgram && p.department_id && (
                       <span>
-                        • {lookups.departmentMap.get(p.department_id)}
+                        • {lookups.departmentMap?.get(p.department_id)}
                       </span>
                     )}
                     {showDepartmentAndProgram && p.program_id && (
-                      <span>• {lookups.programMap.get(p.program_id)}</span>
+                      <span>• {lookups.programMap?.get(p.program_id)}</span>
                     )}
                     {showFacultyAndLevel && p.level_id && (
-                      <span>• {lookups.levelMap.get(p.level_id)}</span>
+                      <span>• {lookups.levelMap?.get(p.level_id)}</span>
                     )}
                   </div>
                   <div className="mt-2">
@@ -246,6 +256,7 @@ export function StudyProgramsPage() {
               </div>
             ))}
           </div>
+
           {/* Desktop table */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm">
@@ -255,12 +266,11 @@ export function StudyProgramsPage() {
                     <input
                       type="checkbox"
                       checked={
-                        data.items.length > 0 &&
-                        selected.length === data.items.length
+                        items.length > 0 && selected.length === items.length
                       }
                       onChange={(e) =>
                         setSelected(
-                          e.target.checked ? data.items.map((i) => i.id) : [],
+                          e.target.checked ? items.map((i) => i.id) : [],
                         )
                       }
                       className="rounded text-orange-500 focus:ring-orange-500"
@@ -276,7 +286,7 @@ export function StudyProgramsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.items.map((p) => (
+                {items.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
                       <input
@@ -287,31 +297,31 @@ export function StudyProgramsPage() {
                       />
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900">
-                      {lookups.classRoomMap.get(p.class_room_id) ||
+                      {lookups.classRoomMap?.get(p.class_room_id) ||
                         `#${p.class_room_id}`}
                     </td>
                     {showFacultyAndLevel && (
                       <td className="px-4 py-3 text-slate-600">
-                        {(p.faculty_id && lookups.facultyMap.get(p.faculty_id)) ||
+                        {(p.faculty_id && lookups.facultyMap?.get(p.faculty_id)) ||
                           '—'}
                       </td>
                     )}
                     {showDepartmentAndProgram && (
                       <td className="px-4 py-3 text-slate-600">
                         {(p.department_id &&
-                          lookups.departmentMap.get(p.department_id)) ||
+                          lookups.departmentMap?.get(p.department_id)) ||
                           '—'}
                       </td>
                     )}
                     {showDepartmentAndProgram && (
                       <td className="px-4 py-3 text-slate-600">
-                        {(p.program_id && lookups.programMap.get(p.program_id)) ||
+                        {(p.program_id && lookups.programMap?.get(p.program_id)) ||
                           '—'}
                       </td>
                     )}
                     {showFacultyAndLevel && (
                       <td className="px-4 py-3 text-slate-600">
-                        {(p.level_id && lookups.levelMap.get(p.level_id)) || '—'}
+                        {(p.level_id && lookups.levelMap?.get(p.level_id)) || '—'}
                       </td>
                     )}
                     <td className="px-4 py-3">
@@ -417,6 +427,7 @@ export function StudyProgramsPage() {
     </motion.div>
   )
 }
+
 function StudyProgramForm({
   initial,
   lookups,
@@ -452,6 +463,7 @@ function StudyProgramForm({
   const [isActive, setIsActive] = useState(initial?.is_active ?? true)
   const { getLabel } = useInstitutionConfig()
   const [err, setErr] = useState('')
+
   const handleSubmit = () => {
     if (!classRoomId) {
       setErr(`${getLabel('class_progression_name')} is required`)
@@ -467,6 +479,7 @@ function StudyProgramForm({
     if (levelId) payload.level_id = levelId
     onSubmit(payload)
   }
+
   return (
     <div className="space-y-4">
       <SearchableSelect
@@ -562,6 +575,7 @@ function StudyProgramForm({
     </div>
   )
 }
+
 function BulkCreateModal({
   open,
   lookups,
@@ -585,6 +599,7 @@ function BulkCreateModal({
   const [programId, setProgramId] = useState<number | null>(null)
   const [levelId, setLevelId] = useState<number | null>(null)
   const { getLabel } = useInstitutionConfig()
+
   const reset = () => {
     setClassRoomIds([])
     setFacultyId(null)
@@ -592,6 +607,7 @@ function BulkCreateModal({
     setProgramId(null)
     setLevelId(null)
   }
+
   const handleSubmit = async () => {
     if (classRoomIds.length === 0) {
       toast.error(`Select at least one ${getLabel('class_progression_name')}`)
@@ -611,6 +627,7 @@ function BulkCreateModal({
     await onSubmit(rows)
     reset()
   }
+
   return (
     <Modal
       open={open}

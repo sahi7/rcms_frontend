@@ -1,3 +1,4 @@
+// src/features/admissions/pages/ApplicantsPage.tsx
 import React, { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -29,6 +30,7 @@ import { formatDate } from '@/lib/utils'
 import { Modal } from '@/components/AdModal'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { toast } from 'sonner'
+
 const STATUSES: ApplicantStatus[] = [
     'SUBMITTED',
     'UNDER_REVIEW',
@@ -36,6 +38,7 @@ const STATUSES: ApplicantStatus[] = [
     'REJECTED',
     'WAITLISTED',
 ]
+
 const statusToBadge = (s: ApplicantStatus) => {
     switch (s) {
         case 'APPROVED':
@@ -51,11 +54,11 @@ const statusToBadge = (s: ApplicantStatus) => {
     }
 }
 
-
 export function ApplicantsPage() {
     const [searchParams, setSearchParams] = useSearchParams()
     const [q, setQ] = useState(searchParams.get('q') ?? '')
     const [filtersOpen, setFiltersOpen] = useState(false)
+
     const params: ApplicantSearchParams = useMemo(
         () => ({
             q: searchParams.get('q') || undefined,
@@ -65,41 +68,53 @@ export function ApplicantsPage() {
             study_program_id: searchParams.get('study_program_id') || undefined,
             gender: searchParams.get('gender') || undefined,
             nationality: searchParams.get('nationality') || undefined,
-            fields: "id,full_name,email,application_type_id,study_program_id,admission_cycle_id,submitted_at,status",
+            fields:
+                'id,full_name,email,application_type_id,study_program_id,admission_cycle_id,submitted_at,status',
             page: Number(searchParams.get('page') || 1),
             limit: 20,
         }),
         [searchParams],
     )
+
     const { data, isLoading, isFetching } = useApplicantsSearch(params)
     const cycles = useCyclesList()
     const types = useApplicationTypesList()
     const programs = useStudyProgramsList()
     const lookups = useStructureLookups()
+
     const bulkStatusMut = useBulkUpdateApplicationStatus()
     const bulkDeleteMut = useBulkDeleteApplications()
+
     const [selected, setSelected] = useState<string[]>([])
     const [bulkStatusOpen, setBulkStatusOpen] = useState(false)
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
+
+    // ─────────────────────────────────────────────────────────────
+    // Safely handle backend responses where `items: null` (instead of `items: []`)
+    // This fixes the exact error: "can't access property 'forEach', cycles.data.items is null"
     const cycleMap = useMemo(() => {
         const m = new Map<string, string>()
-        cycles.data?.items.forEach((c) => m.set(c.id, c.name))
+            ; (cycles.data?.items ?? []).forEach((c) => m.set(c.id, c.name))
         return m
     }, [cycles.data])
+
     const typeMap = useMemo(() => {
         const m = new Map<string, string>()
-        types.data?.items.forEach((t) => m.set(t.id, t.name))
+            ; (types.data?.items ?? []).forEach((t) => m.set(t.id, t.name))
         return m
     }, [types.data])
+
     const programMap = useMemo(() => {
         const m = new Map<string, string>()
-        programs.data?.items.forEach((p) => {
-            const name =
-                lookups.classRoomMap.get(p.class_room_id) || `Program #${p.id}`
-            m.set(String(p.id), name)
-        })
+            ; (programs.data?.items ?? []).forEach((p) => {
+                const name =
+                    lookups.classRoomMap.get(p.class_room_id) || `Program #${p.id}`
+                m.set(String(p.id), name)
+            })
         return m
     }, [programs.data, lookups.classRoomMap])
+    // ─────────────────────────────────────────────────────────────
+
     const updateParam = (key: string, value?: string) => {
         const sp = new URLSearchParams(searchParams)
         if (value) sp.set(key, value)
@@ -109,24 +124,29 @@ export function ApplicantsPage() {
             replace: true,
         })
     }
+
     const clearFilters = () => {
         setSearchParams(new URLSearchParams(), {
             replace: true,
         })
         setQ('')
     }
+
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         updateParam('q', q.trim() || undefined)
     }
+
     const toggleSelect = (id: string) =>
         setSelected((s) =>
             s.includes(id) ? s.filter((x) => x !== id) : [...s, id],
         )
+
     const totalPages = data
         ? Math.max(1, Math.ceil(data.total / (params.limit ?? 20)))
         : 1
     const page = params.page ?? 1
+
     const activeFilters = [
         params.status,
         params.admission_cycle_id,
@@ -135,6 +155,7 @@ export function ApplicantsPage() {
         params.gender,
         params.nationality,
     ].filter(Boolean).length
+
     return (
         <motion.div
             initial={{
@@ -264,7 +285,7 @@ export function ApplicantsPage() {
                     <LoaderIcon className="w-5 h-5 animate-spin mr-2" /> Loading
                     applicants...
                 </div>
-            ) : !data?.hits.length ? (
+            ) : !data?.hits?.length ? (
                 <div className="bg-white border border-dashed border-slate-200 rounded-xl p-10 text-center">
                     <h3 className="text-base font-semibold text-slate-800">
                         No applicants found
@@ -314,6 +335,7 @@ export function ApplicantsPage() {
                             </Link>
                         ))}
                     </div>
+
                     {/* Desktop */}
                     <div className="hidden sm:block overflow-x-auto">
                         <table className="w-full text-sm">
@@ -323,8 +345,7 @@ export function ApplicantsPage() {
                                         <input
                                             type="checkbox"
                                             checked={
-                                                data.total > 0 &&
-                                                selected.length === data.hits.length
+                                                data.total > 0 && selected.length === data.hits.length
                                             }
                                             onChange={(e) =>
                                                 setSelected(
@@ -447,12 +468,10 @@ export function ApplicantsPage() {
                     />
                     <SearchableSelect
                         label="Admission cycle"
-                        options={
-                            cycles.data?.items.map((c) => ({
-                                value: c.id,
-                                label: c.name,
-                            })) ?? []
-                        }
+                        options={(cycles.data?.items ?? []).map((c) => ({
+                            value: c.id,
+                            label: c.name,
+                        }))}
                         value={params.admission_cycle_id ?? null}
                         onChange={(v) =>
                             updateParam('admission_cycle_id', v ? String(v) : undefined)
@@ -461,12 +480,10 @@ export function ApplicantsPage() {
                     />
                     <SearchableSelect
                         label="Application type"
-                        options={
-                            types.data?.items.map((t) => ({
-                                value: t.id,
-                                label: t.name,
-                            })) ?? []
-                        }
+                        options={(types.data?.items ?? []).map((t) => ({
+                            value: t.id,
+                            label: t.name,
+                        }))}
                         value={params.application_type_id ?? null}
                         onChange={(v) =>
                             updateParam('application_type_id', v ? String(v) : undefined)
@@ -475,14 +492,12 @@ export function ApplicantsPage() {
                     />
                     <SearchableSelect
                         label="Study program"
-                        options={
-                            programs.data?.items.map((p) => ({
-                                value: String(p.id),
-                                label:
-                                    lookups.classRoomMap.get(p.class_room_id) ||
-                                    `Program #${p.id}`,
-                            })) ?? []
-                        }
+                        options={(programs.data?.items ?? []).map((p) => ({
+                            value: String(p.id),
+                            label:
+                                lookups.classRoomMap.get(p.class_room_id) ||
+                                `Program #${p.id}`,
+                        }))}
                         value={params.study_program_id ?? null}
                         onChange={(v) =>
                             updateParam('study_program_id', v ? String(v) : undefined)
@@ -577,6 +592,7 @@ export function ApplicantsPage() {
         </motion.div>
     )
 }
+
 function FilterChip({
     label,
     onRemove,
@@ -593,6 +609,7 @@ function FilterChip({
         </span>
     )
 }
+
 function BulkStatusModal({
     open,
     count,
@@ -608,6 +625,7 @@ function BulkStatusModal({
 }) {
     const [status, setStatus] = useState<ApplicantStatus>('APPROVED')
     const [notes, setNotes] = useState('')
+
     return (
         <Modal open={open} title={`Update ${count} applications`} onClose={onClose}>
             <div className="space-y-4">
