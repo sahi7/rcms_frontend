@@ -90,10 +90,10 @@ export function ForgotPasswordPage() {
                 Check your email
               </h2>
               <p className="text-gray-500 mb-8">
-                We've sent a password reset link to{' '}
+                W'll send a reset link if email matches our records{' '}
                 <span className="font-medium text-gray-900">{submittedEmail}</span>.
               </p>
-              <Link to="/">
+              <Link to="/login">
                 <Button className="w-full h-11 bg-orange-600 hover:bg-orange-700 text-white">
                   Return to login
                 </Button>
