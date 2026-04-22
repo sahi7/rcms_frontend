@@ -1,5 +1,4 @@
-// src/types/shared.ts
-import { Department } from '@/types/structure'
+import { Department } from './structure'
 
 export interface PaginatedResponse<T> {
   data: T[]
@@ -11,10 +10,7 @@ export interface PaginatedResponse<T> {
     has_next: boolean
     has_previous: boolean
   }
-  search: {
-    term: string
-    has_results: boolean
-  }
+  search: { term: string; has_results: boolean }
   filters: Record<string, any>
 }
 
@@ -22,12 +18,10 @@ export interface User {
   id: number
   first_name: string
   role: string
-  department?: Department;
+  department?: Department
   last_name: string
   email: string
   username?: string
-  
-  // Basic info
   taught_subjects?: number[]
   phone_number?: string
   enrollment_status?: string
@@ -37,8 +31,6 @@ export interface User {
   value?: number
   date_of_birth?: string
   initials?: string
-  
-  // NEW fields from your code - all optional
   nationality?: string
   preferred_language?: string
   emergency_guardian_name?: string
@@ -46,7 +38,7 @@ export interface User {
   emergency_guardian_phone?: string
   emergency_guardian_address?: string
   relationship_to_guardian?: string
-  subject_ids?: number[]  // For teachers' subjects
+  subject_ids?: number[]
 }
 
 export interface ListQueryParams {
@@ -56,21 +48,23 @@ export interface ListQueryParams {
   [key: string]: any
 }
 
-// The following below id only for the Admisions feature. They have a different response structure
 export interface AdPaginatedResponse<T> {
   items: T[]
   total: number
 }
-
 export interface SearchPaginatedResponse<T> {
   hits: T[]
   total: number
 }
-
 export interface ApiError {
   detail: string
 }
-
 export interface AsyncOperationResponse {
   operationId: string
+}
+
+export interface CursorPaginatedResponse<T> {
+  items: T[]
+  next_cursor: string
+  has_more: boolean
 }

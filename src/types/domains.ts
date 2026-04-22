@@ -1,3 +1,5 @@
+import type { PremiumPricing } from './payments'
+
 export interface DomainContact {
   firstName: string
   lastName: string
@@ -48,10 +50,7 @@ export interface DomainDetails {
     contactForm: boolean
     level: 'high' | 'medium' | 'low' | 'none'
   }
-  nameservers: {
-    provider: 'basic' | 'custom' | string
-    hosts: string[]
-  }
+  nameservers: { provider: 'basic' | 'custom' | string; hosts: string[] }
   contacts: {
     registrant: string
     admin: string
@@ -71,6 +70,7 @@ export type DomainAvailabilityResult =
 export interface DomainAvailabilityResponse {
   domain: string
   result: DomainAvailabilityResult
+  premiumPricing?: PremiumPricing[]
 }
 
 export interface RegisterDomainPayload {
@@ -98,12 +98,10 @@ export interface DnsRecordsResponse {
   items: DnsRecord[]
   total: number
 }
-
 export interface DnsSavePayload {
   force: boolean
   items: DnsRecord[]
 }
-
 export interface DnsDeletePayload {
   type: DnsRecordType
   name: string

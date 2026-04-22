@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Component } from 'react'
+import { useEffect, useState, ComponentType  } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -38,7 +38,7 @@ const TABS: {
   {
     key: 'register',
     label: 'Register',
-    icon: BoxIcon as any,
+    icon: BoxIcon,
   },
   {
     key: 'dns',
@@ -127,7 +127,6 @@ export function DomainManager() {
         </div>
       ) : (
         <>
-          {/* Tabs */}
           <div className="bg-white border border-slate-200 rounded-xl p-1 overflow-x-auto">
             <div className="flex items-center gap-1 min-w-max">
               {TABS.map(({ key, label, icon: Icon }) => {
@@ -146,7 +145,6 @@ export function DomainManager() {
             </div>
           </div>
 
-          {/* Panel */}
           <motion.div
             key={tab}
             initial={{

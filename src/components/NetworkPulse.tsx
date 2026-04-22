@@ -1,3 +1,4 @@
+// src/components/NetworkPulse.tsx
 import { motion } from 'framer-motion'
 import { ServerIcon, GlobeIcon, ActivityIcon } from 'lucide-react'
 type PulseState = 'idle' | 'connecting' | 'success' | 'error'

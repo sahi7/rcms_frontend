@@ -9,14 +9,15 @@ import {
   ArrowRightIcon,
   PlusCircleIcon,
   AlertCircleIcon,
+  HistoryIcon,
+  AlertTriangleIcon,
 } from 'lucide-react'
 import { useDomainInfo } from '../hooks/useDomainInfo'
 import { useDomain } from '../hooks/useDomain'
 import { useDnsRecords } from '../hooks/useDnsRecords'
-import { StatusBadge } from '@/components/StatusBadge'
-import { formatDate } from '@/lib/utils'
-import { LiveIndicator, NetworkPulse } from '@/components/NetworkPulse'
-import { getErrorMessage } from '@/lib/utils'
+import { StatusBadge } from '../../../components/StatusBadge'
+import { formatDate, getErrorMessage, daysUntil } from '../../../lib/utils'
+import { LiveIndicator, NetworkPulse } from '../../../components/NetworkPulse'
 const StatCard = ({
   label,
   value,
@@ -54,8 +55,39 @@ const StatCard = ({
     </div>
   </Link>
 )
-
-
+function ExpiryBanner({ date }: { date?: string }) {
+  const days = daysUntil(date)
+  if (days == null || days > 30) return null
+  const tone =
+    days < 0 || days <= 7
+      ? 'bg-rose-50 border-rose-200 text-rose-900'
+      : 'bg-amber-50 border-amber-200 text-amber-900'
+  const label =
+    days < 0
+      ? `Expired ${Math.abs(days)} day(s) ago`
+      : `Expires in ${days} day(s)`
+  return (
+    <div
+      className={`border rounded-xl p-3 sm:p-4 flex items-start gap-3 ${tone}`}
+    >
+      <AlertTriangleIcon className="w-5 h-5 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold">
+          {label} — renew to avoid service interruption
+        </p>
+        <p className="text-xs mt-0.5 opacity-90">
+          Keep your domain active by renewing or enabling auto-renew.
+        </p>
+      </div>
+      <Link
+        to="/dashboard/domains/manage"
+        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-white rounded-lg border border-current/20 hover:bg-white/60 shrink-0"
+      >
+        Manage <ArrowRightIcon className="w-3 h-3" />
+      </Link>
+    </div>
+  )
+}
 export function DomainsDashboard() {
   const info = useDomainInfo()
   const hasDomain = !!info.data?.DomainName
@@ -85,14 +117,22 @@ export function DomainsDashboard() {
             Domains
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Manage admission portal domain name, configure DNS records, and manage
-            nameservers.
+            Manage domain, configure DNS records, and manage nameservers.
           </p>
         </div>
-        <LiveIndicator label="Live status" />
+        <div className="flex items-center gap-3">
+          <Link
+            to="/dashboard/domains/history"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg"
+          >
+            <HistoryIcon className="w-3.5 h-3.5" /> History
+          </Link>
+          <LiveIndicator label="Live status" />
+        </div>
       </div>
 
-      {/* Connection status card */}
+      {hasDomain && <ExpiryBanner date={domain.data?.expirationDate} />}
+
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <NetworkPulse
@@ -125,7 +165,6 @@ export function DomainsDashboard() {
         </div>
       </div>
 
-      {/* Hero: either current domain or CTA to register */}
       {hasDomain && domain.data ? (
         <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-xl p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -167,11 +206,9 @@ export function DomainsDashboard() {
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-blue-700">
-                    Get started
-                  </span>
-                </div>
+                <span className="text-xs font-semibold uppercase tracking-wider text-blue-700">
+                  Get started
+                </span>
                 <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
                   You don't have a domain yet
                 </h2>
@@ -182,7 +219,7 @@ export function DomainsDashboard() {
                 </p>
               </div>
               <Link
-                to="/dashboard/domains/manage"
+                to="/dashboard/domains/manage?tab=register"
                 className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shrink-0"
               >
                 <PlusCircleIcon className="w-4 h-4" /> Register a domain
@@ -192,7 +229,6 @@ export function DomainsDashboard() {
         )
       )}
 
-      {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Domain"

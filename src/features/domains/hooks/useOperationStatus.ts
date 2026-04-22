@@ -1,3 +1,4 @@
+// src/features/domains/hooks/useOperationStatus.ts
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { uploadApi } from '@/lib/api'

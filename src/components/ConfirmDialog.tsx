@@ -1,3 +1,4 @@
+// src/components/ConfirmDialog.tsx
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangleIcon, XIcon, LoaderIcon } from 'lucide-react'

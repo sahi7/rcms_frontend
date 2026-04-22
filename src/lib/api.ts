@@ -72,4 +72,8 @@ applyInterceptors(uploadApi);
 
 export default api;
 
-// Helper to extract API error message (only for spaceApi)
+/** Env flag: enable credit-card (link) payments in the UI */
+export const CARD_PAYMENTS_ENABLED =
+  ((typeof import.meta !== 'undefined' &&
+    (import.meta as any).env?.VITE_ENABLE_CARD_PAYMENTS) ||
+    'false') === 'true'

@@ -1,3 +1,4 @@
+// src/features/domains/hooks/useRegisterDomain.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { uploadApi } from '@/lib/api'
 import type { RegisterDomainPayload } from '@/types/domains'

@@ -37,11 +37,13 @@ import { MarkPreviewPage } from '@/features/marks/pages/MarkPreviewPage'
 import { UploadStatusPage } from '@/features/marks/pages/UploadStatusPage'
 import { StudentReportPage } from '@/features/students/pages/StudentReportPage'
 
-import { SettingsPage } from './features/settings/pages/SettingsPage'
-import { ReportCardPage } from './features/reports/report_cards/ReportCardPage'
+import { SettingsPage } from '@/features/settings/pages/SettingsPage'
+import { ReportCardPage } from '@/features/reports/report_cards/ReportCardPage'
 
-import { DomainsDashboard } from './features/domains/pages/DomainsDashboard'
-import { DomainManager } from './features/domains/pages/DomainManager'
+import { DomainsDashboard } from '@/features/domains/pages/DomainsDashboard'
+import { DomainManager } from '@/features/domains/pages/DomainManager'
+import { PaymentHistoryPage } from '@/features/payments/pages/PaymentHistoryPage'
+
 
 import { 
   AdmissionsDashboard,
@@ -144,6 +146,7 @@ export default function App() {
 
         <Route path="domains" element={<DomainsDashboard />} />
         <Route path="domains/manage" element={<DomainManager />}/>
+        <Route path="/dashboard/domains/history" element={<PaymentHistoryPage />} />
         {/* <Route path="/" element={<Navigate to="/dashboard/domains" replace />} /> */}
         {/* <Route path="/dashboard" element={<Navigate to="/dashboard/domains" replace />} /> */}
       </Route>
