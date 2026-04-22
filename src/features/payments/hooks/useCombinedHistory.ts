@@ -9,12 +9,11 @@ interface Filters {
 }
 
 export function useCombinedHistory(filters: Filters = {}) {
+  // Backend is no longer filtered – we fetch everything and filter on the frontend only
   const payments = usePaymentHistory({
-    domain: filters.domain,
     limit: filters.limit,
   })
   const registrations = useRegistrationsHistory({
-    domain: filters.domain,
     limit: filters.limit,
   })
 
@@ -61,11 +60,21 @@ export function useCombinedHistory(filters: Filters = {}) {
       }
     }
 
-    return Array.from(byDomain.values()).sort(
+    let result = Array.from(byDomain.values()).sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )
-  }, [payments.data, registrations.data])
+
+    // Frontend-only filtering (applied after combining and sorting)
+    if (filters.domain?.trim()) {
+      const searchTerm = filters.domain.toLowerCase().trim()
+      result = result.filter((item) =>
+        item.domain.toLowerCase().includes(searchTerm),
+      )
+    }
+
+    return result
+  }, [payments.data, registrations.data, filters.domain])
 
   return {
     items: combined,

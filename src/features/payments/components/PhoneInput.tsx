@@ -1,5 +1,4 @@
-import React from 'react'
-import { SearchableSelect } from '../../../components/SearchableSelect'
+import { SearchableSelect } from '@/components/SearchableSelect'
 interface PhoneInputProps {
   countryCode: string
   number: string

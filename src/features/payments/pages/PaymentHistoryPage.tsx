@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
@@ -15,9 +15,9 @@ import {
 import { useCombinedHistory } from '../hooks/useCombinedHistory'
 import { useRegisterDomain } from '../../domains/hooks/useRegisterDomain'
 import { useOperationStatus } from '../../domains/hooks/useOperationStatus'
-import { StatusBadge } from '../../../components/StatusBadge'
-import { NetworkPulse } from '../../../components/NetworkPulse'
-import { formatCurrency, formatDate, getErrorMessage } from '../../../lib/utils'
+import { StatusBadge } from '@/components/StatusBadge'
+import { NetworkPulse } from '@/components/NetworkPulse'
+import { formatCurrency, formatDate, getErrorMessage } from '@/lib/utils'
 import { toast } from 'sonner'
 function PaymentStatusCell({ status }: { status?: string }) {
   if (!status) return <span className="text-xs text-slate-400">—</span>
@@ -57,6 +57,7 @@ export function PaymentHistoryPage() {
   } = useCombinedHistory({
     domain: debouncedSearch || undefined,
   })
+  console.log("items: ", items);
   const [retryingDomain, setRetryingDomain] = useState<string | null>(null)
   const [retryOpId, setRetryOpId] = useState<string | null>(null)
   const register = useRegisterDomain()
@@ -72,10 +73,14 @@ export function PaymentHistoryPage() {
       setRetryOpId(null)
     },
   })
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [search])
   const handleSearch = (v: string) => {
     setSearch(v)
-    // Debounce
-    setTimeout(() => setDebouncedSearch(v), 300)
   }
   const handleRetry = async (domain: string) => {
     setRetryingDomain(domain)

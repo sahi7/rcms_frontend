@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   SearchIcon,
@@ -8,7 +8,6 @@ import {
   LoaderIcon,
   ShieldIcon,
   CreditCardIcon,
-  InfoIcon,
   SmartphoneIcon,
   LinkIcon,
   ExternalLinkIcon,
@@ -31,24 +30,24 @@ import {
   PaymentFlowStepper,
   type FlowStage,
 } from '@/features/payments/components/PaymentFlowStepper'
-import { uploadApi, CARD_PAYMENTS_ENABLED } from '@/lib/api'
+import { CARD_PAYMENTS_ENABLED } from '@/lib/api'
 import {
   formatCurrency,
   getErrorMessage,
   makeExternalReference,
   normalizePhone,
-} from '../../../../lib/utils'
+} from '@/lib/utils'
 import type {
   DomainAvailabilityResult,
   RegisterDomainPayload,
-} from '../../../../types/domains'
+} from '@/types/domains'
 import type {
   PaymentMethod,
   PremiumPricing,
   InitiateCollectResponse,
   InitiateLinkResponse,
   Transaction,
-} from '../../../../types/payments'
+} from '@/types/payments'
 const YEARS_OPTIONS = [1, 2, 3, 5, 10] as const
 const resultConfig: Record<
   DomainAvailabilityResult,

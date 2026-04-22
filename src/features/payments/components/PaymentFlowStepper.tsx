@@ -1,8 +1,7 @@
-import React from 'react'
 import {
   PacketJourney,
   type JourneyNode,
-} from '../../../components/PacketJourney'
+} from '@/components/PacketJourney'
 import { UserIcon, CreditCardIcon, ServerIcon, GlobeIcon } from 'lucide-react'
 export type FlowStage =
   | 'idle'
