@@ -1,4 +1,4 @@
-import React from 'react'
+// src/components/FieldRenderer.tsx
 import { FormField } from '@/types/admissions'
 interface FieldRendererProps {
   field: FormField

@@ -1,3 +1,4 @@
+// src/features/admissions/pages/FormFieldsPage.tsx
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -253,7 +254,7 @@ export function FormFieldsPage() {
       {currentId && (
         <FieldBuilderModal
           open={builderOpen}
-          applicationTypeId={currentId}
+          applicationTypeId={currentId || ''}
           initial={editing ?? undefined}
           nextOrder={nextOrder}
           onClose={() => {

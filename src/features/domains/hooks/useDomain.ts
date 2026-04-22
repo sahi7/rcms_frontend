@@ -10,7 +10,8 @@ export function useDomain(domainName: string | null | undefined) {
     queryKey: ['domains', 'details', domainName],
     queryFn: () =>
       uploadApi
-        .get<DomainDetails>(`/domains/domains/${domainName}`)
+        .get<DomainDetails>(`/domains/`)
+        // .get<DomainDetails>(`/domains/domains/${domainName}`)
         .then((r) => r.data),
     enabled: !!domainName,
     staleTime: 60 * 1000,

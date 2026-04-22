@@ -1,6 +1,7 @@
+// src/components/FieldBuilderModal.tsx
 import React, { useEffect, useState } from 'react'
 import { PlusIcon, TrashIcon } from 'lucide-react'
-import { Modal } from './Modal'
+import { Modal } from './AdModal'
 import {
   FieldConfig,
   FieldOption,

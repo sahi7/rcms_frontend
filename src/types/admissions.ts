@@ -1,4 +1,4 @@
-// ── Admission Cycles ──
+// src/types/admissions.ts
 export interface AdmissionCycle {
   id: string
   name: string
