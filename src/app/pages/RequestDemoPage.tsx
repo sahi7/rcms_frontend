@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check, ArrowRight, Monitor, Users as UsersIcon } from 'lucide-react'
@@ -7,9 +7,19 @@ import { Footer } from '@/features/landing/components/Footer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { PipeBackground } from '../components/PipeBackground'
+import { uploadApi } from '@/lib/api'
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/utils'
+
 interface DemoForm {
   name: string
   email: string
@@ -18,6 +28,7 @@ interface DemoForm {
   details: string
   otherInfo: string
 }
+
 export function RequestDemoPage() {
   const [form, setForm] = useState<DemoForm>({
     name: '',
@@ -27,68 +38,99 @@ export function RequestDemoPage() {
     details: '',
     otherInfo: '',
   })
+
   const [errors, setErrors] = useState<Partial<Record<keyof DemoForm, string>>>(
     {},
   )
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
   const update = <K extends keyof DemoForm>(k: K, v: DemoForm[K]) => {
     setForm((f) => ({
       ...f,
       [k]: v,
     }))
+    // Clear error for this field while typing
     setErrors((e) => ({
       ...e,
       [k]: undefined,
     }))
   }
-  const validate = () => {
+
+  const validate = (): boolean => {
     const errs: Partial<Record<keyof DemoForm, string>> = {}
-    if (!form.name.trim()) errs.name = 'Required'
-    if (!form.email.trim()) errs.email = 'Required'
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = 'Invalid email'
-    if (!form.institutionType) errs.institutionType = 'Required'
+
+    if (!form.name.trim()) errs.name = 'Your name is required'
+    if (!form.email.trim()) errs.email = 'Work email is required'
+    else if (!/^\S+@\S+\.\S+$/.test(form.email))
+      errs.email = 'Please enter a valid email address'
+
+    if (!form.institutionType) errs.institutionType = 'Please select your institution type'
     if (!form.demoType) errs.demoType = 'Please choose a demo type'
-    if (!form.details.trim()) errs.details = 'Tell us a bit about your school'
+    if (!form.details.trim())
+      errs.details = 'Please tell us about your school / needs'
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-    setSubmitting(true)
-    try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          subject: 'Demo request',
-          ...form,
-        }),
+
+  // Scroll to first error field (only called after failed submit)
+  const scrollToFirstError = () => {
+    const firstErrorKey = Object.keys(errors)[0] as keyof DemoForm | undefined
+    if (!firstErrorKey) return
+
+    let id = ''
+    if (firstErrorKey === 'name') id = 'name'
+    else if (firstErrorKey === 'email') id = 'email'
+    else if (firstErrorKey === 'institutionType') id = 'institutionType'
+    else if (firstErrorKey === 'demoType') id = 'demoType' // we use the container
+    else if (firstErrorKey === 'details') id = 'details'
+
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
       })
-    } catch {
-      // swallow — keep UX smooth; real errors would be handled by data layer
-    } finally {
-      setSubmitting(false)
-      setSubmitted(true)
     }
   }
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+
+    const isValid = validate()
+
+    if (!isValid) {
+      // Only scroll when submit fails — not while typing
+      scrollToFirstError()
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      await uploadApi.post('/request-demo', {
+        subject: 'Demo request',
+        ...form,
+      })
+
+      toast.success('Demo request sent successfully!')
+      setSubmitted(true)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to send demo request'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-brand-cream flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center px-6 pt-20">
           <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95,
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-            }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="text-center max-w-lg"
           >
             <div className="w-20 h-20 rounded-full bg-brand-orange text-white flex items-center justify-center mx-auto mb-6">
@@ -110,6 +152,7 @@ export function RequestDemoPage() {
       </div>
     )
   }
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
@@ -120,14 +163,8 @@ export function RequestDemoPage() {
       <main className="flex-1 pt-28 md:pt-36 pb-16 px-6 relative z-10">
         <div className="max-w-3xl mx-auto">
           <motion.div
-            initial={{
-              opacity: 0,
-              y: 10,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             className="text-center mb-10"
           >
             <p className="text-xs font-bold uppercase tracking-widest text-brand-orange mb-3">
@@ -144,53 +181,65 @@ export function RequestDemoPage() {
 
           <form
             onSubmit={onSubmit}
-            className="bg-white rounded-3xl shadow-xl shadow-ink-900/5 border border-ink-100 p-6 md:p-10 space-y-6"
+            className="bg-white rounded-3xl shadow-xl shadow-ink-900/5 border border-brand-orange/10 p-6 md:p-10 space-y-6"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Your name</Label>
-                <Input
-                  id="name"
-                  value={form.name}
-                  onChange={(e) => update('name', e.target.value)}
-                  placeholder="Amina Njoroge"
-                  error={errors.name}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Work email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => update('email', e.target.value)}
-                  placeholder="you@school.ac.ke"
-                  error={errors.email}
-                />
-              </div>
+            {/* Name */}
+            <div id="name" className="space-y-1.5">
+              <Label htmlFor="name">Your name</Label>
+              <Input
+                id="name"
+                value={form.name}
+                onChange={(e) => update('name', e.target.value)}
+                placeholder="Amina Njoroge"
+              />
+              {errors.name && (
+                <p className="text-xs text-red-600 mt-1">{errors.name}</p>
+              )}
             </div>
 
-            <div className="space-y-1.5">
+            {/* Email */}
+            <div id="email" className="space-y-1.5">
+              <Label htmlFor="email">Work email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                placeholder="you@school.ac.ke"
+              />
+              {errors.email && (
+                <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Institution Type */}
+            <div id="institutionType" className="space-y-1.5">
               <Label htmlFor="institutionType">Institution type</Label>
               <Select
-                id="institutionType"
                 value={form.institutionType}
-                onChange={(e) => update('institutionType', e.target.value)}
-                error={errors.institutionType}
+                onValueChange={(v) => update('institutionType', v)}
               >
-                <option value="">Select type…</option>
-                <option value="preschool">Pre-school / ECD centre</option>
-                <option value="primary">Primary school</option>
-                <option value="secondary">Secondary / High school</option>
-                <option value="combined">Combined (K-12)</option>
-                <option value="tertiary">Tertiary / University</option>
-                <option value="vocational">Vocational / TVET</option>
-                <option value="network">Multi-campus network</option>
-                <option value="ministry">Ministry / District</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type…" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="preschool">Pre-school / ECD centre</SelectItem>
+                  <SelectItem value="primary">Primary school</SelectItem>
+                  <SelectItem value="secondary">Secondary / High school</SelectItem>
+                  <SelectItem value="combined">Combined (K-12)</SelectItem>
+                  <SelectItem value="tertiary">Tertiary / University</SelectItem>
+                  <SelectItem value="vocational">Vocational / TVET</SelectItem>
+                  <SelectItem value="network">Multi-campus network</SelectItem>
+                  <SelectItem value="ministry">Ministry / District</SelectItem>
+                </SelectContent>
               </Select>
+              {errors.institutionType && (
+                <p className="text-xs text-red-600 mt-1">{errors.institutionType}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
+            {/* Demo Type */}
+            <div id="demoType" className="space-y-2">
               <Label>Demo type</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DemoTypeOption
@@ -209,11 +258,12 @@ export function RequestDemoPage() {
                 />
               </div>
               {errors.demoType && (
-                <p className="text-xs text-red-600">{errors.demoType}</p>
+                <p className="text-xs text-red-600 mt-1">{errors.demoType}</p>
               )}
             </div>
 
-            <div className="space-y-1.5">
+            {/* Details */}
+            <div id="details" className="space-y-1.5">
               <Label htmlFor="details">
                 Details · institutional structure · needs
               </Label>
@@ -222,11 +272,14 @@ export function RequestDemoPage() {
                 value={form.details}
                 onChange={(e) => update('details', e.target.value)}
                 placeholder="Tell us about your campuses, grades, current tools, pain points and what success would look like…"
-                error={errors.details}
                 rows={5}
               />
+              {errors.details && (
+                <p className="text-xs text-red-600 mt-1">{errors.details}</p>
+              )}
             </div>
 
+            {/* Other Info (optional) */}
             <div className="space-y-1.5">
               <Label htmlFor="otherInfo">
                 Other important info{' '}
@@ -244,7 +297,7 @@ export function RequestDemoPage() {
             <Button
               type="submit"
               size="lg"
-              className="w-full"
+              className="w-full bg-brand-orange hover:bg-brand-orange/90"
               disabled={submitting}
             >
               {submitting ? (
@@ -274,6 +327,7 @@ export function RequestDemoPage() {
     </div>
   )
 }
+
 function DemoTypeOption({
   active,
   onClick,
@@ -291,11 +345,17 @@ function DemoTypeOption({
     <button
       type="button"
       onClick={onClick}
-      className={`text-left p-4 rounded-xl border-2 transition-all ${active ? 'border-brand-orange bg-brand-orange/5 ring-2 ring-brand-orange/20' : 'border-ink-200 bg-white hover:border-ink-300'}`}
+      className={`text-left p-4 rounded-xl border-2 transition-all ${
+        active
+          ? 'border-brand-orange bg-brand-orange/5 ring-2 ring-brand-orange/20'
+          : 'border-ink-200 bg-white hover:border-ink-300'
+      }`}
     >
       <div className="flex items-center gap-2 mb-1.5">
         <div
-          className={`w-8 h-8 rounded-lg flex items-center justify-center ${active ? 'bg-brand-orange text-white' : 'bg-ink-100 text-ink-600'}`}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+            active ? 'bg-brand-orange text-white' : 'bg-ink-100 text-ink-600'
+          }`}
         >
           {icon}
         </div>

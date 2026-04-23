@@ -93,12 +93,32 @@
     font-family: 'Geist', sans-serif;
   }
 }
-@layer utilities {
-  .glass {
-    background: rgba(255, 255, 255, 0.72);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.45);
-    box-shadow: 0 8px 32px -4px rgb(0 0 0 / 0.1);
-  }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #fafaf9; }
+::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+/* Hide scrollbars for horizontal scroll content */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Subtle grid background */
+.bg-grid-ink {
+  background-image: linear-gradient(to right, rgba(28,25,23,0.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(28,25,23,0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.bg-grid-ink-dark {
+  background-image: linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+/* Pipe fluid flow */
+@keyframes pipeFlow {
+  0% { stroke-dashoffset: 200; }
+  100% { stroke-dashoffset: 0; }
+}
+.pipe-fluid {
+  stroke-dasharray: 12 8;
+  animation: pipeFlow 4s linear infinite;
 }

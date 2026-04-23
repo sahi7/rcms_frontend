@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check, ArrowRight, Mail, MessageSquare, MapPin } from 'lucide-react'
@@ -9,12 +9,17 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { PipeBackground } from '../components/PipeBackground'
+import { uploadApi } from '@/lib/api'               // ← Your axios instance
+import { toast } from 'sonner'
+import { getErrorMessage } from '@/lib/utils'
+
 interface ContactForm {
   name: string
   email: string
   subject: string
   message: string
 }
+
 export function ContactPage() {
   const [form, setForm] = useState<ContactForm>({
     name: '',
@@ -22,50 +27,84 @@ export function ContactPage() {
     subject: '',
     message: '',
   })
+
   const [errors, setErrors] = useState<
     Partial<Record<keyof ContactForm, string>>
   >({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+
   const update = <K extends keyof ContactForm>(k: K, v: ContactForm[K]) => {
     setForm((f) => ({
       ...f,
       [k]: v,
     }))
+    // Clear error while typing
     setErrors((e) => ({
       ...e,
       [k]: undefined,
     }))
   }
-  const validate = () => {
+
+  const validate = (): boolean => {
     const errs: Partial<Record<keyof ContactForm, string>> = {}
-    if (!form.name.trim()) errs.name = 'Required'
-    if (!form.email.trim()) errs.email = 'Required'
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = 'Invalid email'
-    if (!form.subject.trim()) errs.subject = 'Required'
-    if (!form.message.trim()) errs.message = 'Required'
+
+    if (!form.name.trim()) errs.name = 'Your name is required'
+    if (!form.email.trim()) errs.email = 'Email is required'
+    else if (!/^\S+@\S+\.\S+$/.test(form.email))
+      errs.email = 'Please enter a valid email address'
+
+    if (!form.subject.trim()) errs.subject = 'Subject is required'
+    if (!form.message.trim()) errs.message = 'Message is required'
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-    setSubmitting(true)
-    try {
-      await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(form),
+
+  // Scroll to first error field (only after failed submit)
+  const scrollToFirstError = () => {
+    const firstErrorKey = Object.keys(errors)[0] as keyof ContactForm | undefined
+    if (!firstErrorKey) return
+
+    let id = ''
+    if (firstErrorKey === 'name') id = 'name'
+    else if (firstErrorKey === 'email') id = 'email'
+    else if (firstErrorKey === 'subject') id = 'subject'
+    else if (firstErrorKey === 'message') id = 'message'
+
+    const element = document.getElementById(id)
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
       })
-    } catch {
-      // handled by data layer
-    } finally {
-      setSubmitting(false)
-      setSubmitted(true)
     }
   }
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+
+    const isValid = validate()
+
+    if (!isValid) {
+      scrollToFirstError()
+      return
+    }
+
+    setSubmitting(true)
+
+    try {
+      await uploadApi.post('/contact', form)
+
+      toast.success('Message sent successfully!')
+      setSubmitted(true)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to send message'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white flex flex-col relative overflow-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
@@ -103,17 +142,17 @@ export function ContactPage() {
               <InfoCard
                 icon={<Mail size={18} />}
                 title="Email"
-                lines={['hello@kakipi.africa', 'support@kakipi.africa']}
+                lines={['hello@kakipiorange.africa', 'support@kakipiorange.africa']}
               />
               <InfoCard
                 icon={<MessageSquare size={18} />}
                 title="Sales"
-                lines={['sales@kakipi.africa', '+254 (0) 700 000 000']}
+                lines={['sales@kakipi.africa', '+237 670 000 000']}
               />
               <InfoCard
                 icon={<MapPin size={18} />}
                 title="Offices"
-                lines={['Nairobi · Kenya', 'Lagos · Nigeria', 'Accra · Ghana']}
+                lines={['Douala· Cameroon', 'Lagos · Nigeria', 'Accra · Ghana']}
               />
             </div>
 
@@ -148,50 +187,64 @@ export function ContactPage() {
                   onSubmit={onSubmit}
                   className="bg-white rounded-3xl border border-ink-100 shadow-xl shadow-ink-900/5 p-6 md:p-8 space-y-5"
                 >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="name">Name</Label>
-                      <Input
-                        id="name"
-                        value={form.name}
-                        onChange={(e) => update('name', e.target.value)}
-                        placeholder="Your name"
-                        error={errors.name}
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={form.email}
-                        onChange={(e) => update('email', e.target.value)}
-                        placeholder="you@school.ac.ke"
-                        error={errors.email}
-                      />
-                    </div>
+                  {/* Name */}
+                  <div id="name" className="space-y-1.5">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      value={form.name}
+                      onChange={(e) => update('name', e.target.value)}
+                      placeholder="Your name"
+                    />
+                    {errors.name && (
+                      <p className="text-xs text-red-600 mt-1">{errors.name}</p>
+                    )}
                   </div>
-                  <div className="space-y-1.5">
+
+                  {/* Email */}
+                  <div id="email" className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={form.email}
+                      onChange={(e) => update('email', e.target.value)}
+                      placeholder="you@school.ac.ke"
+                    />
+                    {errors.email && (
+                      <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+                    )}
+                  </div>
+
+                  {/* Subject */}
+                  <div id="subject" className="space-y-1.5">
                     <Label htmlFor="subject">Subject</Label>
                     <Input
                       id="subject"
                       value={form.subject}
                       onChange={(e) => update('subject', e.target.value)}
                       placeholder="What's this about?"
-                      error={errors.subject}
                     />
+                    {errors.subject && (
+                      <p className="text-xs text-red-600 mt-1">{errors.subject}</p>
+                    )}
                   </div>
-                  <div className="space-y-1.5">
+
+                  {/* Message */}
+                  <div id="message" className="space-y-1.5">
                     <Label htmlFor="message">Message</Label>
                     <Textarea
                       id="message"
                       value={form.message}
                       onChange={(e) => update('message', e.target.value)}
                       placeholder="Tell us more…"
-                      error={errors.message}
                       rows={6}
                     />
+                    {errors.message && (
+                      <p className="text-xs text-red-600 mt-1">{errors.message}</p>
+                    )}
                   </div>
+
                   <Button
                     type="submit"
                     size="lg"
@@ -220,6 +273,7 @@ export function ContactPage() {
     </div>
   )
 }
+
 function InfoCard({
   icon,
   title,

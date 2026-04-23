@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import {
   motion,
   useScroll,
@@ -79,7 +79,7 @@ export function PipeBackground({
           stroke={pipeStrokeStrong}
           pathDefinitions={MID_PATHS.slice(0, count)}
           fluidDelay={0.05}
-          strokeWidth={1.4}
+          strokeWidth={0.4}
         />
       </motion.svg>
 
@@ -98,7 +98,7 @@ export function PipeBackground({
           stroke={pipeStrokeStrong}
           pathDefinitions={FG_PATHS.slice(0, Math.max(2, count - 1))}
           fluidDelay={0.1}
-          strokeWidth={1.8}
+          strokeWidth={0.8}
           showJoints
           variant={variant}
         />

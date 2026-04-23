@@ -100,7 +100,7 @@ export function BrandingPanel() {
           transition={{ duration: 0.6, delay: 1 }}
           className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm"
         >
-          © {new Date().getFullYear()} EduFlow Systems Inc. All rights reserved.
+          © {new Date().getFullYear()} KakipiSystems Inc. All rights reserved.
         </motion.div>
       </div>
     </div>
