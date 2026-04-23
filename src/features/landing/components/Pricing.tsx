@@ -1,5 +1,6 @@
 // src/features/landing/components/Pricing.tsx
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, X, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,8 +71,8 @@ export function Pricing() {
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 className={`relative w-full lg:w-1/3 rounded-3xl bg-white transition-all duration-300 ${isSpotlight
-                    ? 'shadow-2xl shadow-orange-500/20 border-t-4 border-t-orange-500'
-                    : 'shadow-lg border border-gray-100'
+                  ? 'shadow-2xl shadow-orange-500/20 border-t-4 border-t-orange-500'
+                  : 'shadow-lg border border-gray-100'
                   }`}
               >
                 {index === 1 && isSpotlight && (
@@ -116,13 +117,15 @@ export function Pricing() {
                     })}
                   </div>
 
-                  <Button
-                    variant={isSpotlight ? 'default' : 'outline'}
-                    className={`w-full h-12 text-base font-medium ${isSpotlight ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''
-                      }`}
-                  >
-                    Get Started
-                  </Button>
+                  <Link to="/onboarding" className="w-full">
+                    <Button
+                      variant={isSpotlight ? 'default' : 'outline'}
+                      className={`w-full h-12 text-base font-medium ${isSpotlight ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''
+                        }`}
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
                 </div>
               </motion.div>
             );
@@ -148,14 +151,14 @@ export function Pricing() {
                   title={`${addon.description}\n\n+$${addon.additional_price}`}
                 >
                   <div className="flex flex-col justify-between items-center">
-                      <h5 className="font-medium text-gray-900">{addon.name}</h5>
-                      <p className="text-sm text-gray-500 line-clamp-2 mt-1 group-hover:line-clamp-none">
-                        {addon.description}
-                      </p>
-                      <div className="flex items-center gap-1 text-orange-600 text-sm font-medium">
-                        <Info className="h-4 w-4" />
-                        <span>+CFA{addon.additional_price}</span>
-                      </div>
+                    <h5 className="font-medium text-gray-900">{addon.name}</h5>
+                    <p className="text-sm text-gray-500 line-clamp-2 mt-1 group-hover:line-clamp-none">
+                      {addon.description}
+                    </p>
+                    <div className="flex items-center gap-1 text-orange-600 text-sm font-medium">
+                      <Info className="h-4 w-4" />
+                      <span>+CFA{addon.additional_price}</span>
+                    </div>
                   </div>
                 </div>
               ))}

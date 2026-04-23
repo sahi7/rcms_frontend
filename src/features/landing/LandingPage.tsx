@@ -202,7 +202,10 @@ export function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Button className="mt-4 bg-brand-orange hover:bg-orange-700 text-white">Explore Analytics</Button>
+              <Link to="/onboarding">
+                <Button className="mt-4 bg-brand-orange hover:bg-orange-700 text-white">Explore Analytics</Button>
+              </Link>
+
             </motion.div>
 
             <motion.div
@@ -441,7 +444,7 @@ function DashboardPreview() {
           <div className="w-3 h-3 rounded-full bg-yellow-400" />
           <div className="w-3 h-3 rounded-full bg-green-400" />
           <div className="mx-auto w-1/2 h-5 bg-white rounded-md border border-ink-200 flex items-center px-3">
-            <span className="text-[10px] text-ink-400 font-mono">app.kakipiorange.africa/dashboard</span>
+            <span className="text-[10px] text-ink-400 font-mono max-sm:text-[8px]">kakipiorange.com/dash</span>
           </div>
         </div>
 
