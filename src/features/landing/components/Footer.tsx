@@ -26,7 +26,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-ink-400">
                 <MapPin size={14} className="text-brand-orange" />
-                <span>Douala· Lagos · Accra</span>
+                <span>Douala · Lagos · Accra</span>
               </div>
             </div>
           </div>

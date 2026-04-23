@@ -1,6 +1,6 @@
 // src/features/auth/LoginPage.tsx
 import { useState } from 'react';
-import { motion, Variants } from 'framer-motion';  
+import { motion, Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ const formVariants: Variants = {
     transition: {
       delay: custom * 0.1,
       duration: 0.5,
-      ease: 'easeOut',           // This is now accepted
+      ease: 'easeOut',
     },
   }),
 };
@@ -116,9 +116,11 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="mt-8">
-            <Button variant="outline" className="w-full h-11">
-              Request Demo
-            </Button>
+            <Link to="/request-demo" className="w-full sm:w-auto text-brand-orange">
+              <Button variant="outline" className="w-full h-11">
+                Request Demo
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </div>

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Logo } from '@/assets/Logo';
 import { GraduationCap, Users, BookOpen, BarChart3, Shield } from 'lucide-react';
 
 const features = [
@@ -49,10 +50,8 @@ export function BrandingPanel() {
           transition={{ duration: 0.6 }}
           className="flex items-center gap-3 mb-12"
         >
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-500 text-white shadow-lg shadow-orange-500/20">
-            <GraduationCap size={24} />
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-white font-heading">EduFlow</span>
+
+          <Logo variant='light' size={32} />
         </motion.div>
 
         <div className="flex-1 max-w-md mt-8 lg:mt-16">
@@ -100,7 +99,7 @@ export function BrandingPanel() {
           transition={{ duration: 0.6, delay: 1 }}
           className="mt-12 pt-8 border-t border-gray-800 text-gray-500 text-sm"
         >
-          © {new Date().getFullYear()} KakipiSystems Inc. All rights reserved.
+          © {new Date().getFullYear()} Kakipi Orange. All rights reserved.
         </motion.div>
       </div>
     </div>

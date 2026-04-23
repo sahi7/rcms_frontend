@@ -152,7 +152,7 @@ export function ContactPage() {
               <InfoCard
                 icon={<MapPin size={18} />}
                 title="Offices"
-                lines={['Douala· Cameroon', 'Lagos · Nigeria', 'Accra · Ghana']}
+                lines={['Douala · Cameroon', 'Lagos · Nigeria', 'Accra · Ghana']}
               />
             </div>
 
