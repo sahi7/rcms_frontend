@@ -18,7 +18,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <path d="M6 12v5c3 3 9 3 12 0v-5" />
             </svg>
           </div>
-          <span className="text-xl font-bold font-heading">EduFlow</span>
+          <span className="text-xl font-bold font-heading">Kakipi</span>
         </div>
 
         {/* Desktop branding panel */}

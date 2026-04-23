@@ -191,7 +191,7 @@ export function LandingPage() {
               className="flex-1 space-y-8"
             >
               <h2 className="text-3xl md:text-4xl font-bold font-heading text-ink-900 leading-tight">Powerful Analytics at Your Fingertips</h2>
-              <p className="text-lg text-ink-600 leading-relaxed">Make informed decisions with real-time data. EduFlow's analytics engine transforms complex school data into clear, actionable insights.</p>
+              <p className="text-lg text-ink-600 leading-relaxed">Make informed decisions with real-time data. Kakipi's analytics engine transforms complex school data into clear, actionable insights.</p>
               <ul className="space-y-4">
                 {['Identify at-risk students early with predictive modeling', 'Track school-wide performance trends over time', 'Generate comprehensive reports for accreditation'].map((item, i) => (
                   <li key={i} className="flex items-start gap-3">
@@ -481,7 +481,7 @@ function DashboardPreview() {
                 { label: 'Enrolled', value: '1,284', delta: '+4.2%' },
                 { label: 'Attendance', value: '94.2%', delta: '+2.1%' },
                 { label: 'Avg. grade', value: 'B+', delta: '+0.4' },
-                { label: 'Fees collected', value: '₦82M', delta: '+12%' },
+                { label: 'Fees collected', value: 'CFA82M', delta: '+12%' },
               ].map((k) => (
                 <div key={k.label} className="rounded-xl border border-ink-100 bg-white p-3 md:p-4">
                   <div className="text-[10px] md:text-xs text-ink-500 mb-1">{k.label}</div>
