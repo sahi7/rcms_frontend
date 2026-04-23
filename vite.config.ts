@@ -12,4 +12,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@radix-ui/react-tooltip'],
   },
+  server: {
+    allowedHosts: [
+      "nutlike-crushing-anatomist.ngrok-free.dev",
+      // Add other allowed hosts if needed
+    ],
+  },
 })

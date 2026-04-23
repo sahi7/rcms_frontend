@@ -1,90 +1,126 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X } from 'lucide-react'
+import { Logo } from '@/assets/Logo'
+import { Button } from '@/components/ui/button'
+const nav = [
+  {
+    to: '/#features',
+    label: 'Features',
+  },
+  {
+    to: '/#pricing',
+    label: 'Pricing',
+  },
+  {
+    to: '/about',
+    label: 'About',
+  },
+  {
+    to: '/contact',
+    label: 'Contact',
+  },
+]
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const navLinks = [
-    { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'About', href: '#about' },
-    { name: 'Resources', href: '#resources' },
-  ];
-
+    const onScroll = () => setScrolled(window.scrollY > 12)
+    onScroll()
+    window.addEventListener('scroll', onScroll, {
+      passive: true,
+    })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm py-3' : 'bg-transparent py-5'}`}>
-      <div className="container mx-auto px-6 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-orange-500 text-white transition-transform group-hover:scale-105">
-            <GraduationCap size={20} />
-          </div>
-          <span className="text-xl font-bold font-heading text-gray-900">EduFlow</span>
-        </Link>
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/85 backdrop-blur-md border-b border-ink-100' : 'bg-transparent'}`}
+    >
+      <div className="container mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
+        <Logo size={30} />
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a key={link.name} href={link.href} className="text-sm font-medium text-gray-600 hover:text-orange-600 transition-colors">
-              {link.name}
+          {nav.map((item) => (
+            <a
+              key={item.to}
+              href={item.to}
+              className="text-sm font-medium text-ink-700 hover:text-brand-orange transition-colors"
+            >
+              {item.label}
             </a>
           ))}
         </nav>
 
-        {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors">Login</Link>
-          <Link to="/onboarding">
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all hover:shadow-lg hover:shadow-orange-500/30">
-              Start Onboarding
+        <div className="hidden md:flex items-center gap-3">
+          <Link to="/login">
+            <Button variant="ghost" size="sm">
+              Sign in
             </Button>
+          </Link>
+          <Link to="/request-demo">
+            <Button size="sm">Request demo</Button>
           </Link>
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <button className="md:hidden text-gray-600 hover:text-orange-600 transition-colors" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-          {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        <button
+          className="md:hidden p-2 -mr-2 text-ink-900"
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={24} />
         </button>
       </div>
 
-      {/* Mobile Nav */}
       <AnimatePresence>
-        {mobileMenuOpen && (
+        {mobileOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="md:hidden overflow-hidden bg-white border-b border-gray-100 shadow-lg absolute top-full left-0 right-0"
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            exit={{
+              opacity: 0,
+            }}
+            className="fixed inset-0 z-50 bg-white md:hidden"
           >
-            <div className="px-6 py-4 flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <a key={link.name} href={link.href} className="text-base font-medium text-gray-700 hover:text-orange-600 py-2 border-b border-gray-50" onClick={() => setMobileMenuOpen(false)}>
-                  {link.name}
+            <div className="flex items-center justify-between px-6 h-16 border-b border-ink-100">
+              <Logo size={30} />
+              <button
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+                className="p-2 -mr-2"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <nav className="flex flex-col p-6 gap-1">
+              {nav.map((item) => (
+                <a
+                  key={item.to}
+                  href={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  className="py-3 text-lg font-medium text-ink-900 border-b border-ink-100"
+                >
+                  {item.label}
                 </a>
               ))}
-              <div className="flex flex-col gap-3 pt-4">
-                <Link to="/">
-                  <Button variant="outline" className="w-full justify-center">Login</Button>
+              <div className="flex flex-col gap-3 mt-6">
+                <Link to="/login" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Sign in
+                  </Button>
                 </Link>
-                <Link to="/onboarding">
-                  <Button className="w-full justify-center bg-orange-600 hover:bg-orange-700 text-white">Start Onboarding</Button>
+                <Link to="/request-demo" onClick={() => setMobileOpen(false)}>
+                  <Button className="w-full">Request demo</Button>
                 </Link>
               </div>
-            </div>
+            </nav>
           </motion.div>
         )}
       </AnimatePresence>
     </header>
-  );
+  )
 }

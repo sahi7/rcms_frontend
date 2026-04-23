@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, useInView, animate } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Users, ClipboardCheck, BookOpen, BarChart3, MessageSquare, Calendar, CheckCircle2, PlayCircle } from 'lucide-react';
+import { PipeBackground } from '@/app/components/PipeBackground'
+import { Users, ClipboardCheck, BookOpen, BarChart3, MessageSquare, Calendar, CheckCircle2, PlayCircle, Sparkles, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -34,203 +35,151 @@ function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: strin
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-white font-sans selection:bg-orange-100 selection:text-orange-900">
+    <div className="relative min-h-screen bg-white text-ink-900 overflow-x-hidden">
+      {/* Reactive pipe background — orange fluid flows as user scrolls */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <PipeBackground variant="light" density="normal" />
+      </div>
       <Header />
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-gray-50">
-        {/* Decorative Background */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden bg-gradient-to-b from-brand-cream via-white to-white">
+      <div className="absolute inset-0 bg-grid-ink opacity-60 pointer-events-none" />
+      <div className="container relative z-10 mx-auto px-6 text-center">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: {
+              opacity: 0,
+            },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+              },
+            },
+          }}
+          className="max-w-4xl mx-auto"
+        >
           <motion.div
-            animate={{
-              y: [0, -20, 0],
-              opacity: [0.3, 0.5, 0.3],
+            variants={{
+              hidden: {
+                opacity: 0,
+                y: 10,
+              },
+              visible: {
+                opacity: 1,
+                y: 0,
+              },
             }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-            className="absolute top-1/4 left-1/4 w-64 h-64 bg-orange-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30"
-          />
-          <motion.div
-            animate={{
-              y: [0, 20, 0],
-              opacity: [0.2, 0.4, 0.2],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: 1,
-            }}
-            className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20"
-          />
-        </div>
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-ink-200 shadow-sm mb-6"
+          >
+            <Sparkles size={14} className="text-brand-orange" />
+            <span className="text-xs font-semibold text-ink-700">
+              Trusted by 2,000+ African institutions
+            </span>
+          </motion.div>
 
-        <div className="container relative z-10 mx-auto px-6 text-center">
+          <motion.h1
+            variants={{
+              hidden: {
+                opacity: 0,
+                y: 20,
+              },
+              visible: {
+                opacity: 1,
+                y: 0,
+              },
+            }}
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-ink-900 tracking-tight leading-[1.05] mb-6"
+          >
+            One platform, from{' '}
+            <span className="relative inline-block">
+              <span className="relative z-10">enrollment</span>
+              <motion.span
+                initial={{
+                  scaleX: 0,
+                }}
+                animate={{
+                  scaleX: 1,
+                }}
+                transition={{
+                  delay: 0.8,
+                  duration: 0.6,
+                }}
+                style={{
+                  originX: 0,
+                }}
+                className="absolute inset-x-0 bottom-1 h-3 bg-brand-orange/30 -z-0"
+              />
+            </span>{' '}
+            to <span className="text-brand-orange">graduation</span>.
+          </motion.h1>
+
+          <motion.p
+            variants={{
+              hidden: {
+                opacity: 0,
+                y: 20,
+              },
+              visible: {
+                opacity: 1,
+                y: 0,
+              },
+            }}
+            className="text-lg md:text-xl text-ink-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+          >
+            Kakipi is the modern school management platform built for Africa —
+            unifying admissions, attendance, grading, finance and family
+            communication in one beautifully simple place.
+          </motion.p>
+
           <motion.div
-            initial="hidden"
-            animate="visible"
+            variants={{
+              hidden: {
+                opacity: 0,
+                y: 20,
+              },
+              visible: {
+                opacity: 1,
+                y: 0,
+              },
+            }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3"
+          >
+            <Link to="/onboarding" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto">
+                Start free trial <ArrowRight size={18} />
+              </Button>
+            </Link>
+            <Link to="/request-demo" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                <PlayCircle size={18} className="text-brand-orange" /> Request a
+                demo
+              </Button>
+            </Link>
+          </motion.div>
+
+          <motion.p
             variants={{
               hidden: {
                 opacity: 0,
               },
               visible: {
                 opacity: 1,
-                transition: {
-                  staggerChildren: 0.1,
-                },
               },
             }}
-            className="max-w-4xl mx-auto"
+            className="mt-6 text-xs text-ink-500"
           >
-            <motion.h1
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  y: 20,
-                },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                },
-              }}
-              className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 tracking-tight font-heading mb-6 leading-tight"
-            >
-              The Modern Platform for{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-600">
-                School Excellence
-              </span>
-            </motion.h1>
+            No credit card required · Free for up to 50 students · Setup in
+            minutes
+          </motion.p>
+        </motion.div>
 
-            <motion.p
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  y: 20,
-                },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                },
-              }}
-              className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
-            >
-              From admissions to alumni — manage every aspect of your
-              institution with AI-powered tools trusted by 2,000+ schools
-              worldwide.
-            </motion.p>
-
-            <motion.div
-              variants={{
-                hidden: {
-                  opacity: 0,
-                  y: 20,
-                },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                },
-              }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4"
-            >
-              <Link to="/onboarding">
-                <Button className="w-full sm:w-auto h-12 px-8 text-base bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-500/25">
-                  Get Started Free
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto h-12 px-8 text-base border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                <PlayCircle className="mr-2 h-5 w-5 text-orange-500" /> Watch
-                Demo
-              </Button>
-            </motion.div>
-          </motion.div>
-
-          {/* Dashboard Preview Visual */}
-          <motion.div
-            initial={{
-              opacity: 0,
-              y: 40,
-            }}
-            animate={{
-              opacity: 1,
-              y: 0,
-            }}
-            transition={{
-              delay: 0.6,
-              duration: 0.8,
-              ease: 'easeOut',
-            }}
-            className="mt-16 md:mt-24 mx-auto max-w-5xl relative perspective-1000"
-          >
-            <div className="relative rounded-2xl bg-white border border-gray-200 shadow-2xl overflow-hidden transform rotate-x-12 -rotate-y-6 scale-100 md:scale-105 transition-transform duration-700 hover:rotate-x-0 hover:rotate-y-0">
-              {/* Fake Browser Header */}
-              <div className="h-10 bg-gray-100 border-b border-gray-200 flex items-center px-4 gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                <div className="mx-auto w-1/2 h-5 bg-white rounded-md border border-gray-200"></div>
-              </div>
-              {/* Fake Dashboard Layout */}
-              <div className="flex h-[400px] md:h-[500px]">
-                {/* Sidebar */}
-                <div className="w-48 md:w-64 bg-gray-50 border-r border-gray-200 p-4 hidden sm:block">
-                  <div className="h-8 w-3/4 bg-gray-200 rounded mb-8"></div>
-                  <div className="space-y-4">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-6 rounded ${i === 2 ? 'bg-orange-100 w-full' : 'bg-gray-200 w-5/6'}`}
-                      ></div>
-                    ))}
-                  </div>
-                </div>
-                {/* Main Content */}
-                <div className="flex-1 p-6 bg-white">
-                  <div className="flex justify-between items-center mb-8">
-                    <div className="h-8 w-48 bg-gray-200 rounded"></div>
-                    <div className="h-8 w-24 bg-orange-500 rounded text-white"></div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 mb-8">
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className="h-24 bg-gray-50 border border-gray-100 rounded-xl p-4 flex flex-col justify-between"
-                      >
-                        <div className="h-4 w-1/2 bg-gray-200 rounded"></div>
-                        <div className="h-8 w-3/4 bg-gray-300 rounded"></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="h-48 bg-gray-50 border border-gray-100 rounded-xl p-4">
-                    <div className="h-full w-full border-b border-l border-gray-300 relative">
-                      {/* Fake chart line */}
-                      <svg
-                        className="absolute inset-0 h-full w-full"
-                        preserveAspectRatio="none"
-                        viewBox="0 0 100 100"
-                      >
-                        <path
-                          d="M0,100 L20,60 L40,80 L60,30 L80,50 L100,10"
-                          fill="none"
-                          stroke="#f97316"
-                          strokeWidth="3"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+        <DashboardPreview />
+      </div>
+    </section>
 
       {/* TRUSTED BY SECTION */}
       <section className="py-10 border-b border-gray-100 bg-white">
@@ -687,5 +636,212 @@ export function LandingPage() {
 
       <Footer />
     </div>
+  )
+}
+
+// ==================== DASHBOARD PREVIEW ====================
+function DashboardPreview() {
+  return (
+    <motion.div
+      initial={{
+        opacity: 0,
+        y: 40,
+      }}
+      animate={{
+        opacity: 1,
+        y: 0,
+      }}
+      transition={{
+        delay: 0.5,
+        duration: 0.8,
+        ease: 'easeOut',
+      }}
+      className="mt-16 md:mt-24 mx-auto max-w-6xl relative"
+    >
+      <div className="absolute -inset-6 bg-gradient-to-tr from-brand-orange/10 via-transparent to-brand-amber/10 blur-2xl rounded-3xl" />
+
+      <div className="relative rounded-2xl bg-white border border-ink-200 shadow-2xl shadow-ink-900/10 overflow-hidden">
+        {/* Browser chrome */}
+        <div className="h-10 bg-ink-50 border-b border-ink-100 flex items-center px-4 gap-2">
+          <div className="w-3 h-3 rounded-full bg-red-400" />
+          <div className="w-3 h-3 rounded-full bg-yellow-400" />
+          <div className="w-3 h-3 rounded-full bg-green-400" />
+          <div className="mx-auto w-1/2 h-5 bg-white rounded-md border border-ink-200 flex items-center px-3">
+            <span className="text-[10px] text-ink-400 font-mono">
+              app.kakipi.africa/dashboard
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-12">
+          {/* Sidebar */}
+          <aside className="hidden md:flex col-span-3 lg:col-span-2 border-r border-ink-100 bg-ink-50/50 p-4 flex-col gap-1">
+            <div className="px-2 py-3 mb-4 flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-ink-900 flex items-center justify-center">
+                <div className="w-1.5 h-3 bg-white rounded-sm" />
+              </div>
+              <span className="text-sm font-extrabold text-ink-900 lowercase">
+                kakipi
+              </span>
+            </div>
+            {[
+              'Dashboard',
+              'Students',
+              'Attendance',
+              'Gradebook',
+              'Finance',
+              'Messages',
+              'Timetable',
+            ].map((l, i) => (
+              <div
+                key={l}
+                className={`px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 ${i === 1 ? 'bg-brand-orange/10 text-brand-orange' : 'text-ink-600'}`}
+              >
+                <div
+                  className={`w-1 h-1 rounded-full ${i === 1 ? 'bg-brand-orange' : 'bg-ink-300'}`}
+                />
+                {l}
+              </div>
+            ))}
+          </aside>
+
+          {/* Main */}
+          <main className="col-span-12 md:col-span-9 lg:col-span-10 p-5 md:p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <div className="text-xs text-ink-500 mb-1">
+                  Good morning, Amina
+                </div>
+                <div className="text-lg md:text-xl font-bold text-ink-900">
+                  Students overview
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="h-8 px-3 rounded-md border border-ink-200 text-xs text-ink-600 flex items-center">
+                  This term
+                </div>
+                <div className="h-8 px-3 rounded-md bg-brand-orange text-white text-xs font-semibold flex items-center">
+                  + Add student
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                {
+                  label: 'Enrolled',
+                  value: '1,284',
+                  delta: '+4.2%',
+                },
+                {
+                  label: 'Attendance',
+                  value: '94.2%',
+                  delta: '+2.1%',
+                },
+                {
+                  label: 'Avg. grade',
+                  value: 'B+',
+                  delta: '+0.4',
+                },
+                {
+                  label: 'Fees collected',
+                  value: '₦82M',
+                  delta: '+12%',
+                },
+              ].map((k) => (
+                <div
+                  key={k.label}
+                  className="rounded-xl border border-ink-100 bg-white p-3 md:p-4"
+                >
+                  <div className="text-[10px] md:text-xs text-ink-500 mb-1">
+                    {k.label}
+                  </div>
+                  <div className="text-lg md:text-2xl font-bold text-ink-900">
+                    {k.value}
+                  </div>
+                  <div className="text-[10px] md:text-xs text-green-600 font-semibold mt-0.5">
+                    ↑ {k.delta}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Chart + List */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 rounded-xl border border-ink-100 p-4 bg-white">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-semibold text-ink-700">
+                    Attendance trend
+                  </div>
+                  <div className="text-[10px] text-ink-400">Last 7 days</div>
+                </div>
+                <div className="h-32 md:h-40 relative">
+                  <svg
+                    viewBox="0 0 300 120"
+                    className="w-full h-full"
+                    preserveAspectRatio="none"
+                  >
+                    <defs>
+                      <linearGradient id="areaG" x1="0" x2="0" y1="0" y2="1">
+                        <stop
+                          offset="0%"
+                          stopColor="#ea580c"
+                          stopOpacity="0.3"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#ea580c"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M0,90 L40,70 L80,75 L120,50 L160,58 L200,35 L240,42 L300,20 L300,120 L0,120 Z"
+                      fill="url(#areaG)"
+                    />
+                    <path
+                      d="M0,90 L40,70 L80,75 L120,50 L160,58 L200,35 L240,42 L300,20"
+                      fill="none"
+                      stroke="#ea580c"
+                      strokeWidth="2"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="rounded-xl border border-ink-100 p-4 bg-white">
+                <div className="text-xs font-semibold text-ink-700 mb-3">
+                  Today's schedule
+                </div>
+                <div className="space-y-2.5">
+                  {[
+                    {
+                      t: '08:00',
+                      s: 'Assembly · Grade 10',
+                    },
+                    {
+                      t: '10:30',
+                      s: 'Mathematics · Form 3B',
+                    },
+                    {
+                      t: '13:00',
+                      s: 'Staff standup',
+                    },
+                  ].map((e) => (
+                    <div key={e.t} className="flex items-start gap-2">
+                      <div className="text-[10px] font-mono text-brand-orange font-bold w-10">
+                        {e.t}
+                      </div>
+                      <div className="text-[11px] text-ink-700">{e.s}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </motion.div>
   )
 }
