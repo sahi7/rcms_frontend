@@ -201,34 +201,29 @@ export function DashboardSidebar({
 
   // ── Reusable inner content (used by both desktop and mobile drawer) ──
   const sidebarContent = (
+
     <div className="flex h-full flex-col">
+
+
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-orange-500 text-white shrink-0">
-            <GraduationCap size={24} />
+        <div className="flex items-center gap-4">
+          <div className="w-9 h-9 rounded-xl bg-brand-orange flex items-center justify-center shadow-inner">
+            <div className="w-2 h-5 bg-white rounded-sm" />
           </div>
-          <AnimatePresence>
-            {showLabels && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="text-xl font-bold font-heading text-white tracking-tight"
-              >
-                EduFlow
-              </motion.span>
-            )}
-          </AnimatePresence>
+          <span className="text-xl font-black tracking-tighter text-white lowercase">
+            kakipi
+          </span>
         </div>
 
+        {/* Pin button */}
         <AnimatePresence>
           {showLabels && (
             <motion.button
               onClick={() => setIsPinned(!isPinned)}
-              className="text-gray-400 hover:text-white p-1.5 rounded-md hover:bg-white/10 md:block hidden"
+              className="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/10 transition-colors md:block hidden"
             >
-              {isPinned ? <Pin size={18} /> : <PinOff size={18} />}
+              {isPinned ? <Pin size={20} /> : <PinOff size={20} />}
             </motion.button>
           )}
         </AnimatePresence>
@@ -243,11 +238,10 @@ export function DashboardSidebar({
                   {/* Group Header */}
                   <div
                     onClick={() => group.children?.length && toggleGroup(group.title)}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${
-                      location.pathname === group.path
-                        ? 'bg-orange-500/10 text-orange-400'
-                        : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
-                    }`}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all ${location.pathname === group.path
+                      ? 'bg-orange-500/10 text-orange-400'
+                      : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <group.icon size={20} />
@@ -287,11 +281,10 @@ export function DashboardSidebar({
                             <Link
                               to={child.path}
                               onClick={isMobileOpen ? onMobileClose : undefined}
-                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                                location.pathname === child.path
-                                  ? 'text-orange-400 bg-orange-500/5'
-                                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-                              }`}
+                              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${location.pathname === child.path
+                                ? 'text-orange-400 bg-orange-500/5'
+                                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                                }`}
                             >
                               <span className="whitespace-nowrap">{getDynamicTitle(child)}</span>
                             </Link>
