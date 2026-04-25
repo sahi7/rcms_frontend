@@ -62,7 +62,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Toaster position="top-center" richColors />
       </BrowserRouter>
       {/* <ReactQueryDevtools initialIsOpen={false} /> */}
-      {(import.meta as any).env?.ENV && <ReactQueryDevtools initialIsOpen={false} />}
+      {(import.meta as any).env?.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   </React.StrictMode>
 );
