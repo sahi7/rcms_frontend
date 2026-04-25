@@ -15,6 +15,7 @@ export default defineConfig({
   server: {
     allowedHosts: [
       "nutlike-crushing-anatomist.ngrok-free.dev",
+      "dating-unison-cosmos.ngrok-free.dev",
       // Add other allowed hosts if needed
     ],
   },
